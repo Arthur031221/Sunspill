@@ -1206,7 +1206,7 @@ function fitRing(ring) {
 }
 function buildingQuery(lat, lon, radius = 200) {
   const around = `around:${Math.round(radius)},${lat.toFixed(5)},${lon.toFixed(5)}`;
-  return `[out:json][timeout:20];(way["building"](${around});way["building:part"](${around});relation["building"](${around}););out geom tags;`;
+  return `[out:json][timeout:20];(way["building"](${around});way["building:part"](${around}););out geom tags;(relation["building"](${around});relation["building:part"](${around}););out geom;`;
 }
 var ringOf = (geometry, center) => {
   if (!Array.isArray(geometry) || geometry.length < 4) return null;
@@ -1218,6 +1218,36 @@ var ringOf = (geometry, center) => {
   pts.pop();
   return pts;
 };
+var pointKey = (g) => `${g.lat},${g.lon}`;
+function outerRings(members) {
+  const closed = [];
+  const open = [];
+  for (const m of Array.isArray(members) ? members : []) {
+    if (m?.type !== "way" || m.role !== "outer" || !Array.isArray(m.geometry)) continue;
+    const pts = m.geometry.filter((g) => g && Number.isFinite(g.lat) && Number.isFinite(g.lon));
+    if (pts.length < 2) continue;
+    (pts.length >= 4 && pointKey(pts[0]) === pointKey(pts[pts.length - 1]) ? closed : open).push(pts);
+  }
+  while (open.length) {
+    let chain = open.shift();
+    let grew = true;
+    while (grew && pointKey(chain[0]) !== pointKey(chain[chain.length - 1])) {
+      grew = false;
+      const tail = pointKey(chain[chain.length - 1]);
+      for (let i = 0; i < open.length; i++) {
+        const seg = open[i];
+        if (pointKey(seg[0]) === tail) chain = chain.concat(seg.slice(1));
+        else if (pointKey(seg[seg.length - 1]) === tail) chain = chain.concat(seg.slice(0, -1).reverse());
+        else continue;
+        open.splice(i, 1);
+        grew = true;
+        break;
+      }
+    }
+    if (chain.length >= 4 && pointKey(chain[0]) === pointKey(chain[chain.length - 1])) closed.push(chain);
+  }
+  return closed;
+}
 function parseBuildings(json, center, { limit = OSM_LIMIT } = {}) {
   const found = [];
   for (const el of Array.isArray(json?.elements) ? json.elements : []) {
@@ -1225,9 +1255,7 @@ function parseBuildings(json, center, { limit = OSM_LIMIT } = {}) {
     if (!tags.building && !tags["building:part"]) continue;
     const rings = [];
     if (el.type === "way") rings.push(ringOf(el.geometry, center));
-    else if (el.type === "relation" && Array.isArray(el.members)) {
-      for (const m of el.members) if (m.type === "way" && m.role === "outer") rings.push(ringOf(m.geometry, center));
-    }
+    else if (el.type === "relation") for (const outer of outerRings(el.members)) rings.push(ringOf(outer, center));
     for (const ring of rings) {
       if (!ring || Math.abs(area2(ring)) < 2) continue;
       found.push({ id: el.id, part: Boolean(tags["building:part"]) && !tags.building, tags, ring });

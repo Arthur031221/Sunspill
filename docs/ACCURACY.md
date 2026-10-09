@@ -55,6 +55,7 @@ So the height of a building across the street matters more than where exactly th
 - **Check against what you saw.** Mark where the sun landed on the floor at a time you remember, or lay a photo of the floor under the plan and mark it there. The app shows how much of what you marked the model covers, how far apart the two patches are, and can fit the facing and, with a second observation at another hour, the placement of the window. Fitting is only as good as the marks. A fit that agrees well on one hour can still be one of several rooms that would give the same patch, so mark a second hour before you trust it.
 - **Heights.** Every building height that was guessed says so. Change it to what you can see from the window.
 - **Your own building.** The outline that holds the room is left out, because the room is inside it. If a wing or a bay of your building stands in front of your window, add it as a building by hand, or switch the outline on in the list.
+- **Courtyards.** A building drawn with an inner ring (a courtyard or an atrium) is read by its outer ring only, so the courtyard counts as solid and the building can shade a little more than it does. This matters for a window that looks across a wide courtyard of another block. Switch that building off, or redraw it as a few buildings by hand.
 
 ## What is left out
 

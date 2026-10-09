@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { toLocal, fromLocal, metresPerDegree, haversine, lonLatToTile, tileToLonLat, moveRoom, insideRing, ownBuilding, roomCorners, metresPerPixel, setPlacePoint, snapToOutline } from '../src/core/geo.js'
-import { parseBuildings, parseLength, buildingHeight, buildingQuery, fitRing, simplifyRing, parsePlaces, shortLabel } from '../src/core/osm.js'
+import { parseBuildings, parseLength, buildingHeight, buildingQuery, fitRing, simplifyRing, parsePlaces, shortLabel, outerRings } from '../src/core/osm.js'
 import { declination, decimalYear, inRange } from '../src/core/declination.js'
 import { headingFromAngles, rotationMatrix, circularMean, circularSpread, createAverager, trueHeading } from '../src/core/compass.js'
 import { zoneAt } from '../src/core/zone.js'
@@ -196,9 +196,73 @@ test('outlines are thinned to a small corner count that keeps their shape', () =
   assert.ok(Math.abs(area(fit) / area(circle) - 1) < 0.08)
 })
 
-test('the Overpass query names the area and asks for outlines with tags', () => {
+test('the Overpass query names the area, asks ways for tags and geometry and relations for their members', () => {
   const q = buildingQuery(25.0288, 121.5442, 200)
-  assert.ok(q.includes('around:200,25.02880,121.54420') && q.includes('out geom tags') && q.startsWith('[out:json]'))
+  assert.ok(q.includes('around:200,25.02880,121.54420') && q.startsWith('[out:json]'))
+  // `out geom tags` leaves the members out of a relation, so relations get their own `out geom`
+  assert.ok(q.includes('way["building"]') && q.includes('out geom tags;'))
+  assert.ok(q.includes('relation["building"]') && q.includes('relation["building:part"]'))
+  assert.ok(q.endsWith(';out geom;'), 'the last statement is the relations with their members')
+})
+
+const area = (r) => Math.abs(r.reduce((s, p, i) => s + p[0] * r[(i + 1) % r.length][1] - r[(i + 1) % r.length][0] * p[1], 0) / 2)
+const relations = fixture('overpass-relations.json')
+
+test('real building relations, as Overpass answers them, give the outline shapely finds when it joins their ways', () => {
+  assert.equal(relations.elements.length, 4)
+  for (const el of relations.elements) {
+    const want = relations.expected[el.id]
+    const center = relations.centers[el.id]
+    const joined = outerRings(el.members)
+    assert.equal(joined.length, want.rings, `relation ${el.id} joins into ${want.rings} ring`)
+    const exact = area(joined[0].slice(0, -1).map((g) => toLocal(center, g.lat, g.lon)))
+    assert.ok(Math.abs(exact / want.area - 1) < 0.005, `relation ${el.id}: ${exact.toFixed(1)} m2 against ${want.area} m2`)
+    const { buildings } = parseBuildings({ elements: [el] }, center, { limit: 10 })
+    assert.equal(buildings.length, want.rings)
+    // the page then thins an outline to at most 40 corners, which gives up a little area on a round one
+    assert.ok(Math.abs(area(buildings[0].ring) / want.area - 1) < 0.03, `relation ${el.id} thinned: ${area(buildings[0].ring).toFixed(1)} m2 against ${want.area} m2`)
+    assert.ok(buildings[0].ring.length <= 40)
+  }
+  const split = relations.elements.filter((el) => relations.expected[el.id].ways > 1)
+  assert.equal(split.length, 2, 'two of them are drawn as several ways that close only together')
+  assert.ok(relations.elements.some((el) => relations.expected[el.id].inner > 0), 'and some have courtyards, which the page treats as solid')
+})
+
+test('the order and the direction of the ways in a relation do not change the outline', () => {
+  const el = relations.elements.find((e) => relations.expected[e.id].ways === 3)
+  const outer = el.members.filter((m) => m.role === 'outer')
+  assert.equal(outer.length, 3)
+  const key = (ring) => ring.map((p) => p.map((v) => v.toFixed(2)).join(',')).sort().join(';')
+  const center = relations.centers[el.id]
+  const base = parseBuildings({ elements: [el] }, center)
+  const orders = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]
+  for (const order of orders) for (let flips = 0; flips < 8; flips++) {
+    const members = order.map((i, k) => ({ ...outer[i], geometry: flips & (1 << k) ? [...outer[i].geometry].reverse() : outer[i].geometry }))
+    const { buildings } = parseBuildings({ elements: [{ ...el, members }] }, center)
+    assert.equal(buildings.length, 1, `order ${order} flips ${flips}`)
+    assert.equal(key(buildings[0].ring), key(base.buildings[0].ring))
+  }
+})
+
+test('a relation that Overpass answers without members, an open chain and inner rings are handled plainly', () => {
+  // what `out geom tags` returns for a relation: bounds and tags, nothing to draw
+  const bare = { type: 'relation', id: 5, bounds: { minlat: 0, minlon: 0, maxlat: 0.001, maxlon: 0.001 }, tags: { building: 'yes', type: 'multipolygon' } }
+  assert.deepEqual(parseBuildings({ elements: [bare] }, { lat: 0, lon: 0 }).buildings, [])
+  const way = (pts) => ({ type: 'way', role: 'outer', geometry: pts.map(([lat, lon]) => ({ lat, lon })) })
+  // two sides of a square that never meet again are not a building
+  assert.deepEqual(outerRings([way([[0, 0], [0, 1], [1, 1]]), way([[1, 1], [1, 2]])]), [])
+  // a closed way and a chain of two make two outlines, and inner members are not read
+  const rings = outerRings([
+    way([[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]),
+    way([[5, 5], [5, 6], [6, 6]]),
+    way([[5, 5], [6, 5], [6, 6]]),
+    { type: 'way', role: 'inner', geometry: [{ lat: 0.2, lon: 0.2 }, { lat: 0.2, lon: 0.4 }, { lat: 0.4, lon: 0.4 }, { lat: 0.2, lon: 0.2 }] },
+    { type: 'node', role: 'outer' },
+    null,
+  ])
+  assert.equal(rings.length, 2)
+  assert.deepEqual(rings.map((r) => r.length), [5, 5])
+  assert.deepEqual(outerRings(undefined), [])
 })
 
 test('address matches from Nominatim keep a short label, and junk rows are dropped', () => {

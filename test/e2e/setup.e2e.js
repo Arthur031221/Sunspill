@@ -393,6 +393,27 @@ test('facing: the buildings load after a yes, the first server may fail, and dra
   await context.close()
 })
 
+test('surroundings: a building drawn as a multipolygon of several ways loads, and the query asks for its members', { skip: engine !== chromium }, async () => {
+  const relations = JSON.parse(readFileSync(new URL('../fixtures/overpass-relations.json', import.meta.url), 'utf8'))
+  // the two relations at Taipei Main Station, each with an outer ring that closes only when its ways are joined
+  const station = relations.elements.filter((el) => relations.expected[el.id].ways > 1)
+  assert.equal(station.length, 2)
+  const { page, context, outside } = await open({ answers: { overpass: JSON.stringify({ elements: station }) } })
+  await page.evaluate(() => window.__sunspill.store.update((d) => { d.place = { name: 'Taipei Main Station', lat: 25.0478, lon: 121.517, zone: 'Asia/Taipei' } }))
+  await openWizard(page, 3)
+  await page.click('#load-buildings')
+  await page.click('.modal button.primary')
+  await page.waitForFunction(() => window.__sunspill.store.scene.obstacles.length > 0)
+  const query = decodeURIComponent(outside[0].body.replace(/^data=/, '').replace(/\+/g, ' '))
+  assert.match(query, /relation\["building"\]/)
+  assert.match(query, /out geom;$/)
+  const s = await scene(page)
+  assert.deepEqual(s.obstacles.map((o) => o.id).sort(), station.map((el) => el.id).sort())
+  assert.ok(s.obstacles.every((o) => o.ring.length >= 4 && o.src === 'osm'))
+  assert.match(await page.locator('.wiz-step').innerText(), /2 buildings are loaded/)
+  await context.close()
+})
+
 test('facing: the button lines the window wall up with a wall of the building that holds the room, and is hidden with no building', { skip: engine !== chromium }, async () => {
   const { page, context } = await open()
   await openWizard(page, 3)

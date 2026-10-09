@@ -96,11 +96,15 @@ export function fitRing(ring) {
   return out.length > MAX_RING ? out.filter((_, i) => i % Math.ceil(out.length / MAX_RING) === 0) : out
 }
 
-/** The Overpass query for building outlines within a radius of a point. */
+/**
+ * The Overpass query for building outlines within a radius of a point.
+ * Ways come back with tags and geometry only. Relations (a building drawn as a multipolygon) need the full
+ * `out geom`: with `tags` alone Overpass leaves out their members and the building would have no outline.
+ */
 export function buildingQuery(lat, lon, radius = 200) {
   // five decimals are about a metre, which is what the page tells people it sends
   const around = `around:${Math.round(radius)},${lat.toFixed(5)},${lon.toFixed(5)}`
-  return `[out:json][timeout:20];(way["building"](${around});way["building:part"](${around});relation["building"](${around}););out geom tags;`
+  return `[out:json][timeout:20];(way["building"](${around});way["building:part"](${around}););out geom tags;(relation["building"](${around});relation["building:part"](${around}););out geom;`
 }
 
 const ringOf = (geometry, center) => {
@@ -112,6 +116,44 @@ const ringOf = (geometry, center) => {
   if (Math.hypot(first[0] - last[0], first[1] - last[1]) > 0.5) return null // an open way is not a building
   pts.pop()
   return pts
+}
+
+const pointKey = (g) => `${g.lat},${g.lon}`
+
+/**
+ * Closed outlines from the outer members of a multipolygon. A big building is often drawn as several ways that
+ * meet end to end, none of them closed on its own, so ways that share an end node are joined, in either
+ * direction. A chain that never closes is left out. Inner members (courtyards) are not read, so a courtyard is
+ * treated as solid, which can only add shade.
+ */
+export function outerRings(members) {
+  const closed = []
+  const open = []
+  for (const m of Array.isArray(members) ? members : []) {
+    if (m?.type !== 'way' || m.role !== 'outer' || !Array.isArray(m.geometry)) continue
+    const pts = m.geometry.filter((g) => g && Number.isFinite(g.lat) && Number.isFinite(g.lon))
+    if (pts.length < 2) continue
+    ;(pts.length >= 4 && pointKey(pts[0]) === pointKey(pts[pts.length - 1]) ? closed : open).push(pts)
+  }
+  while (open.length) {
+    let chain = open.shift()
+    let grew = true
+    while (grew && pointKey(chain[0]) !== pointKey(chain[chain.length - 1])) {
+      grew = false
+      const tail = pointKey(chain[chain.length - 1])
+      for (let i = 0; i < open.length; i++) {
+        const seg = open[i]
+        if (pointKey(seg[0]) === tail) chain = chain.concat(seg.slice(1))
+        else if (pointKey(seg[seg.length - 1]) === tail) chain = chain.concat(seg.slice(0, -1).reverse())
+        else continue
+        open.splice(i, 1)
+        grew = true
+        break
+      }
+    }
+    if (chain.length >= 4 && pointKey(chain[0]) === pointKey(chain[chain.length - 1])) closed.push(chain)
+  }
+  return closed
 }
 
 /**
@@ -128,7 +170,7 @@ export function parseBuildings(json, center, { limit = OSM_LIMIT } = {}) {
     if (!tags.building && !tags['building:part']) continue
     const rings = []
     if (el.type === 'way') rings.push(ringOf(el.geometry, center))
-    else if (el.type === 'relation' && Array.isArray(el.members)) for (const m of el.members) if (m.type === 'way' && m.role === 'outer') rings.push(ringOf(m.geometry, center))
+    else if (el.type === 'relation') for (const outer of outerRings(el.members)) rings.push(ringOf(outer, center))
     for (const ring of rings) {
       if (!ring || Math.abs(area2(ring)) < 2) continue
       found.push({ id: el.id, part: Boolean(tags['building:part']) && !tags.building, tags, ring })
