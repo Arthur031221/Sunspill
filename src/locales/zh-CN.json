@@ -426,7 +426,7 @@
  "share.earlier": "找回我之前的房间",
  "saved.title": "已保存的房间",
  "saved.name": "这间房的名称",
- "saved.placeholder": "例如：A 家卧室",
+ "saved.placeholder": "例如：A 公寓卧室",
  "saved.save": "保存这间房",
  "saved.saved": "已保存：{name}。",
  "saved.noName": "请先为这间房起个名字。",

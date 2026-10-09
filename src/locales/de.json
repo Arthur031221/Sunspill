@@ -14,7 +14,7 @@
  "view.plan": "Grundriss",
  "stage.arc": "Sonnenbahn",
  "stage.hint": "Ziehen, um das Zimmer zu drehen. Möbel und Fenster lassen sich per Ziehen verschieben.",
- "stage.keys": "Die Pfeiltasten drehen den Raum in der 3D-Ansicht. Ist ein Möbelstück ausgewählt, verschieben die Pfeiltasten es in der Grundrissansicht, in 3D mit gedrückter Alt-Taste, und die eckigen Klammern drehen es. Ist ein Fenster ausgewählt, verschieben Links und Rechts es. Mit der Umschalttaste werden die Schritte größer.",
+ "stage.keys": "Die Pfeiltasten drehen den Raum in der 3D-Ansicht. Ist ein Möbelstück ausgewählt, verschieben die Pfeiltasten es in der Grundrissansicht, in 3D mit gedrückter Alt-Taste, und die eckigen Klammern drehen es. Ist ein Fenster ausgewählt, verschieben die Pfeiltasten links und rechts es. Mit der Umschalttaste werden die Schritte größer.",
  "live.item": "{name}: {x} von der linken Wand, {y} von der unteren Wand, um {rot} Grad gedreht.",
  "live.window": "Fenster {n}, {wall}: {pos} vom linken Ende.",
  "stage.aria": "Zimmer {w} mal {d}. {state} {date}, {time}, {place}.",

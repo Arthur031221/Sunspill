@@ -14,7 +14,7 @@
  "view.plan": "Planta",
  "stage.arc": "Trayectoria del sol",
  "stage.hint": "Arrastra para girar la habitación. Arrastra muebles y ventanas para moverlos.",
- "stage.keys": "Las flechas giran la habitación en la vista 3D. Con un mueble seleccionado, las flechas lo mueven en la vista de plano, o en 3D con Alt pulsada, y los corchetes lo giran. Con una ventana seleccionada, izquierda y derecha la mueven. Mayúsculas da pasos más grandes.",
+ "stage.keys": "Las flechas giran la habitación en la vista 3D. Con un mueble seleccionado, las flechas lo mueven en la vista de plano, o en 3D con Alt pulsada, y los corchetes lo giran. Con una ventana seleccionada, izquierda y derecha la mueven. Con Mayús los pasos son más grandes.",
  "live.item": "{name}: a {x} de la pared izquierda y a {y} de la pared inferior, girado {rot} grados.",
  "live.window": "Ventana {n}, {wall}: a {pos} del extremo izquierdo.",
  "stage.aria": "Habitación de {w} por {d}. {state} {date}, {time}, {place}.",
