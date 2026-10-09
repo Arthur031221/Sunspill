@@ -118,7 +118,7 @@ export function checkStep(ctx) {
       d.date.day = Math.min(daysInMonth(d.date.month), Math.max(1, Number(day.value) || 1))
       d.minutes = hh * 60 + (mm || 0)
     }, { history: false })
-    points = draft.points = []
+    // the corners are what the person saw on the floor, so a corrected time or date keeps them and only the fit is dropped
     fit = null
     refreshOverlay()
     sync()

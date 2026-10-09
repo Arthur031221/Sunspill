@@ -870,6 +870,10 @@ test('the check step starts from today, and corners can be typed for a keyboard 
   await page.click('#wiz-back')
   await page.click('#wiz-next')
   assert.match(await page.locator('.wiz-step').innerText(), /1 points/)
+  // putting right the time the sun was seen at keeps the corners that were marked
+  await page.locator('.wiz-step input[type=time]').fill('15:20')
+  assert.equal((await scene(page)).minutes, 15 * 60 + 20)
+  assert.match(await page.locator('.wiz-step').innerText(), /1 points/)
   await context.close()
 })
 
