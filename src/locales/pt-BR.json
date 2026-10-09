@@ -72,6 +72,7 @@
  "wall.left": "Parede da esquerda",
  "f.pos": "Distância da ponta esquerda",
  "f.winWidth": "Largura da janela",
+ "f.doorWidth": "Largura da porta",
  "f.winHeight": "Altura da janela",
  "f.sill": "Altura do peitoril",
  "f.shadeDepth": "Projeção (0 para nenhuma)",

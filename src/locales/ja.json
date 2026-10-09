@@ -72,6 +72,7 @@
  "wall.left": "左の壁",
  "f.pos": "左端からの距離",
  "f.winWidth": "窓の幅",
+ "f.doorWidth": "ドアの幅",
  "f.winHeight": "窓の高さ",
  "f.sill": "窓台の高さ",
  "f.shadeDepth": "出の深さ（0でなし）",

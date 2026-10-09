@@ -72,6 +72,7 @@
  "wall.left": "Linke Wand",
  "f.pos": "Abstand vom linken Ende",
  "f.winWidth": "Fensterbreite",
+ "f.doorWidth": "Türbreite",
  "f.winHeight": "Fensterhöhe",
  "f.sill": "Brüstungshöhe",
  "f.shadeDepth": "Ausladung (0 für keine)",

@@ -72,6 +72,7 @@
  "wall.left": "左侧墙面",
  "f.pos": "距离左端",
  "f.winWidth": "窗宽",
+ "f.doorWidth": "门宽",
  "f.winHeight": "窗高",
  "f.sill": "窗台高度",
  "f.shadeDepth": "出挑深度（0 表示没有）",

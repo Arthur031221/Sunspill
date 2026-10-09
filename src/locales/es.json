@@ -72,6 +72,7 @@
  "wall.left": "Muro izquierdo",
  "f.pos": "Distancia desde el extremo izquierdo",
  "f.winWidth": "Ancho de la ventana",
+ "f.doorWidth": "Ancho de la puerta",
  "f.winHeight": "Alto de la ventana",
  "f.sill": "Altura del antepecho",
  "f.shadeDepth": "Vuelo (0 si no hay)",

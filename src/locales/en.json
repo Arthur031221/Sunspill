@@ -72,6 +72,7 @@
  "wall.left": "Left wall",
  "f.pos": "Distance from the left end",
  "f.winWidth": "Window width",
+ "f.doorWidth": "Door width",
  "f.winHeight": "Window height",
  "f.sill": "Sill height",
  "f.shadeDepth": "Depth (0 for none)",

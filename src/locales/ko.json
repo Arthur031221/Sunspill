@@ -72,6 +72,7 @@
  "wall.left": "왼쪽 벽",
  "f.pos": "왼쪽 끝에서의 거리",
  "f.winWidth": "창문 너비",
+ "f.doorWidth": "문 너비",
  "f.winHeight": "창문 높이",
  "f.sill": "창턱 높이",
  "f.shadeDepth": "돌출 깊이 (0이면 없음)",

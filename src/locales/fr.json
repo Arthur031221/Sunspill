@@ -72,6 +72,7 @@
  "wall.left": "Mur de gauche",
  "f.pos": "Distance depuis l'extrémité gauche",
  "f.winWidth": "Largeur de la fenêtre",
+ "f.doorWidth": "Largeur de la porte",
  "f.winHeight": "Hauteur de la fenêtre",
  "f.sill": "Hauteur de l'allège",
  "f.shadeDepth": "Saillie (0 pour aucune)",

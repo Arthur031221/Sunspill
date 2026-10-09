@@ -215,11 +215,11 @@ export function surroundStep(ctx) {
   const label = (o) => (o.type === 'tree' ? t('wiz.sur.tree') : o.own ? t('map.own') : o.name || (o.src === 'osm' ? t('wiz.sur.osm') : t('wiz.sur.block')))
 
   function row(o, i) {
-    const on = h('input', { type: 'checkbox', checked: o.on, id: `ob-on${i}`, 'aria-label': t('wiz.sur.on') })
+    const on = h('input', { type: 'checkbox', checked: o.on, id: `ob-on${i}`, 'aria-label': `${label(o)}: ${t('wiz.sur.on')}` })
     on.addEventListener('change', () => store.update((d) => { if (d.obstacles[i]) d.obstacles[i].on = on.checked }))
     const height = numberField({ store, compact: true, label: o.type === 'tree' ? t('wiz.sur.treeHeight') : t('wiz.sur.height'), min: 1, max: o.type === 'tree' ? 45 : 600, step: 0.5, get: (s) => s.obstacles[i]?.h ?? 1, set: (d, v) => { if (d.obstacles[i]) { d.obstacles[i].h = v; d.obstacles[i].est = false } }, key: `ob${i}.h` })
     fields.push(height)
-    const del = h('button', { class: 'mini', type: 'button', onclick: () => { store.update((d) => { d.obstacles.splice(i, 1) }); select(null) } }, t('things.remove'))
+    const del = h('button', { class: 'mini', type: 'button', 'aria-label': `${t('things.remove')}: ${label(o)}`, onclick: () => { store.update((d) => { d.obstacles.splice(i, 1) }); select(null) } }, t('things.remove'))
     const card = h('div', { class: `card ob ${sel() === i ? 'selected' : ''}`, dataset: { obstacle: i }, onclick: (e) => { if (!e.target.closest('input,button,label')) select(sel() === i ? null : i) } },
       h('div', { class: 'card-head' }, h('label', { class: 'check', htmlFor: `ob-on${i}`, style: 'margin:0;flex:1' }, on, h('b', {}, label(o))), o.est ? h('span', { class: 'tag est', title: t('wiz.sur.estNote') }, t('wiz.sur.est')) : null, del),
       height.el)

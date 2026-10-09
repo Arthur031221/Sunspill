@@ -122,8 +122,8 @@ export function windowsStep(ctx) {
     const bearing = h('span', { class: 'tag' })
     const card = h('div', { class: 'card', dataset: { window: i } },
       h('div', { class: 'card-head' }, h('b', {}, t('win.name', { n: i + 1 })), bearing,
-        h('button', { class: 'mini', type: 'button', onclick: () => store.update((d) => { const c = structuredClone(d.windows[i]); const l = wallLength(d.room, c.wall); c.pos = c.pos + c.w + 0.3 + c.w <= l ? c.pos + c.w + 0.3 : Math.max(0, c.pos - c.w - 0.3); d.windows.push(c) }) }, t('win.duplicate')),
-        h('button', { class: 'mini', type: 'button', onclick: () => { store.update((d) => { d.windows.splice(i, 1) }); store.setUi({ selected: null, selectedWindow: 0 }) } }, t('win.remove'))),
+        h('button', { class: 'mini', type: 'button', 'aria-label': `${t('win.duplicate')}: ${t('win.name', { n: i + 1 })}`, onclick: () => store.update((d) => { const c = structuredClone(d.windows[i]); const l = wallLength(d.room, c.wall); c.pos = c.pos + c.w + 0.3 + c.w <= l ? c.pos + c.w + 0.3 : Math.max(0, c.pos - c.w - 0.3); d.windows.push(c) }) }, t('win.duplicate')),
+        h('button', { class: 'mini', type: 'button', 'aria-label': `${t('win.remove')}: ${t('win.name', { n: i + 1 })}`, onclick: () => { store.update((d) => { d.windows.splice(i, 1) }); store.setUi({ selected: null, selectedWindow: 0 }) } }, t('win.remove'))),
       wall,
       h('div', { class: 'grid2' },
         add({ label: t('f.pos'), min: 0, max: (s) => Math.max(0, len(s) - s.windows[i].w), step: 0.05, get: (s) => s.windows[i].pos, set: (d, v) => { d.windows[i].pos = v }, key: `w${i}.pos` }),
@@ -135,7 +135,6 @@ export function windowsStep(ctx) {
       h('label', { class: 'check', htmlFor: `roof${i}` }, roofOn, t('wiz.win.roof')),
       roof)
     card.addEventListener('pointerdown', pick)
-    card.addEventListener('focusin', pick)
     card.addEventListener('focusin', pick)
     syncs.push(() => {
       const s = store.scene
@@ -157,13 +156,13 @@ export function windowsStep(ctx) {
     const wall = selectWall(null, (v) => store.update((d) => { if (d.doors[i]) d.doors[i].wall = v }), t('win.wall'))
     const len = (s) => wallLength(s.room, s.doors[i].wall)
     const card = h('div', { class: 'card' },
-      h('div', { class: 'card-head' }, h('b', {}, t('wiz.door.name', { n: i + 1 })), h('button', { class: 'mini', type: 'button', onclick: () => store.update((d) => { d.doors.splice(i, 1) }) }, t('win.remove'))),
+      h('div', { class: 'card-head' }, h('b', {}, t('wiz.door.name', { n: i + 1 })), h('button', { class: 'mini', type: 'button', 'aria-label': `${t('win.remove')}: ${t('wiz.door.name', { n: i + 1 })}`, onclick: () => store.update((d) => { d.doors.splice(i, 1) }) }, t('win.remove'))),
       wall,
       h('div', { class: 'grid2' },
         add({ label: t('f.pos'), min: 0, max: (s) => Math.max(0, len(s) - s.doors[i].w), step: 0.05, get: (s) => s.doors[i].pos, set: (d, v) => { d.doors[i].pos = v }, key: `d${i}.pos` }),
-        add({ label: t('f.winWidth'), min: 0.5, max: (s) => Math.min(3, len(s)), step: 0.05, get: (s) => s.doors[i].w, set: (d, v) => { d.doors[i].w = v }, key: `d${i}.w` })))
+        add({ label: t('f.doorWidth'), min: 0.5, max: (s) => Math.min(3, len(s)), step: 0.05, get: (s) => s.doors[i].w, set: (d, v) => { d.doors[i].w = v }, key: `d${i}.w` })))
     syncs.push(() => {
-      for (const o of wall.options) o.textContent = t(`wall.${o.value}`)
+      for (const o of wall.options) o.textContent = `${t(`wall.${o.value}`)} · ${bearingText(wallBearing(store.scene, o.value))}`
       if (store.scene.doors[i]) wall.value = store.scene.doors[i].wall
     })
     return card

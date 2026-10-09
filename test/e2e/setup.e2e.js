@@ -348,6 +348,11 @@ test('windows: a balcony rail shades low sun, a window dragged near the wall end
   await page.fill('#wizard .card input[type=number][aria-label="Window width"]', '2.4')
   await page.press('#wizard .card input[type=number][aria-label="Window width"]', 'Enter')
   assert.equal((await scene(page)).windows[0].w, 2.4)
+  // the door's width says door, and each button and box names the piece it belongs to
+  await page.locator('#wizard .card input[type=number][aria-label="Door width"]').waitFor()
+  await page.locator('#wizard .card button[aria-label="Remove: Door 1"]').waitFor()
+  await page.locator('#wizard .card button[aria-label="Remove: Window 1"]').waitFor()
+  assert.match(await page.locator('#wizard .card:has(button[aria-label="Remove: Door 1"]) select option').first().innerText(), /· [A-Z]{1,2} \d+°/)
   await context.close()
 })
 
@@ -600,6 +605,9 @@ test('surroundings: estimated heights are marked, editing one clears the mark, a
   assert.equal(s.obstacles[0].src, 'manual')
   assert.equal(await page.evaluate(() => window.__sunspill.floorArea()), 0, 'the block hides the 16:30 sun')
   assert.match(await page.locator('.wiz-step').innerText(), /Direct sun inside on July 15: .* with these, 6 h 15 min without/)
+  // a screen reader hears which building a box and a button belong to
+  assert.match(await page.locator('.obstacle-list input[type=checkbox]').getAttribute('aria-label'), /^.+: Counts as shade$/)
+  assert.match(await page.locator('.obstacle-list .card button.mini').first().getAttribute('aria-label'), /^Remove: .+$/)
   // switching it off brings the sun back
   await page.uncheck('.obstacle-list input[type=checkbox]')
   await page.waitForTimeout(150)
