@@ -32,7 +32,7 @@ export function makeFrameCamera(scene, view, width, height, frame, showArc, { di
 }
 
 export class Stage {
-  constructor({ canvas, store, getFrame, getHeat, getMarkers, getOverlay, onSelect, onHover, reducedMotion }) {
+  constructor({ canvas, store, getFrame, getHeat, getMarkers, getOverlay, onSelect, onHover, say, reducedMotion }) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')
     this.store = store
@@ -44,6 +44,7 @@ export class Stage {
     this.guides = []
     this.onSelect = onSelect
     this.onHover = onHover
+    this.say = say
     this.reducedMotion = reducedMotion
     this.view = { ...VIEWS['3d'] }
     this.mode = '3d'
@@ -328,18 +329,21 @@ export class Stage {
       if (move && (this.mode === 'plan' || e.altKey)) {
         e.preventDefault()
         this.store.update((s) => { s.items[sel.index].x += move[0]; s.items[sel.index].y += move[1] }, { key: `item${sel.index}` })
+        this.say?.(sel)
         return
       }
       if (e.key === '[' || e.key === ']') {
         e.preventDefault()
         const turn = (e.key === ']' ? 15 : -15) * (e.shiftKey ? 6 : 1)
         this.store.update((s) => { s.items[sel.index].rot = (s.items[sel.index].rot + turn + 360) % 360 }, { key: `rot${sel.index}` })
+        this.say?.(sel)
         return
       }
     } else if (sel?.type === 'window' && this.store.scene.windows[sel.index] && (e.altKey || this.mode === 'plan') && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
       e.preventDefault()
       const by = (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 0.25 : 0.05)
       this.store.update((s) => { s.windows[sel.index].pos += by }, { key: `window${sel.index}` })
+      this.say?.(sel)
       return
     }
     const step = e.shiftKey ? 15 : 5

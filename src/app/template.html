@@ -33,7 +33,8 @@
   <main class="layout">
     <section class="stage-wrap" aria-label="Room">
       <div class="stage" id="stage">
-        <canvas id="canvas" tabindex="0" role="img"></canvas>
+        <canvas id="canvas" tabindex="0" role="application" aria-describedby="canvas-help"></canvas>
+        <p class="sr-only" id="canvas-help"></p>
         <div class="stage-top">
           <div class="seg" id="view" role="group"></div>
           <button class="chip" id="arc" type="button" aria-pressed="true"></button>

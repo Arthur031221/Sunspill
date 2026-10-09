@@ -245,7 +245,7 @@ input[type="text"], input[type="search"], input[type="time"], input[type="url"],
   opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s var(--ease); z-index: 60; box-shadow: var(--shadow); max-width: 90vw;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-.live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.live, .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
 @media (max-width: 960px) {
   .layout { grid-template-columns: 1fr; height: auto; padding: 0 10px 14px; }

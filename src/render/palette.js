@@ -24,7 +24,7 @@ export const PALETTES = {
     mark: '#0f766e',
     patch: 'rgba(255, 199, 70, 0.92)',
     patchWall: 'rgba(255, 205, 90, 0.86)',
-    patchEdge: 'rgba(224, 112, 10, 0.95)',
+    patchEdge: 'rgba(184, 76, 0, 0.95)',
     glow: 'rgba(255, 170, 30, 0.7)',
     sun: '#ffb020',
     sunCore: '#fff0b8',

@@ -52,6 +52,7 @@ export function createStore(scene, ui) {
     },
     replace(scene) {
       past.push(state.scene)
+      if (past.length > LIMIT) past.shift()
       future.length = 0
       state = { ...state, scene: normalizeScene(scene) }
       last = { key: null, at: 0 }
@@ -68,6 +69,7 @@ export function createStore(scene, ui) {
     redo() {
       if (!future.length) return false
       past.push(state.scene)
+      if (past.length > LIMIT) past.shift()
       state = { ...state, scene: future.pop() }
       last = { key: null, at: 0 }
       emit('scene')

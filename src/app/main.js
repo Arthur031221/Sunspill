@@ -7,7 +7,7 @@ import { createPanels, toast } from './panels.js'
 import { createAnalysis } from './analysis.js'
 import { frameFor, itemSunHours, floorArea } from './frame.js'
 import { renderCard, renderGif } from './export.js'
-import { clock, dateText, duration, bearingText, areaText, lengthText } from './format.js'
+import { clock, dateText, duration, bearingText, areaText, lengthText, itemName } from './format.js'
 import { defaultScene } from '../core/room.js'
 import { encodeScene, decodeScene, blurScene } from '../core/codec.js'
 import { hoursAt } from '../core/hours.js'
@@ -137,6 +137,7 @@ const stage = new Stage({
   getOverlay: () => ({ ...overlay, dimensions: store.ui.dims, fmt: (m) => lengthText(m, store.ui.units) }),
   onSelect: (sel) => store.setUi({ selected: sel, selectedWindow: sel?.type === 'window' ? sel.index : store.ui.selectedWindow }),
   onHover: (p, cam) => showTip(p, cam),
+  say: (sel) => say(sel),
 })
 
 const dock = createDock({ root: $('#dock'), store, stage })
@@ -437,6 +438,7 @@ function chrome() {
   arc.textContent = t('stage.arc')
   arc.setAttribute('aria-pressed', String(store.ui.showArc))
   el.hint.textContent = t('stage.hint')
+  $('#canvas-help').textContent = t('stage.keys')
   $('#setup').textContent = t('wiz.start')
   $('#foot').replaceChildren(
     h('span', {}, t('foot.privacy')),
@@ -504,6 +506,24 @@ function flushSave() {
   clearTimeout(writeTimer)
   writeTimer = 0
   keepRoom(encodeScene(store.scene))
+}
+
+/** Where the middle of a piece, or a window, ended up after an arrow key, said aloud through the live region. */
+function say(sel) {
+  const s = store.scene
+  const unit = store.ui.units
+  let text = ''
+  if (sel.type === 'item' && s.items[sel.index]) {
+    const it = s.items[sel.index]
+    text = t('live.item', { name: itemName(s.items, sel.index), x: lengthText(it.x + it.w / 2, unit), y: lengthText(it.y + it.d / 2, unit), rot: Math.round(it.rot) })
+  } else if (sel.type === 'window' && s.windows[sel.index]) {
+    const win = s.windows[sel.index]
+    text = t('live.window', { n: sel.index + 1, pos: lengthText(win.pos, unit), wall: t(`wall.${win.wall}`) })
+  }
+  if (!text) return
+  // the same words twice in a row are not read again unless the region is emptied first
+  el.live.textContent = ''
+  requestAnimationFrame(() => { el.live.textContent = text })
 }
 
 let announceTimer = 0
