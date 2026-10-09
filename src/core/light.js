@@ -10,6 +10,7 @@
 
 import { clipConvex, rect, subtractConvex, unionArea } from './poly.js'
 import { WALLS, wallFrame, sunInRoom } from './room.js'
+import { prismShadow, balconyPrism, sceneObstacles } from './obstacles.js'
 
 /** Below these the sun is edge on to the wall or the horizon and the beam is not worth tracing. */
 const MIN_NORMAL = 0.02
@@ -23,8 +24,25 @@ const SIDE_PLANES = {
   left: { axis: 0, side: 'min' },
 }
 
-/** Pieces of the opening, in outer face coordinates (a along the wall, b above the floor), that the sun reaches. */
-export function litOpening(room, win, s, minHeight = 0) {
+const overlaps = (poly, [a0, b0, a1, b1]) => {
+  let lo0 = Infinity
+  let lo1 = Infinity
+  let hi0 = -Infinity
+  let hi1 = -Infinity
+  for (const [x, y] of poly) {
+    lo0 = Math.min(lo0, x)
+    hi0 = Math.max(hi0, x)
+    lo1 = Math.min(lo1, y)
+    hi1 = Math.max(hi1, y)
+  }
+  return hi0 > a0 && lo0 < a1 && hi1 > b0 && lo1 < b1
+}
+
+/**
+ * Pieces of the opening, in outer face coordinates (a along the wall, b above the floor), that the sun reaches.
+ * `prisms` are further shadow casters in room metres (see obstacles.js): buildings and trees.
+ */
+export function litOpening(room, win, s, minHeight = 0, prisms = []) {
   const frame = wallFrame(room, win.wall)
   const sn = s[0] * frame.n[0] + s[1] * frame.n[1]
   const st = s[0] * frame.t[0] + s[1] * frame.t[1]
@@ -56,6 +74,13 @@ export function litOpening(room, win, s, minHeight = 0) {
     const limit = across.height - (across.distance * sz) / sn
     shadows.push(rect(-BIG, -BIG, BIG, limit))
   }
+  const rail = balconyPrism(room, win)
+  const casters = rail ? [rail, ...prisms] : prisms
+  const box = [a0, b0, a1, b1]
+  for (const prism of casters) {
+    const shadow = prismShadow(room, win, frame, s, prism)
+    if (shadow && overlaps(shadow, box)) shadows.push(shadow)
+  }
   for (const shadow of shadows) pieces = pieces.flatMap((p) => subtractConvex(p, shadow))
   return { pieces, frame, sn, st, sz }
 }
@@ -74,14 +99,14 @@ const along = (p, s, tau) => [p[0] - tau * s[0], p[1] - tau * s[1], p[2] - tau *
  * @returns {{floor: number[][][], walls: {wall:string, poly:number[][]}[], opening: number[][][]}}
  *   floor patches are [x, y] polygons at height planeZ. wall patches are [x, y, z] polygons.
  */
-export function windowPatches(room, win, s, { planeZ = 0, walls = true } = {}) {
-  const whole = litOpening(room, win, s, 0)
+export function windowPatches(room, win, s, { planeZ = 0, walls = true, obstacles = [] } = {}) {
+  const whole = litOpening(room, win, s, 0, obstacles)
   const { frame, sz } = whole
   const out = { floor: [], walls: [], opening: whole.pieces }
   if (!whole.pieces.length) return out
   const clipRoom = rect(0, 0, room.w, room.d)
   // light that arrives below the plane never reaches it, but it still lights the walls
-  const above = planeZ > 0 ? litOpening(room, win, s, planeZ).pieces : whole.pieces
+  const above = planeZ > 0 ? litOpening(room, win, s, planeZ, obstacles).pieces : whole.pieces
   const outer = (piece) => piece.map(([a, b]) => outerPoint(room, win, frame, a, b))
 
   for (const piece of above) {
@@ -115,7 +140,8 @@ export function windowPatches(room, win, s, { planeZ = 0, walls = true } = {}) {
 export function scenePatches(scene, sun, options) {
   if (!(sun.elevation > 0)) return { floor: [], walls: [], windows: scene.windows.map(() => ({ floor: [], walls: [], opening: [] })) }
   const s = sunInRoom(scene, sun.azimuth, sun.elevation)
-  const windows = scene.windows.map((win) => windowPatches(scene.room, win, s, options))
+  const opts = { ...options, obstacles: sceneObstacles(scene) }
+  const windows = scene.windows.map((win) => windowPatches(scene.room, win, s, opts))
   return {
     floor: windows.flatMap((w) => w.floor),
     walls: windows.flatMap((w) => w.walls),

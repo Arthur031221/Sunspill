@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@fontsource-variable/fraunces": "^5.2.0",
+    "@photostructure/tz-lookup": "^11.7.0",
     "esbuild": "^0.28.2",
     "playwright": "1.63.0"
   },

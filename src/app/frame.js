@@ -1,8 +1,9 @@
 // Everything the drawing needs that depends on the scene and the moment.
 
 import { scenePatches, windowPatches, totalArea } from '../core/light.js'
-import { clipConvex, rect } from '../core/poly.js'
-import { sunInRoom } from '../core/room.js'
+import { clipConvex } from '../core/poly.js'
+import { sunInRoom, itemFootprint } from '../core/room.js'
+import { sceneObstacles } from '../core/obstacles.js'
 import { sunAt, sunPath, daySteps } from '../core/hours.js'
 
 const pathCache = { key: '', value: null }
@@ -26,9 +27,10 @@ export function computeFrame(scene) {
   const itemTops = scene.items.map((item) => {
     if (item.kind === 'plant' || !(sun.elevation > 0)) return []
     const s = sunInRoom(scene, sun.azimuth, sun.elevation)
-    const footprint = rect(item.x, item.y, item.x + item.w, item.y + item.d)
+    const footprint = itemFootprint(item)
+    const obstacles = sceneObstacles(scene)
     return scene.windows
-      .flatMap((win) => windowPatches(scene.room, win, s, { planeZ: item.h, walls: false }).floor)
+      .flatMap((win) => windowPatches(scene.room, win, s, { planeZ: item.h, walls: false, obstacles }).floor)
       .map((poly) => clipConvex(poly, footprint))
       .filter((poly) => poly.length)
   })
@@ -45,13 +47,14 @@ export function frameFor(scene) {
 /** Hours of the day in which the sun touches the top of each piece of furniture. */
 export function itemSunHours(scene) {
   const { steps } = daySteps(scene.place, scene.date.month, scene.date.day, 10)
+  const obstacles = sceneObstacles(scene)
   return scene.items.map((item) => {
     if (item.kind === 'plant') return null
-    const footprint = rect(item.x, item.y, item.x + item.w, item.y + item.d)
+    const footprint = itemFootprint(item)
     let lit = 0
     for (const step of steps) {
       const s = sunInRoom(scene, step.azimuth, step.elevation)
-      const hit = scene.windows.some((win) => windowPatches(scene.room, win, s, { planeZ: item.h, walls: false }).floor.some((poly) => clipConvex(poly, footprint).length))
+      const hit = scene.windows.some((win) => windowPatches(scene.room, win, s, { planeZ: item.h, walls: false, obstacles }).floor.some((poly) => clipConvex(poly, footprint).length))
       if (hit) lit += step.w
     }
     return lit
