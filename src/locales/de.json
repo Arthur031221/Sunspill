@@ -219,7 +219,7 @@
  "net.title.tiles": "OpenStreetMap-Karte anzeigen?",
  "net.body.tiles": "Die Karte besteht aus kleinen Bildern von tile.openstreetmap.org. Beim Laden erfährt dieser Server, welchen Teil der Welt du ansiehst, und deine Netzwerkadresse. Das Zimmer wird nicht gesendet.",
  "net.title.buildings": "Gebäudeumrisse von OpenStreetMap laden?",
- "net.body.buildings": "Sunspill sendet die Position des Zimmers auf etwa einen Meter genau an einen Overpass-Server (overpass-api.de, bei Überlastung overpass.openstreetmap.fr und overpass.private.coffee) und erhält Umrisse und Höhen der Gebäude im Umkreis von 200 Metern.",
+ "net.body.buildings": "Sunspill sendet die Position des Zimmers auf etwa einen Meter genau an einen Overpass-Server (overpass-api.de, bei Überlastung overpass.kumi.systems und overpass.private.coffee) und erhält Umrisse und Höhen der Gebäude im Umkreis von 200 Metern.",
  "net.note": "Nichts wird gesendet, bevor du es erlaubst, und jeden Dienst kannst du unter Online-Dienste am Seitenende wieder ausschalten. Ohne sie funktioniert Sunspill weiter: Koordinaten eingeben, die eingebaute Städteliste nutzen und Gebäude selbst zeichnen.",
  "net.allow": "Erlauben",
  "net.deny": "Jetzt nicht",

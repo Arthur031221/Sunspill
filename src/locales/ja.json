@@ -219,7 +219,7 @@
  "net.title.tiles": "OpenStreetMap の地図を表示しますか？",
  "net.body.tiles": "地図は tile.openstreetmap.org から読み込む小さな画像の集まりです。読み込むと、そのサーバーに見ている地域とネットワークアドレスが伝わります。部屋は送りません。",
  "net.title.buildings": "OpenStreetMap から建物の輪郭を読み込みますか？",
- "net.body.buildings": "部屋の位置（約 1 m の精度）を Overpass サーバー（overpass-api.de。混雑時は overpass.openstreetmap.fr と overpass.private.coffee）に送り、200 m 以内の建物の輪郭と高さを受け取ります。",
+ "net.body.buildings": "部屋の位置（約 1 m の精度）を Overpass サーバー（overpass-api.de。混雑時は overpass.kumi.systems と overpass.private.coffee）に送り、200 m 以内の建物の輪郭と高さを受け取ります。",
  "net.note": "許可するまで何も送信されず、あとからページ下部の「オンラインサービス」でいつでもオフにできます。使わなくても座標の入力、内蔵の都市リスト、建物の手描きで Sunspill は使えます。",
  "net.allow": "許可する",
  "net.deny": "今はしない",

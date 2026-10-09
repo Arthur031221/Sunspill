@@ -219,7 +219,7 @@
  "net.title.tiles": "OpenStreetMap 지도를 표시할까요?",
  "net.body.tiles": "지도는 tile.openstreetmap.org에서 불러오는 작은 이미지 묶음입니다. 불러오면 그 서버가 보고 있는 지역과 네트워크 주소를 알게 됩니다. 방은 보내지 않습니다.",
  "net.title.buildings": "OpenStreetMap에서 건물 윤곽을 불러올까요?",
- "net.body.buildings": "방의 위치(약 1m 정밀도)를 Overpass 서버(overpass-api.de, 바쁘면 overpass.openstreetmap.fr와 overpass.private.coffee)로 보내 200m 이내 건물의 윤곽과 높이를 받습니다.",
+ "net.body.buildings": "방의 위치(약 1m 정밀도)를 Overpass 서버(overpass-api.de, 바쁘면 overpass.kumi.systems와 overpass.private.coffee)로 보내 200m 이내 건물의 윤곽과 높이를 받습니다.",
  "net.note": "허용하기 전에는 아무것도 전송되지 않으며, 나중에 페이지 아래의 '온라인 서비스'에서 서비스별로 끌 수 있습니다. 쓰지 않아도 좌표 입력, 내장 도시 목록, 건물 직접 그리기로 Sunspill을 쓸 수 있습니다.",
  "net.allow": "허용",
  "net.deny": "나중에",

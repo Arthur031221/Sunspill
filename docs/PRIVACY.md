@@ -8,7 +8,7 @@ Three optional services talk to public servers. Each one is off until you allow 
 | --- | --- | --- | --- |
 | Address search | Finding your address or building | nominatim.openstreetmap.org (OpenStreetMap Foundation) | The text you type in the search box |
 | Map pictures | The map behind the pin and the room | tile.openstreetmap.org (OpenStreetMap Foundation) | The map tiles for the part of the world you are looking at |
-| Building outlines | Neighbouring buildings and their heights | overpass-api.de, or if it fails overpass.openstreetmap.fr and then overpass.private.coffee (run by OpenStreetMap France and by the private.coffee collective, not by the OpenStreetMap Foundation) | The latitude and longitude of the room, rounded to five decimals (about one metre), and the radius of 200 metres |
+| Building outlines | Neighbouring buildings and their heights | overpass-api.de, or if it fails overpass.kumi.systems and then overpass.private.coffee (run by Kumi Systems and by the private.coffee collective, not by the OpenStreetMap Foundation) | The latitude and longitude of the room, rounded to five decimals (about one metre), and the radius of 200 metres |
 
 Every request also carries what any web request carries: your network address, your browser's name and the site this page is on (not its full address, and never the part after the `#`). OpenStreetMap's own [privacy policy](https://wiki.osmfoundation.org/wiki/Privacy_Policy) and the policies of the Overpass server operators say what they do with it.
 

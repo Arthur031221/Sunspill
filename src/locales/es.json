@@ -219,7 +219,7 @@
  "net.title.tiles": "¿Mostrar el mapa de OpenStreetMap?",
  "net.body.tiles": "El mapa es un conjunto de imágenes pequeñas cargadas desde tile.openstreetmap.org. Al cargarlas, ese servidor sabe qué parte del mundo miras y tu dirección de red. La habitación no se envía.",
  "net.title.buildings": "¿Cargar contornos de edificios de OpenStreetMap?",
- "net.body.buildings": "Sunspill enviará la posición de la habitación, con un metro de precisión, a un servidor Overpass (overpass-api.de, o overpass.openstreetmap.fr y overpass.private.coffee si está ocupado) y recibirá los contornos y alturas de los edificios a menos de 200 metros.",
+ "net.body.buildings": "Sunspill enviará la posición de la habitación, con un metro de precisión, a un servidor Overpass (overpass-api.de, o overpass.kumi.systems y overpass.private.coffee si está ocupado) y recibirá los contornos y alturas de los edificios a menos de 200 metros.",
  "net.note": "No se envía nada hasta que lo permitas, y puedes desactivar cada servicio en Servicios en línea, al final de la página. Sin ellos Sunspill funciona igual: escribe coordenadas, usa la lista de ciudades incluida y dibuja los edificios tú mismo.",
  "net.allow": "Permitir",
  "net.deny": "Ahora no",

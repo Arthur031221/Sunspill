@@ -219,7 +219,7 @@
  "net.title.tiles": "Show the OpenStreetMap map?",
  "net.body.tiles": "The map is a set of small pictures loaded from tile.openstreetmap.org. Loading them tells that server which part of the world you are looking at, and your network address. The room is not sent.",
  "net.title.buildings": "Load building outlines from OpenStreetMap?",
- "net.body.buildings": "Sunspill will send the position of the room, to about one metre, to an Overpass server (overpass-api.de, or overpass.openstreetmap.fr and overpass.private.coffee if that one is busy) and receive the outlines and heights of buildings within 200 metres.",
+ "net.body.buildings": "Sunspill will send the position of the room, to about one metre, to an Overpass server (overpass-api.de, or overpass.kumi.systems and overpass.private.coffee if that one is busy) and receive the outlines and heights of buildings within 200 metres.",
  "net.note": "Nothing is sent until you allow it, and you can switch each service off again from Online services at the bottom of the page. Without them Sunspill still works: type coordinates, use the built in city list and draw the buildings yourself.",
  "net.allow": "Allow",
  "net.deny": "Not now",

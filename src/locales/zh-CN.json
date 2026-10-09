@@ -219,7 +219,7 @@
  "net.title.tiles": "显示 OpenStreetMap 地图？",
  "net.body.tiles": "地图是由 tile.openstreetmap.org 加载的许多小图片。加载时，该服务器会知道你正在看世界的哪一区，以及你的网络地址。房间不会发出。",
  "net.title.buildings": "从 OpenStreetMap 加载建筑轮廓？",
- "net.body.buildings": "Sunspill 会把房间的位置（精确到约 1 米）发送到 Overpass 服务器（overpass-api.de。若繁忙则改用 overpass.openstreetmap.fr 与 overpass.private.coffee），并取回 200 米内建筑的轮廓与高度。",
+ "net.body.buildings": "Sunspill 会把房间的位置（精确到约 1 米）发送到 Overpass 服务器（overpass-api.de。若繁忙则改用 overpass.kumi.systems 与 overpass.private.coffee），并取回 200 米内建筑的轮廓与高度。",
  "net.note": "你允许之前不会发出任何数据，之后也可在页面底部的「在线服务」逐项关闭。没有它们 Sunspill 仍可使用：输入坐标、用内置城市列表、自己画建筑。",
  "net.allow": "允许",
  "net.deny": "暂不",

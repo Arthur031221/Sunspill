@@ -63,7 +63,7 @@ test('buildings come from the first Overpass server that answers, and the positi
   const { buildings, total } = await h.net.buildings({ lat: 25.0288, lon: 121.5442 }, 200)
   assert.equal(total, 37)
   assert.ok(buildings.length === 37)
-  assert.deepEqual(h.calls.map((c) => new URL(c.url).origin), ['https://overpass-api.de', 'https://overpass.openstreetmap.fr', 'https://overpass.private.coffee'])
+  assert.deepEqual(h.calls.map((c) => new URL(c.url).origin), ['https://overpass-api.de', 'https://overpass.kumi.systems', 'https://overpass.private.coffee'])
   const body = h.calls[0].init.body
   assert.ok(body instanceof URLSearchParams)
   assert.match(body.get('data'), /around:200,25\.02880,121\.54420/)
@@ -74,13 +74,13 @@ test('the page hears when the next server is tried, and the server that answered
   const h = harness({ responses: [json({}, 504), json(overpass), json(overpass), json(overpass)] })
   const told = []
   await h.net.buildings({ lat: 25.0288, lon: 121.5442 }, 200, undefined, { onNext: (host) => told.push(host) })
-  assert.deepEqual(told, ['overpass.openstreetmap.fr'], 'told once, before the second server')
-  assert.deepEqual(h.calls.map((c) => new URL(c.url).host), ['overpass-api.de', 'overpass.openstreetmap.fr'])
+  assert.deepEqual(told, ['overpass.kumi.systems'], 'told once, before the second server')
+  assert.deepEqual(h.calls.map((c) => new URL(c.url).host), ['overpass-api.de', 'overpass.kumi.systems'])
   // the second server answered, so it is asked first now, and nobody is told anything
   const again = []
   await h.net.buildings({ lat: 25.0288, lon: 121.5442 }, 200, undefined, { onNext: (host) => again.push(host) })
   assert.deepEqual(again, [])
-  assert.equal(new URL(h.calls[2].url).host, 'overpass.openstreetmap.fr')
+  assert.equal(new URL(h.calls[2].url).host, 'overpass.kumi.systems')
   // options still reach the parser
   const { buildings, cutoff } = await h.net.buildings({ lat: 25.0288, lon: 121.5442 }, 200, undefined, { limit: 10, eye: 12 })
   assert.equal(buildings.length, 10)
@@ -107,18 +107,18 @@ test('a second request that changes the preferred server does not make the first
   // B: the first server is busy for it, the second answers, and the second is now the preferred one
   const b = await net.buildings(center, 200)
   assert.equal(b.total, 37)
-  assert.deepEqual(hosts, ['overpass-api.de', 'overpass-api.de', 'overpass.openstreetmap.fr'])
+  assert.deepEqual(hosts, ['overpass-api.de', 'overpass-api.de', 'overpass.kumi.systems'])
   // A's first server now fails: A goes on to the server after it in its own order, which is the one that works
   gates[0](json({}, 504))
   const done = await a
   assert.equal(done.total, 37)
-  assert.equal(hosts[3], 'overpass.openstreetmap.fr')
+  assert.equal(hosts[3], 'overpass.kumi.systems')
   assert.equal(hosts.length, 4)
 })
 
 test('when every server fails the error says which and why', async () => {
   const h = harness({ responses: [json({}, 504), new Error('network down'), json({}, 500)] })
-  await assert.rejects(h.net.buildings({ lat: 1, lon: 1 }), /overpass-api\.de.*504.*openstreetmap\.fr.*network down.*private\.coffee.*500/)
+  await assert.rejects(h.net.buildings({ lat: 1, lon: 1 }), /overpass-api\.de.*504.*kumi\.systems.*network down.*private\.coffee.*500/)
 })
 
 test('a request cancelled before it starts, or while it runs, never goes on to the next server', async () => {
@@ -183,7 +183,7 @@ test('tiles are plain https images from one host, and the list of origins is wha
   const h = harness()
   assert.equal(h.net.tileUrl(17, 109708, 56367), 'https://tile.openstreetmap.org/17/109708/56367.png')
   assert.deepEqual(ORIGINS.images, ['https://tile.openstreetmap.org'])
-  assert.deepEqual(ORIGINS.connect, ['https://nominatim.openstreetmap.org', 'https://overpass-api.de', 'https://overpass.openstreetmap.fr', 'https://overpass.private.coffee'])
+  assert.deepEqual(ORIGINS.connect, ['https://nominatim.openstreetmap.org', 'https://overpass-api.de', 'https://overpass.kumi.systems', 'https://overpass.private.coffee'])
   assert.equal(Object.keys(SERVICES).length, 3)
 })
 

@@ -9,7 +9,7 @@ import { addressVariants } from '../core/address.js'
 export const SERVICES = {
   search: { name: 'Nominatim', hosts: ['https://nominatim.openstreetmap.org'], sends: 'the address you type' },
   tiles: { name: 'OpenStreetMap tiles', hosts: ['https://tile.openstreetmap.org'], sends: 'the part of the map you look at' },
-  buildings: { name: 'Overpass', hosts: ['https://overpass-api.de', 'https://overpass.openstreetmap.fr', 'https://overpass.private.coffee'], sends: 'the position of the room' },
+  buildings: { name: 'Overpass', hosts: ['https://overpass-api.de', 'https://overpass.kumi.systems', 'https://overpass.private.coffee'], sends: 'the position of the room' },
 }
 
 /** Every origin the page may contact, for the content security policy and for tests. */
