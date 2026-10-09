@@ -2,7 +2,7 @@
 
 ## 0.2.3 (2026-10-10)
 
-Walking the live page with real addresses and the real OpenStreetMap servers found four things that fixtures had hidden.
+Walking the live page with real addresses and the real OpenStreetMap servers found several things that fixtures had hidden.
 
 - **Taiwanese addresses.** Nominatim found nothing for a Taiwanese address that ends in a house number and a floor, because it wants the number after a space and has no word for the floor. A search that finds nothing now tries plainer forms of the same words, at most three more, a second apart: the road and the number after a space (the building), then the street, then the road a lane or alley leaves from. A Latin address loses its floor and unit first, then its house number. When the house number had to go, the page says so and asks you to drop a pin on your building. Checked against the real servers on three Taipei addresses, which now land on the right building. Only words you typed are sent, and the privacy notes say so. `addressVariants` is exported.
 - **Buildings.** `overpass.openstreetmap.fr` answers every browser with 403 ("white-listed usages") and no CORS header, so one of the three servers could never help. `overpass.kumi.systems` takes its place. When no server sends the buildings, the page now says so in plain words, stays on the page after the toast, and offers the way on (try again, or add them by hand), where it showed a raw error list that was gone in a few seconds.
