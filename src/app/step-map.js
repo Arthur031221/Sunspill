@@ -17,7 +17,10 @@ import { sunHoursInside } from './frame.js'
 /** Fetch the building outlines around the room, after asking, and keep them next to the ones drawn by hand. */
 export async function loadBuildings(ctx) {
   const { store, net, consent, toast } = ctx
-  if (ctx.loading) return false
+  if (ctx.loading) {
+    toast(t('wiz.map.loading'))
+    return false
+  }
   if (!(await consent.ask('buildings'))) return false
   const asked = { ...store.scene.place }
   ctx.loading = new AbortController()
@@ -171,7 +174,6 @@ export function facingStep(ctx) {
     },
     leave() {
       reader?.close()
-      ctx.loading?.abort()
       for (const k of ['turnBy', 'turnTo', 'moveRoom']) map.on[k] = null
     },
   }
@@ -299,7 +301,6 @@ export function surroundStep(ctx) {
       map.selected = sel()
     },
     leave() {
-      ctx.loading?.abort()
       for (const k of ['select', 'moveObstacle']) map.on[k] = null
     },
   }

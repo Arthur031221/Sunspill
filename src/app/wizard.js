@@ -91,6 +91,8 @@ export function createWizard(ctx) {
 
   function close(finished) {
     leave()
+    // a building load goes on across steps, so the answer is there when the person arrives, and stops only when the setup ends
+    ctx.loading?.abort()
     // marks and a photo that were never saved do not wait for the next time
     ctx.draft = null
     ctx.overlay.marks = null

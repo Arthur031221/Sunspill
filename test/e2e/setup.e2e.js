@@ -39,6 +39,7 @@ async function open({ locale = 'en-GB', answers = {}, hash = '', viewport = { wi
     }
     if (url.host === 'tile.openstreetmap.org') return route.fulfill({ status: 200, contentType: 'image/png', headers: CORS, body: PNG })
     if (/^overpass/.test(url.host)) {
+      if (answers.overpassDelay) await new Promise((r) => setTimeout(r, answers.overpassDelay))
       const fail = answers.overpassFail ?? 0
       const nth = outside.filter((o) => /^overpass/.test(o.host)).length
       if (nth <= fail) return route.fulfill({ status: 504, headers: CORS, body: 'busy' })
@@ -393,6 +394,35 @@ test('facing: the phone compass in the step, a flip of 180 degrees and a turn wi
     const s = window.__sunspill.store.scene
     return `${['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(s.facing / 45) % 8]} ${Math.round(s.facing)}°`
   })}`)
+  await context.close()
+})
+
+test('facing: pressing Next while the buildings are still on their way does not drop them, and a second press only says it is loading', { skip: engine !== chromium }, async () => {
+  const { page, context, outside, errors } = await open({ answers: { overpassDelay: 1200 } })
+  await openWizard(page, 3)
+  await page.click('#load-buildings')
+  await page.click('.modal button.primary')
+  await page.click('#wiz-next')
+  assert.equal(await title(page), 'What stands around it?')
+  await page.click('#load-buildings')
+  assert.match(await page.locator('.toast').last().innerText().catch(() => ''), /Asking OpenStreetMap for buildings/)
+  await page.waitForFunction(() => window.__sunspill.store.scene.obstacles.length > 0, null, { timeout: 8000 })
+  assert.equal(outside.filter((o) => /^overpass/.test(o.host)).length, 1, 'the second press did not ask again')
+  assert.match(await page.locator('.wiz-step').innerText(), /37 buildings/)
+  // leaving the setup stops a load that is still waiting, and nothing arrives afterwards
+  await page.click('#wiz-exit')
+  assert.deepEqual(errors, [])
+  await context.close()
+})
+
+test('facing: closing the setup while the buildings are on their way drops them', { skip: engine !== chromium }, async () => {
+  const { page, context } = await open({ answers: { overpassDelay: 1500 } })
+  await openWizard(page, 3)
+  await page.click('#load-buildings')
+  await page.click('.modal button.primary')
+  await page.click('#wiz-exit')
+  await page.waitForTimeout(2200)
+  assert.equal((await scene(page)).obstacles.filter((o) => o.src === 'osm').length, 0)
   await context.close()
 })
 
