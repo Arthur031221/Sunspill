@@ -15,7 +15,7 @@ A room set up on a phone in a few minutes, and a way to check it against the sun
 - **Sharing.** A new link format (`r2`) that carries buildings, floors, balconies and observations. Old links still open. "Hide my exact location" also drops building names.
 - **Install on a phone.** A web manifest and icons, so "Add to Home Screen" opens the page full screen.
 - **Library.** New exports for obstacles, geography, declination, the compass, fitting and tracing.
-- **Fixed.** A sun running exactly along a wall no longer lights it. An outline that crosses itself no longer disappears. Wall patches above a raised plane were already fixed in 0.1.
+- **Fixed.** A sun running exactly along a wall no longer lights it. An outline that crosses itself no longer disappears.
 
 ## 0.1.0
 

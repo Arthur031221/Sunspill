@@ -29,17 +29,7 @@ export function blurScene(scene) {
   return normalizeScene({ ...s, place: blurPlace(s.place), obstacles: s.obstacles.map(({ name, id, ...rest }) => ({ ...rest, name: '' })) })
 }
 
-export function packScene(scene) {
-  const s = normalizeScene(scene)
-  return [
-    s.room.w, s.room.d, s.room.h, s.room.wall, s.facing,
-    [s.place.name, s.place.lat, s.place.lon, s.place.zone],
-    s.date.month, s.date.day, s.minutes,
-    s.windows.map((w) => [WALLS.indexOf(w.wall), w.pos, w.w, w.h, w.sill, w.eave.depth, w.eave.gap, w.eave.ext, w.across ? [w.across.height, w.across.distance] : 0]),
-    s.items.map((i) => [ITEM_KINDS.indexOf(i.kind), i.x, i.y, i.w, i.d, i.h]),
-  ]
-}
-
+/** The first link format, which is only read now. */
 export function unpackScene(a) {
   const [w, d, h, wall, facing, place, month, day, minutes, windows, items] = a
   return normalizeScene({
