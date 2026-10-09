@@ -149,3 +149,44 @@ export function roomCorners(scene) {
 }
 
 export { localToRoom }
+
+const mod = (a, n) => ((a % n) + n) % n
+
+/**
+ * Line the room up with the outline of a building. Rooms have square corners
+ * and so do most buildings, so the wall of the room that holds the window
+ * should be parallel to a wall of the building. The nearest long wall of the
+ * building that holds the room (or, outside any building, of the nearest one)
+ * gives the four directions the wall can face, and the one closest to where
+ * it faces now is taken.
+ * @param scene a scene with buildings in it
+ * @param current the bearing the window wall faces now, in degrees
+ * @returns {{bearing:number, turn:number, edge:number[][], building:number}|null} the new bearing, the turn from `current` in degrees (-45 to 45), the edge used and the building's index
+ */
+export function snapToOutline(scene, current) {
+  let best = null
+  const consider = (o, index, inside) => {
+    const ring = o.ring
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i]
+      const b = ring[(i + 1) % ring.length]
+      const length = Math.hypot(b[0] - a[0], b[1] - a[1])
+      if (length < 2.5) continue
+      // distance from the room centre (0, 0) to this edge
+      const t = Math.max(0, Math.min(1, -(a[0] * (b[0] - a[0]) + a[1] * (b[1] - a[1])) / length ** 2))
+      const d = Math.hypot(a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]))
+      const key = (inside ? 0 : 1e6) + d
+      if (!best || key < best.key) best = { key, a, b, index }
+    }
+  }
+  const buildings = scene.obstacles.map((o, index) => ({ o, index })).filter(({ o }) => o.type === 'building')
+  const own = buildings.filter(({ o }) => insideRing(o.ring, [0, 0]))
+  for (const { o, index } of own.length ? own : buildings) consider(o, index, own.length > 0)
+  if (!best) return null
+  const edge = (Math.atan2(best.b[0] - best.a[0], best.b[1] - best.a[1]) * 180) / Math.PI
+  const target = mod(edge, 90)
+  // the candidates are the edge direction and its quarter turns: the wall faces one of them
+  let turn = mod(target - current, 90)
+  if (turn > 45) turn -= 90
+  return { bearing: mod(current + turn, 360), turn: Math.round(turn * 10) / 10 || 0, edge: [best.a, best.b], building: best.index }
+}

@@ -10,7 +10,7 @@ import { sunAt } from '../core/hours.js'
 import { sunInRoom } from '../core/room.js'
 import { shadingObstacles } from '../core/obstacles.js'
 import { WALLS, wallBearing, MAX_OBSTACLES } from '../core/room.js'
-import { moveRoom, refreshOwn, blockRing, haversine } from '../core/geo.js'
+import { moveRoom, refreshOwn, blockRing, haversine, snapToOutline } from '../core/geo.js'
 import { openCompass, compassSupported } from './compass-ui.js'
 import { sunHoursInside } from './frame.js'
 
@@ -88,6 +88,9 @@ export function facingStep(ctx) {
   const compassBtn = compassSupported() ? h('button', { class: 'btn block', type: 'button', id: 'compass-open', onclick: startCompass }, t('room.useCompass')) : null
   const outlines = h('button', { class: 'btn block', type: 'button', id: 'load-buildings', onclick: async () => { outlines.disabled = true; await loadBuildings(ctx); outlines.disabled = false; sync() } }, t('wiz.face.outlines'))
   const outlinesNote = h('p', { class: 'note' })
+  const align = h('button', { class: 'btn block', type: 'button', id: 'align-outline', onclick: alignToOutline }, t('wiz.face.align'))
+  const alignNote = h('p', { class: 'note' }, t('wiz.face.alignNote'))
+  const alignBox = h('div', { hidden: true }, align, alignNote)
   const clockRow = timeRow(ctx)
   const main = h('div', {},
     h('p', {}, t('wiz.face.intro')),
@@ -97,7 +100,7 @@ export function facingStep(ctx) {
     dial.el, bearing.el, turn,
     compassBtn,
     h('h3', {}, t('wiz.face.outlinesTitle')),
-    outlines, outlinesNote,
+    outlines, outlinesNote, alignBox,
     h('p', { class: 'note' }, t('wiz.face.northNote')))
   const el = h('section', { class: 'wiz-step' }, main, compassCard)
   let reader = null
@@ -120,6 +123,18 @@ export function facingStep(ctx) {
     })
   }
 
+  function alignToOutline() {
+    const s = store.scene
+    const found = snapToOutline(s, wallBearing(s, wallOf()))
+    if (!found) return
+    if (found.turn === 0) {
+      toast(t('wiz.face.alignedAlready'))
+      return
+    }
+    setBearing(found.bearing)
+    toast(t('wiz.face.aligned', { n: Math.abs(found.turn), dir: bearingText(found.bearing) }))
+  }
+
   map.on.turnBy = (delta) => store.update((d) => { d.facing = (((d.facing + delta) % 360) + 360) % 360 }, { key: 'facing' })
   map.on.turnTo = setBearing
   map.on.moveRoom = (e, n) => store.update((d) => {
@@ -138,6 +153,7 @@ export function facingStep(ctx) {
     chips.replaceChildren(...list.map((w, i) => h('button', { class: 'chip', type: 'button', 'aria-pressed': String(i === target()), onclick: () => { store.setUi({ selectedWindow: i, selected: s.windows.length ? { type: 'window', index: i } : null }); map.target = i; map.invalidate(); sync() } }, `${t('win.name', { n: i + 1 })} · ${bearingText(wallBearing(s, w.wall))}`)))
     faceLine.textContent = t('room.faces', { n: target() + 1, dir: bearingText(wallBearing(s, wallOf())) })
     const osm = s.obstacles.filter((o) => o.src === 'osm').length
+    alignBox.hidden = !s.obstacles.some((o) => o.type === 'building')
     outlinesNote.textContent = osm ? t('wiz.face.outlinesOn', { n: osm }) : t('wiz.face.outlinesOff')
     map.target = target()
     map.invalidate()

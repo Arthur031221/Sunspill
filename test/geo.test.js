@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { toLocal, fromLocal, metresPerDegree, haversine, lonLatToTile, tileToLonLat, moveRoom, insideRing, ownBuilding, roomCorners, metresPerPixel, setPlacePoint } from '../src/core/geo.js'
+import { toLocal, fromLocal, metresPerDegree, haversine, lonLatToTile, tileToLonLat, moveRoom, insideRing, ownBuilding, roomCorners, metresPerPixel, setPlacePoint, snapToOutline } from '../src/core/geo.js'
 import { parseBuildings, parseLength, buildingHeight, buildingQuery, fitRing, simplifyRing, parsePlaces, shortLabel } from '../src/core/osm.js'
 import { declination, decimalYear, inRange } from '../src/core/declination.js'
 import { headingFromAngles, rotationMatrix, circularMean, circularSpread, createAverager, trueHeading } from '../src/core/compass.js'
@@ -333,4 +333,29 @@ test('a nudge of the pin keeps every outline on the ground, and a long move drop
   setPlacePoint(far, away.lat, away.lon)
   assert.deepEqual(far.obstacles.map((o) => o.src), ['manual'])
   assert.ok(Math.abs(far.place.lat - away.lat) < 1e-9)
+})
+
+test('the window wall can be lined up with the nearest long wall of the building that holds the room', () => {
+  // a building 30 by 12 metres turned 17 degrees clockwise from north, with the room inside it
+  const turn = (17 * Math.PI) / 180
+  const rot = ([x, y]) => [x * Math.cos(turn) + y * Math.sin(turn), -x * Math.sin(turn) + y * Math.cos(turn)]
+  const ring = [[-15, -6], [15, -6], [15, 6], [-15, 6]].map(rot)
+  const scene = normalizeScene({ obstacles: [{ type: 'building', src: 'osm', ring, h: 20, own: true, on: false }, { type: 'building', ring: [[40, 40], [60, 40], [60, 60], [40, 60]], h: 10 }] })
+  // the walls of that building face 17, 107, 197 and 287 degrees, so a window that faces about 290 is turned a little
+  const a = snapToOutline(scene, 290)
+  assert.ok(Math.abs(a.bearing - 287) < 0.05, `bearing ${a.bearing}`)
+  assert.ok(Math.abs(a.turn + 3) < 0.05)
+  assert.equal(a.building, 0)
+  const b = snapToOutline(scene, 20)
+  assert.ok(Math.abs(b.bearing - 17) < 0.05)
+  // already lined up: no turn
+  assert.equal(snapToOutline(scene, 197).turn, 0)
+  // across the half way point it takes the nearer quarter turn
+  assert.ok(Math.abs(snapToOutline(scene, 17 + 44).turn + 44) < 0.05)
+  assert.ok(Math.abs(snapToOutline(scene, 17 + 46).turn - 44) < 0.05)
+  // with the room in the street the nearest building is used, and with no building there is nothing to do
+  const street = normalizeScene({ obstacles: [{ type: 'building', ring: [[10, 5], [30, 5], [30, 40], [10, 40]], h: 12 }] })
+  assert.equal(snapToOutline(street, 100).bearing, 90)
+  assert.equal(snapToOutline(normalizeScene({}), 100), null)
+  assert.equal(snapToOutline(normalizeScene({ obstacles: [{ type: 'tree', x: 5, y: 5, r: 2, h: 8 }] }), 100), null)
 })

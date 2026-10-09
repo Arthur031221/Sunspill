@@ -393,6 +393,33 @@ test('facing: the buildings load after a yes, the first server may fail, and dra
   await context.close()
 })
 
+test('facing: the button lines the window wall up with a wall of the building that holds the room, and is hidden with no building', { skip: engine !== chromium }, async () => {
+  const { page, context } = await open()
+  await openWizard(page, 3)
+  assert.equal(await page.locator('#align-outline').isVisible(), false)
+  // a building 30 by 12 metres turned 17 degrees, with the room inside it
+  await page.evaluate(() => window.__sunspill.store.update((d) => {
+    const t = (17 * Math.PI) / 180
+    const ring = [[-15, -6], [15, -6], [15, 6], [-15, 6]].map(([x, y]) => [x * Math.cos(t) + y * Math.sin(t), -x * Math.sin(t) + y * Math.cos(t)])
+    d.obstacles = [{ type: 'building', src: 'manual', ring, h: 20 }]
+    d.facing = 0
+    d.windows[0].wall = 'top'
+  }))
+  await page.waitForSelector('#align-outline', { state: 'visible' })
+  await page.evaluate(() => window.__sunspill.store.update((d) => { d.facing = 290 }))
+  await page.click('#align-outline')
+  await page.waitForTimeout(150)
+  const f = (await scene(page)).facing
+  assert.ok(Math.abs(f - 287) < 0.1, `facing ${f}`)
+  assert.match(await page.locator('#toast').innerText(), /Turned 3 degrees/)
+  // pressing it again has nothing left to do
+  await page.click('#align-outline')
+  await page.waitForTimeout(100)
+  assert.ok(Math.abs((await scene(page)).facing - 287) < 0.1)
+  assert.match(await page.locator('#toast').innerText(), /already follows/)
+  await context.close()
+})
+
 test('surroundings: estimated heights are marked, editing one clears the mark, and a block to the west takes the afternoon sun', async () => {
   const { page, context } = await open()
   await page.evaluate(() => window.__sunspill.store.update((d) => { d.place = { name: 'Da-an', lat: 25.0288, lon: 121.5442, zone: 'Asia/Taipei' } }))
