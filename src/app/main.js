@@ -47,6 +47,9 @@ const prefs = loadPrefs()
 const ROOM_KEY = 'sunspill.room'
 // the room that a friend's link pushed aside, so that one edit does not cost you yours
 const EARLIER_KEY = 'sunspill.room.earlier'
+// rooms kept by name, to flip between flats: a short list of links that stays in this browser
+const SAVED_KEY = 'sunspill.saved'
+const MAX_SAVED = 12
 const stored = (key) => {
   try {
     return localStorage.getItem(key) || ''
@@ -55,6 +58,29 @@ const stored = (key) => {
   }
 }
 const loadRoom = () => decodeScene(stored(ROOM_KEY))
+/** The named rooms, newest first, each with the scene its link holds. Anything that does not decode is left out. */
+function readSaved() {
+  let list = []
+  try {
+    list = JSON.parse(stored(SAVED_KEY))
+  } catch {
+    // nothing saved yet, or not readable
+  }
+  if (!Array.isArray(list)) return []
+  return list
+    .filter((r) => r && typeof r.name === 'string' && typeof r.code === 'string')
+    .map((r) => ({ name: r.name.slice(0, 60), code: r.code, at: Number(r.at) || 0, scene: decodeScene(r.code) }))
+    .filter((r) => r.scene)
+    .slice(0, MAX_SAVED)
+}
+const writeSaved = (list) => {
+  try {
+    localStorage.setItem(SAVED_KEY, JSON.stringify(list.map(({ name, code, at }) => ({ name, code, at }))))
+    return true
+  } catch {
+    return false
+  }
+}
 const fromLink = decodeScene(location.hash.slice(1))
 // without a link, the room that was last edited here comes back
 const restored = fromLink ? null : loadRoom()
@@ -205,6 +231,51 @@ const actions = {
     }
   },
   hasEarlier: () => Boolean(decodeScene(stored(EARLIER_KEY))),
+  savedRooms: () => readSaved(),
+  /** Keep the room under a name. The same name again replaces that room. Returns 'saved', 'full', 'name' or 'failed'. */
+  saveRoom(name) {
+    const clean = String(name).replace(/\s+/g, ' ').trim().slice(0, 60)
+    if (!clean) return 'name'
+    const list = readSaved()
+    const at = list.findIndex((r) => r.name.toLowerCase() === clean.toLowerCase())
+    const entry = { name: clean, code: encodeScene(store.scene), at: Date.now() }
+    if (at >= 0) list.splice(at, 1)
+    else if (list.length >= MAX_SAVED) return 'full'
+    list.unshift(entry)
+    if (!writeSaved(list)) return 'failed'
+    toast(t('saved.saved', { name: clean }))
+    return 'saved'
+  },
+  /** Show a saved room. The room that was open is set aside, so Bring back my earlier room returns to it and Undo does too. */
+  openRoom(index) {
+    const room = readSaved()[index]
+    if (!room) return false
+    flushSave()
+    const now = encodeScene(store.scene)
+    // the room to set aside is the one that is yours: the room a friend's link pushed aside, or else the one on the page,
+    // unless that is only the sample room nobody touched
+    const keep = aside || (edited || restored || fromLink ? now : '')
+    store.replace(room.scene)
+    edited = true
+    try {
+      if (keep && keep !== room.code) localStorage.setItem(EARLIER_KEY, keep)
+      localStorage.setItem(ROOM_KEY, room.code)
+    } catch {
+      // the room is on the page either way
+    }
+    aside = ''
+    toast(t('saved.opened', { name: room.name }))
+    afterScene()
+    return true
+  },
+  deleteRoom(index) {
+    const list = readSaved()
+    const [gone] = list.splice(index, 1)
+    if (!gone) return false
+    writeSaved(list)
+    toast(t('saved.deleted', { name: gone.name }))
+    return true
+  },
   /** Swap with the room a link pushed aside, so that a second press goes back. */
   bringBack() {
     flushSave()
@@ -660,7 +731,7 @@ document.documentElement.dataset.ready = '1'
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {})
 // a read only handle for the browser tests
 window.__sunspill = {
-  store, stage, analysis, wizard, map, consent, net,
+  store, stage, analysis, wizard, map, consent, net, panelActions: actions,
   frame: () => frameFor(store.scene),
   floorArea: () => floorArea(frameFor(store.scene).patches),
   decode: (hash) => decodeScene(hash.slice(1)),

@@ -454,6 +454,64 @@ function placePlant(store, spot) {
   toast(t('plant.placed'))
 }
 
+/** Rooms kept by name in this browser: save the one on screen, open another, delete one. */
+function savedSection({ store, actions }) {
+  const name = h('input', { type: 'text', id: 'saved-name', maxLength: 60, autocomplete: 'off', placeholder: t('saved.placeholder'), 'aria-label': t('saved.name') })
+  const note = h('p', { class: 'note', role: 'status' })
+  const list = h('div', { class: 'saved-list' })
+  const save = h('button', { class: 'btn primary fixed', type: 'button', id: 'saved-save' }, t('saved.save'))
+  let sure = -1
+  let sureTimer = 0
+  const doSave = () => {
+    const result = actions.saveRoom(name.value)
+    if (result === 'saved') note.textContent = ''
+    else if (result === 'full') note.textContent = t('saved.full')
+    else if (result === 'name') note.textContent = t('saved.noName')
+    else note.textContent = t('saved.failed')
+    render()
+  }
+  save.addEventListener('click', doSave)
+  name.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doSave() } })
+  function render() {
+    const rooms = actions.savedRooms()
+    if (!rooms.length) {
+      list.replaceChildren(h('p', { class: 'note' }, t('saved.empty')))
+      return
+    }
+    list.replaceChildren(...rooms.map((r, i) => {
+      const s = r.scene
+      const where = s.place.name || '-'
+      const del = h('button', { class: 'btn', type: 'button', onclick: () => {
+        clearTimeout(sureTimer)
+        note.textContent = ''
+        if (sure === i) {
+          sure = -1
+          actions.deleteRoom(i)
+        } else {
+          sure = i
+          sureTimer = setTimeout(() => { sure = -1; render() }, 4000)
+        }
+        render()
+      } }, sure === i ? t('saved.sure') : t('saved.delete'))
+      return h('div', { class: 'saved-row' },
+        h('div', { class: 'saved-text' }, h('b', {}, r.name), h('span', { class: 'note' }, t('saved.row', { place: where, w: lengthText(s.room.w, store.ui.units), d: lengthText(s.room.d, store.ui.units) }))),
+        h('div', { class: 'saved-buttons' },
+          h('button', { class: 'btn', type: 'button', onclick: () => { note.textContent = ''; actions.openRoom(i) } }, t('saved.open')),
+          del,
+        ),
+      )
+    }))
+  }
+  const el = h('div', { class: 'saved' },
+    h('h2', {}, t('saved.title')),
+    h('div', { class: 'row' }, name, save),
+    note,
+    list,
+    h('p', { class: 'note' }, t('saved.note')),
+  )
+  return { el, render }
+}
+
 function shareTab({ store, actions }) {
   const el = h('section')
   const link = h('input', { type: 'text', readOnly: true, 'aria-label': t('share.link') })
@@ -491,6 +549,7 @@ function shareTab({ store, actions }) {
     }
   })
   const earlier = h('div', { class: 'row', hidden: true }, h('button', { class: 'btn', type: 'button', id: 'bring-back', onclick: () => actions.bringBack() }, t('share.earlier')))
+  const saved = savedSection({ store, actions })
   const importer = h('input', { type: 'file', accept: 'application/json,.json', hidden: true })
   importer.addEventListener('change', () => importer.files[0] && actions.importJson(importer.files[0]))
   el.append(
@@ -498,6 +557,7 @@ function shareTab({ store, actions }) {
     h('div', { class: 'row' }, link, copy),
     h('label', { class: 'check', htmlFor: 'hide' }, hide, t('share.hide')),
     h('p', { class: 'note' }, t('share.hideNote')),
+    saved.el,
     h('h2', {}, t('share.image')),
     png,
     h('h2', {}, t('share.animation')),
@@ -514,6 +574,7 @@ function shareTab({ store, actions }) {
   )
   const refreshLink = () => {
       earlier.hidden = !actions.hasEarlier()
+      saved.render()
       link.value = location.origin === 'null' ? '' : `${location.origin}${location.pathname}#${encodeScene(hide.checked ? blurScene(store.scene) : store.scene)}`
   }
   hide.addEventListener('change', refreshLink)
