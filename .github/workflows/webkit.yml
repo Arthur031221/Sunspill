@@ -1,0 +1,25 @@
+name: WebKit
+
+# Safari's engine as an extra signal, on demand and once a week. It runs on
+# Linux, so it is not Safari on an iPhone, and the touch drags that need
+# Chromium's input protocol are skipped. It does not gate a push.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1'
+
+jobs:
+  webkit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - run: npm run build
+      - run: npm run test:e2e
+        env:
+          BROWSER: webkit
