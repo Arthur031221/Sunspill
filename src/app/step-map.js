@@ -10,7 +10,7 @@ import { sunAt } from '../core/hours.js'
 import { sunInRoom } from '../core/room.js'
 import { shadingObstacles } from '../core/obstacles.js'
 import { WALLS, wallBearing, floorLift, MAX_OBSTACLES } from '../core/room.js'
-import { moveRoom, refreshOwn, blockRing, haversine, snapToOutline } from '../core/geo.js'
+import { moveRoom, refreshOwn, blockRing, haversine, snapToOutline, toLocal } from '../core/geo.js'
 import { openCompass, compassSupported } from './compass-ui.js'
 import { sunHoursInside } from './frame.js'
 
@@ -35,10 +35,13 @@ export async function loadBuildings(ctx) {
     // the answer is for the spot that was asked about, so it is dropped when the room has been put somewhere else since
     const now = store.scene.place
     if (mine.signal.aborted || haversine(asked, now) > 25) return false
+    // the outlines are measured from the spot that was asked about, and the room may have moved a little since
+    const [dx, dy] = toLocal(now, asked.lat, asked.lon)
+    const placed = buildings.map((o) => (o.type === 'tree' ? { ...o, x: o.x + dx, y: o.y + dy } : { ...o, ring: o.ring.map(([x, y]) => [x + dx, y + dy]) }))
     store.update((d) => {
       // what was drawn by hand is kept, and the loaded outlines take the room that is left
       const manual = d.obstacles.filter((o) => o.src !== 'osm')
-      d.obstacles = [...buildings.slice(0, Math.max(0, MAX_OBSTACLES - manual.length)), ...manual]
+      d.obstacles = [...placed.slice(0, Math.max(0, MAX_OBSTACLES - manual.length)), ...manual]
       refreshOwn(d)
     })
     store.setUi({ obstacle: null })

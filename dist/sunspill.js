@@ -1871,11 +1871,12 @@ function searchCities(query, limit = 8) {
 }
 
 // src/core/address.js
-var CJK_NUMBER = /^(.*?)(\d+)(?:\s*[之-]\s*\d+)?\s*[號号]/;
+var CJK_NUMBER = /^(.*?)(\d+)(?:\s*([之-])\s*(\d+))?\s*[號号]/;
 var LANE = /\s*\d+\s*[巷弄]$/;
 var UNIT = /(?:[,，\s]+|^)(?:\d+\s*(?:[Ff]|[Ff]loor|樓|楼|層|层)|[Ff]loor\s*\d+|[Ff]l\.?\s*\d+|\d+\s*(?:st|nd|rd|th)\s+[Ff]loor|[Aa]pt\.?\s*\w+|[Uu]nit\s*\w+|[Ss]uite\s*\w+|[Rr]oom\s*\w+|#\s*\w+|[Bb]\d+)\s*$/;
-var LATIN_NUMBER = /\b(?:No|Nr|Num)\.?\s*\d+[-\w]*\s*,?\s*/i;
-var LEADING_NUMBER = /^\d+[A-Za-z]?(?:-\d+)?\s*[,\s]\s*/;
+var LATIN_NUMBER = /\b(?:No|Nr|Num)\.?\s*\d+[-\w]*\s*(?:,\s*|$)/i;
+var LEADING_NUMBER = /^(?:(?:No|Nr|Num)\.?\s*)?\d+[A-Za-z]?(?:-\d+)?\s*[,\s]\s*(?!(?:road|rd|street|st|avenue|ave|lane|ln|boulevard|blvd|drive|dr|way|highway|hwy)\b)/i;
+var FLOOR_PIECE = /\d\s*(?:室|樓|楼|層|层|[Ff])\s*$/;
 function addressVariants(text) {
   const clean = String(text ?? "").normalize("NFKC").replace(/\s+/g, " ").trim();
   const out = [];
@@ -1886,15 +1887,19 @@ function addressVariants(text) {
   const house = CJK_NUMBER.exec(clean);
   if (house && house[1].trim()) {
     let road = house[1].trim();
-    add(`${road} ${house[2]}`, true);
-    add(road, false);
+    const tail = clean.slice(house[0].length).split(/[,，、]/).slice(1).map((x) => x.trim()).filter((x) => x && !FLOOR_PIECE.test(x)).join(", ");
+    const end = tail ? `, ${tail}` : "";
+    if (house[3]) add(`${road} ${house[2]}${house[3]}${house[4]}${end}`, true);
+    add(`${road} ${house[2]}${end}`, !house[3]);
+    add(`${road}${end}`, false);
     while (LANE.test(road)) {
       road = road.replace(LANE, "").trim();
-      if (road) add(road, false);
+      if (road) add(`${road}${end}`, false);
     }
     return out;
   }
-  const bare = clean.replace(UNIT, "");
+  let bare = clean;
+  for (let n = 0; n < 4 && UNIT.test(bare); n++) bare = bare.replace(UNIT, "");
   add(bare, true);
   const noNumber = bare.replace(LATIN_NUMBER, "").replace(LEADING_NUMBER, "");
   add(noNumber, false);

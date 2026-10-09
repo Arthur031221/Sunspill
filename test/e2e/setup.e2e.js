@@ -436,6 +436,30 @@ test('surroundings: when no server sends the buildings the page says so and keep
   await context.close()
 })
 
+test('facing: buildings that arrive after the room moved a few metres stand where they are on the ground', { skip: engine !== chromium }, async () => {
+  const where = { name: 'Da-an', lat: 25.0288, lon: 121.5442, zone: 'Asia/Taipei' }
+  const ground = (sc, o) => {
+    const [e, n] = o.ring[0]
+    return { lat: sc.place.lat + n / 111195, lon: sc.place.lon + e / (111320 * Math.cos((sc.place.lat * Math.PI) / 180)) }
+  }
+  const load = async (move) => {
+    const { page, context } = await open({ answers: { overpassDelay: move ? 900 : 0 } })
+    await page.evaluate((w) => window.__sunspill.store.update((d) => { d.place = w }), where)
+    await openWizard(page, 3)
+    await page.click('#load-buildings')
+    await page.click('.modal button.primary')
+    if (move) await page.evaluate(() => window.__sunspill.store.update((d) => { d.place.lon += 20 / (111320 * Math.cos((d.place.lat * Math.PI) / 180)) }))
+    await page.waitForFunction(() => window.__sunspill.store.scene.obstacles.length > 0)
+    const sc = await scene(page)
+    await context.close()
+    return ground(sc, sc.obstacles[3])
+  }
+  const still = await load(false)
+  const moved = await load(true)
+  const metres = Math.hypot((moved.lat - still.lat) * 111195, (moved.lon - still.lon) * 111320 * Math.cos((where.lat * Math.PI) / 180))
+  assert.ok(metres < 0.5, `a building is ${metres.toFixed(2)} m from where it stands`)
+})
+
 test('facing: closing the setup while the buildings are on their way drops them', { skip: engine !== chromium }, async () => {
   const { page, context } = await open({ answers: { overpassDelay: 1500 } })
   await openWizard(page, 3)
