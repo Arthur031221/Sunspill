@@ -1029,3 +1029,26 @@ test('a photo of the floor that is half way through counts as unsaved when leavi
   assert.equal(await page.evaluate(() => document.documentElement.dataset.wizard), '1')
   await context.close()
 })
+
+test('on a phone every box is at least 16 pixels high text, so Safari does not zoom in, and nothing sticks out at 320 pixels', { skip: engine !== chromium }, async () => {
+  const { page, context } = await open({ locale: 'fr', viewport: { width: 320, height: 640 } })
+  const small = () => page.evaluate(() => [...document.querySelectorAll('input:not([type=range]):not([type=checkbox]), select, textarea')].filter((e) => e.offsetParent).map((e) => [e.id || e.type, parseFloat(getComputedStyle(e).fontSize)]).filter(([, px]) => px < 16))
+  const sticksOut = () => page.evaluate(() => [...document.querySelectorAll('body *')].filter((e) => {
+    if (e.closest('[role=tablist], .skip, canvas, svg') || !e.offsetParent) return false
+    return e.getBoundingClientRect().right > document.documentElement.clientWidth + 1
+  }).map((e) => e.id || e.className || e.tagName))
+  for (const tab of ['room', 'place', 'things', 'results', 'share']) {
+    await page.click(`#tab-${tab}`)
+    assert.deepEqual(await small(), [], `tab ${tab}`)
+    assert.deepEqual(await sticksOut(), [], `tab ${tab}`)
+    assert.equal(await noSideways(page), true, `tab ${tab}`)
+  }
+  await openWizard(page)
+  for (let i = 0; i < 7; i++) {
+    assert.deepEqual(await small(), [], `step ${i + 1}`)
+    assert.deepEqual(await sticksOut(), [], `step ${i + 1}`)
+    assert.equal(await noSideways(page), true, `step ${i + 1}`)
+    if (i < 6) await page.click('#wiz-next')
+  }
+  await context.close()
+})

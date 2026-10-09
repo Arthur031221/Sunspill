@@ -202,6 +202,8 @@ input[type="text"], input[type="search"], input[type="time"], input[type="url"],
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .row > * { flex: 1; min-width: 0; }
 .row > .fixed { flex: none; }
+/* three buttons with long words go to a second line on a narrow phone */
+.row.data-row > * { flex: 1 1 9em; }
 .row input[type="time"] { min-width: 132px; }
 .btn {
   height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); padding: 0 14px; font-weight: 600;
@@ -288,6 +290,7 @@ html[data-wizard] .stage-wrap { grid-template-rows: minmax(0, 1fr); }
 .wiz-dots button::before { content: ""; position: absolute; inset: -14px -4px; }
 .wiz-dots button.on { width: 24px; background: var(--accent); border-color: var(--accent); }
 .wiz-dots button.done { background: var(--ink); border-color: var(--ink); }
+@media (max-width: 359px) { .wiz-dots { gap: 5px; } .wiz-top .mini { padding: 4px 7px; } }
 .wiz-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 6px; }
 .wiz-count { margin: 0; font-size: 12px; color: var(--muted); }
 .wiz-meta .linkbtn { font-size: 12px; color: var(--muted); }
@@ -356,6 +359,8 @@ html[data-wizard] .stage-wrap { grid-template-rows: minmax(0, 1fr); }
 .linkbtn { border: 0; background: none; padding: 0; text-decoration: underline; color: inherit; font: inherit; cursor: pointer; }
 
 @media (pointer: coarse) {
+  /* below 16px Safari on an iPhone zooms the page in when a box gets the focus */
+  input, select, textarea { font-size: 16px; }
   .btn, .chip, .select, .num-in, input[type="text"], input[type="number"], input[type="search"], input[type="time"] { min-height: 44px; }
   .mini { min-height: 36px; padding: 6px 12px; }
   .field input[type="range"] { height: 32px; }

@@ -503,7 +503,7 @@ function shareTab({ store, actions }) {
     h('div', { class: 'row' }, gifRange), h('div', { style: 'height:8px' }), gifBtn, progress, cancel, preview,
     h('p', { class: 'note' }, t('share.gifNote')),
     h('h2', {}, t('share.data')),
-    h('div', { class: 'row' },
+    h('div', { class: 'row data-row' },
       h('button', { class: 'btn', type: 'button', onclick: () => actions.exportJson(hide.checked) }, t('share.export')),
       h('button', { class: 'btn', type: 'button', onclick: () => importer.click() }, t('share.import')),
       h('button', { class: 'btn', type: 'button', onclick: () => actions.reset() }, t('share.reset')),
