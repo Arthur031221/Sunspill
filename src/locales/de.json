@@ -336,7 +336,7 @@
  "wiz.map.loaded": "{n} Gebäude geladen.",
  "wiz.map.partial": "{n} von {total} Gebäuden wurden behalten: die, die am höchsten über deinem Fenster aufragen. Die übrigen ragen weniger als {deg} Grad darüber auf und beschatten nur eine tiefere Sonne. Lade nach einer Änderung der Etage erneut.",
  "wiz.map.empty": "OpenStreetMap kennt hier keine Gebäude. Füge sie von Hand hinzu, falls es welche gibt.",
- "wiz.map.failed": "Gebäude konnten nicht geladen werden: {why}",
+ "wiz.map.failed": "Kein OpenStreetMap-Server hat die Gebäude geschickt, meist weil die öffentlichen ausgelastet sind. Versuche es in einer Minute noch einmal oder füge die Gebäude unten von Hand hinzu.",
  "wiz.sur.intro": "Gebäude und Bäume zwischen Fenster und Sonne. Lade die Gebäude in deiner Umgebung, korrigiere ihre Höhen und ergänze, was fehlt.",
  "wiz.sur.none": "Noch keine Gebäude oder Bäume.",
  "wiz.sur.status": "{n} Gebäude und Bäume, bei {est} ist die Höhe geschätzt.",

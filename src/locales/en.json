@@ -336,7 +336,7 @@
  "wiz.map.loaded": "{n} buildings loaded.",
  "wiz.map.partial": "{n} of {total} buildings were kept: the ones that rise highest above your window. The rest rise less than {deg} degrees above it, so they only shade a sun lower than that. Load again after you change the floor number.",
  "wiz.map.empty": "OpenStreetMap has no buildings here. Add them by hand if there are any.",
- "wiz.map.failed": "Could not load buildings: {why}",
+ "wiz.map.failed": "No OpenStreetMap server sent the buildings, usually because the public ones are busy. Try again in a minute, or add the buildings by hand below.",
  "wiz.sur.intro": "Buildings and trees that stand between the window and the sun. Load the buildings around you, then correct their heights, and add what is missing.",
  "wiz.sur.none": "No buildings or trees yet.",
  "wiz.sur.status": "{n} buildings and trees, {est} with a guessed height.",

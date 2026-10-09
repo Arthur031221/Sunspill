@@ -336,7 +336,7 @@
  "wiz.map.loaded": "已載入 {n} 棟建築。",
  "wiz.map.partial": "共 {total} 棟建築，保留了 {n} 棟：從你的窗戶看上去仰角最高的那些。其餘的仰角低於 {deg} 度，只會遮到比這更低的太陽。改了樓層後請再載入一次。",
  "wiz.map.empty": "OpenStreetMap 在此沒有建築資料。如有建築，請手動新增。",
- "wiz.map.failed": "無法載入建築：{why}",
+ "wiz.map.failed": "沒有任何 OpenStreetMap 伺服器回傳建築，通常是公用伺服器正忙。請一分鐘後再試，或在下方手動新增建築。",
  "wiz.sur.intro": "位於窗戶與太陽之間的建築與樹木。先載入周圍的建築，再修正高度，並補上缺少的。",
  "wiz.sur.none": "目前沒有建築或樹木。",
  "wiz.sur.status": "{n} 個建築與樹木，其中 {est} 個的高度是推測的。",

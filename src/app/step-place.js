@@ -37,6 +37,7 @@ export function placeStep(ctx) {
       d.place.zone = zone
     })
     ctx.actions.afterPlace()
+    ctx.loadNote = ''
     results.replaceChildren()
     status.textContent = ''
     // a result from the search brings the map to it, a tap on the map leaves the view where the person put it

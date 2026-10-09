@@ -420,6 +420,22 @@ test('facing: pressing Next while the buildings are still on their way does not 
   await context.close()
 })
 
+test('surroundings: when no server sends the buildings the page says so and keeps saying it, and a second try that works clears it', { skip: engine !== chromium }, async () => {
+  const { page, context } = await open({ answers: { overpassFail: 3 } })
+  await openWizard(page, 4)
+  await page.click('#load-buildings')
+  await page.click('.modal button.primary')
+  await page.waitForFunction(() => /No OpenStreetMap server sent the buildings/.test(document.querySelector('.wiz-step').innerText))
+  assert.equal((await scene(page)).obstacles.length, 0)
+  // it is on the page after the toast, and the button still works
+  await page.waitForTimeout(300)
+  assert.match(await page.locator('.wiz-step').innerText(), /Try again in a minute, or add the buildings by hand/)
+  await page.click('#load-buildings')
+  await page.waitForFunction(() => window.__sunspill.store.scene.obstacles.length > 0)
+  assert.doesNotMatch(await page.locator('.wiz-step').innerText(), /No OpenStreetMap server sent/)
+  await context.close()
+})
+
 test('facing: closing the setup while the buildings are on their way drops them', { skip: engine !== chromium }, async () => {
   const { page, context } = await open({ answers: { overpassDelay: 1500 } })
   await openWizard(page, 3)

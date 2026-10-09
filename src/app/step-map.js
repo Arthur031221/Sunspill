@@ -23,6 +23,7 @@ export async function loadBuildings(ctx) {
   }
   if (!(await consent.ask('buildings'))) return false
   const asked = { ...store.scene.place }
+  ctx.loadNote = ''
   ctx.loading = new AbortController()
   const mine = ctx.loading
   toast(t('wiz.map.loading'))
@@ -46,7 +47,11 @@ export async function loadBuildings(ctx) {
     ctx.map.invalidate()
     return true
   } catch (err) {
-    if (!mine.signal.aborted) toast(t('wiz.map.failed', { why: String(err.message || err).slice(0, 90) }))
+    // the servers are public and often busy, so the note stays on the page after the toast has gone
+    if (!mine.signal.aborted) {
+      ctx.loadNote = t('wiz.map.failed')
+      toast(ctx.loadNote)
+    }
     return false
   } finally {
     if (ctx.loading === mine) ctx.loading = null
@@ -161,7 +166,7 @@ export function facingStep(ctx) {
     faceLine.textContent = t('room.faces', { n: target() + 1, dir: bearingText(wallBearing(s, wallOf())) })
     const osm = s.obstacles.filter((o) => o.src === 'osm').length
     alignBox.hidden = !s.obstacles.some((o) => o.type === 'building')
-    outlinesNote.textContent = osm ? t('wiz.face.outlinesOn', { n: osm }) : t('wiz.face.outlinesOff')
+    outlinesNote.textContent = osm ? t('wiz.face.outlinesOn', { n: osm }) : ctx.loadNote || t('wiz.face.outlinesOff')
     map.target = target()
     map.invalidate()
   }
@@ -283,7 +288,7 @@ export function surroundStep(ctx) {
     const shading = sun.elevation > 0 && s.obstacles.length ? shadingObstacles(s, sunInRoom(s, sun.azimuth, sun.elevation)) : []
     shadeNow.textContent = !s.obstacles.length || !(sun.elevation > 0) ? '' : shading.length ? t('wiz.sur.shadeNow', { time: clock(s.minutes), n: shading.length }) : t('wiz.sur.shadeNone', { time: clock(s.minutes) })
     list.querySelectorAll('.card.ob').forEach((c) => c.classList.toggle('selected', sel() === Number(c.dataset.obstacle)))
-    status.textContent = s.obstacles.length ? t('wiz.sur.status', { n: s.obstacles.length, est: s.obstacles.filter((o) => o.est).length }) : t('wiz.sur.none')
+    status.textContent = s.obstacles.length ? t('wiz.sur.status', { n: s.obstacles.length, est: s.obstacles.filter((o) => o.est).length }) : ctx.loadNote || t('wiz.sur.none')
     const withIt = sunHoursInside(s)
     const without = sunHoursInside({ ...s, obstacles: [] })
     effect.textContent = s.obstacles.some((o) => o.on) ? t('wiz.sur.effect', { date: dateText(s.date.month, s.date.day), a: duration(withIt), b: duration(without) }) : t('wiz.sur.effectNone', { date: dateText(s.date.month, s.date.day), b: duration(without) })

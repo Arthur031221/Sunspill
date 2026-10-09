@@ -336,7 +336,7 @@
  "wiz.map.loaded": "{n} edificios cargados.",
  "wiz.map.partial": "Se conservaron {n} de {total} edificios: los que más se elevan sobre tu ventana. El resto sube menos de {deg} grados sobre ella, así que solo da sombra a un sol más bajo. Vuelve a cargar tras cambiar el número de planta.",
  "wiz.map.empty": "OpenStreetMap no tiene edificios aquí. Añádelos a mano si los hay.",
- "wiz.map.failed": "No se pudieron cargar los edificios: {why}",
+ "wiz.map.failed": "Ningún servidor de OpenStreetMap envió los edificios, casi siempre porque los públicos están ocupados. Inténtalo de nuevo en un minuto o añade los edificios a mano más abajo.",
  "wiz.sur.intro": "Edificios y árboles que quedan entre la ventana y el sol. Carga los edificios de tu entorno, corrige sus alturas y añade lo que falte.",
  "wiz.sur.none": "Aún no hay edificios ni árboles.",
  "wiz.sur.status": "{n} edificios y árboles, {est} con altura supuesta.",
