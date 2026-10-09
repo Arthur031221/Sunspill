@@ -87,6 +87,35 @@ test('the page hears when the next server is tried, and the server that answered
   assert.ok(cutoff >= 0)
 })
 
+test('a second request that changes the preferred server does not make the first one skip it', async () => {
+  const gates = []
+  const hosts = []
+  const net = createNet({
+    allowed: () => true,
+    fetch: async (url) => {
+      const host = new URL(url).host
+      hosts.push(host)
+      // the first call to the first server waits to be told how it ends, every other call answers at once
+      if (host === 'overpass-api.de' && !gates.length) return new Promise((resolve) => gates.push(resolve))
+      if (host === 'overpass-api.de') return json({}, 504)
+      return json(overpass)
+    },
+    wait: async () => {},
+  })
+  const center = { lat: 25.0288, lon: 121.5442 }
+  const a = net.buildings(center, 200)
+  // B: the first server is busy for it, the second answers, and the second is now the preferred one
+  const b = await net.buildings(center, 200)
+  assert.equal(b.total, 37)
+  assert.deepEqual(hosts, ['overpass-api.de', 'overpass-api.de', 'overpass.openstreetmap.fr'])
+  // A's first server now fails: A goes on to the server after it in its own order, which is the one that works
+  gates[0](json({}, 504))
+  const done = await a
+  assert.equal(done.total, 37)
+  assert.equal(hosts[3], 'overpass.openstreetmap.fr')
+  assert.equal(hosts.length, 4)
+})
+
 test('when every server fails the error says which and why', async () => {
   const h = harness({ responses: [json({}, 504), new Error('network down'), json({}, 500)] })
   await assert.rejects(h.net.buildings({ lat: 1, lon: 1 }), /overpass-api\.de.*504.*openstreetmap\.fr.*network down.*private\.coffee.*500/)

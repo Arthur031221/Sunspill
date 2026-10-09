@@ -88,8 +88,10 @@ export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), w
       const body = new URLSearchParams({ data: buildingQuery(center.lat, center.lon, radius) })
       const failures = []
       const hosts = SERVICES.buildings.hosts
+      // taken once: another request may change `preferred` while this one waits, and this one must still try every server
+      const first = preferred
       for (let n = 0; n < hosts.length; n++) {
-        const at = (preferred + n) % hosts.length
+        const at = (first + n) % hosts.length
         const host = hosts[at]
         if (n > 0) onNext?.(new URL(host).host)
         try {

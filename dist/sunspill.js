@@ -1141,7 +1141,7 @@ function parseLength(text) {
   const v = Number(m[1]);
   return m[2] === "ft" || m[2] === "feet" ? v * 0.3048 : v;
 }
-var hasHeight = (tags = {}) => parseLength(tags.height) > 0 || Number(tags["building:levels"]) > 0;
+var hasHeight = (tags = {}) => parseLength(tags.height) > 0 || Number.isFinite(Number(tags["building:levels"])) && Number(tags["building:levels"]) > 0;
 function buildingHeight(tags = {}, prior = null) {
   const top = parseLength(tags.height);
   const base = parseLength(tags.min_height);

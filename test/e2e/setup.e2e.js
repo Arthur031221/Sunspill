@@ -1290,3 +1290,38 @@ test('the room step shows the floor area, with ping (坪) on the Traditional Chi
   assert.equal(await zh.page.locator('#floor-area').innerText(), '地板面積：15.8 m²（約 4.8 坪）。')
   await zh.context.close()
 })
+
+test('saved rooms: a room that is saved is still told apart as saved after a reload, so a full list does not stop another being opened', { skip: engine !== chromium }, async () => {
+  const { page, context } = await open({ viewport: { width: 390, height: 844 } })
+  // the odd digits are what a link rounds off, and a saved room keeps
+  const saved = await page.evaluate(() => {
+    const a = window.__sunspill.panelActions
+    const out = []
+    for (let i = 0; i < 11; i++) out.push(a.saveRoom(`Room ${i}`))
+    window.__sunspill.store.update((d) => { d.room.w = 3.777; d.facing = 211.37; d.place = { name: 'Odd', lat: 25.0418123, lon: 121.5436987, zone: 'Asia/Taipei' } })
+    out.push(a.saveRoom('Odd'))
+    return out
+  })
+  assert.equal(saved.every((r) => r === 'saved'), true)
+  assert.equal(await page.evaluate(() => window.__sunspill.panelActions.savedRooms().length), 12)
+  await page.waitForTimeout(900)
+  await page.reload()
+  await page.waitForSelector('html[data-ready]')
+  const back = await scene(page)
+  assert.notEqual(back.facing, 211.37, 'the reloaded room went through the link and lost digits')
+  await page.click('#tab-share')
+  await page.locator('.saved-row', { hasText: 'Room 3' }).getByRole('button', { name: 'Open' }).click()
+  await page.waitForFunction(() => window.__sunspill.store.scene.room.w !== 3.777)
+  assert.doesNotMatch(await page.locator('.saved .note[role=status]').innerText(), /twelve rooms are saved/)
+  assert.equal(await page.evaluate(() => window.__sunspill.panelActions.savedRooms().length), 12, 'nothing was added, the room was saved already')
+  await context.close()
+})
+
+test('saved rooms from the first draft, stored as links, are still listed', { skip: engine !== chromium }, async () => {
+  const { page, context } = await open()
+  const code = await page.evaluate(() => { window.__sunspill.store.update((d) => { d.facing = 77 }); return window.__sunspill.encode(window.__sunspill.store.scene) })
+  await page.evaluate((c) => localStorage.setItem('sunspill.saved', JSON.stringify([{ name: 'Old flat', code: c, at: 1 }])), code)
+  const names = await page.evaluate(() => window.__sunspill.panelActions.savedRooms().map((r) => [r.name, r.scene.facing, typeof r.id]))
+  assert.deepEqual(names, [['Old flat', 77, 'string']])
+  await context.close()
+})

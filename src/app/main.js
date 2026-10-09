@@ -68,6 +68,8 @@ function readSaved() {
   }
   if (!Array.isArray(list)) return []
   return list
+    // a room saved as a link by the first draft of this list (name, code, at) is read as a scene and given an id
+    .map((r) => (r && typeof r.code === 'string' && !r.scene ? { id: newId(), name: r.name, at: r.at, scene: decodeScene(r.code) } : r))
     .filter((r) => r && typeof r.id === 'string' && typeof r.name === 'string' && r.scene && typeof r.scene === 'object')
     .map((r) => ({ id: r.id, name: r.name.slice(0, 60), at: Number(r.at) || 0, scene: normalizeScene(r.scene) }))
     .slice(0, MAX_SAVED)
@@ -258,7 +260,10 @@ const actions = {
     flushSave()
     // yours is the room a friend's link pushed aside, or else the one on the page unless it is only the untouched sample
     const mine = aside ? decodeScene(aside) : edited || restored || fromLink ? store.scene : null
-    if (mine && !list.some((r) => JSON.stringify(r.scene) === JSON.stringify(mine))) {
+    // the same room is told by what a link holds of it, since the copy that came back from the browser's storage
+    // after a reload went through the link and was rounded, while a saved room keeps every digit
+    const sameRoom = (a, b) => encodeScene(a) === encodeScene(b)
+    if (mine && !list.some((r) => sameRoom(r.scene, mine))) {
       if (list.length >= MAX_SAVED) return 'full'
       list.unshift({ id: newId(), name: t('saved.earlierName', { place: mine.place.name || '-' }).slice(0, 60), at: Date.now(), scene: structuredClone(mine) })
       if (!writeSaved(list)) return 'failed'

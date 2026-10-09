@@ -31,7 +31,7 @@ export function parseLength(text) {
 }
 
 /** True when the tags give a height or a number of floors, so the building does not need a guess. */
-export const hasHeight = (tags = {}) => parseLength(tags.height) > 0 || Number(tags['building:levels']) > 0
+export const hasHeight = (tags = {}) => parseLength(tags.height) > 0 || (Number.isFinite(Number(tags['building:levels'])) && Number(tags['building:levels']) > 0)
 
 /**
  * Height of a building and whether it is a guess, from its tags. `prior` is what to use for a kind of building

@@ -64,7 +64,7 @@ A scene's `obstacles` are buildings and trees in metres east and north of the ro
 
 **`toLocal(center, lat, lon)`** and **`fromLocal(center, east, north)`** convert between latitude and longitude and metres east and north of a centre. **`moveRoom(scene, east, north)`** moves the room on the ground and keeps every building and tree where it was. **`haversine(a, b)`** is the distance in metres.
 
-**`parseBuildings(overpassJson, center)`** turns an Overpass answer into buildings with heights, flagging the ones whose height is a guess and the one that holds the room. **`buildingHeight(tags)`**, **`parseLength(text)`** and **`buildingQuery(lat, lon, radius)`** are the pieces. The library makes no request itself.
+**`parseBuildings(overpassJson, center, { limit, eye })`** turns an Overpass answer into `{ buildings, total, cutoff }`: buildings with heights, flagging the ones whose height is a guess and the one that holds the room. It keeps `limit` (60) of them, the ones that rise highest above a window `eye` metres up, and `cutoff` is how many degrees above that window the highest left out rises. A building drawn as a multipolygon needs the answer to `buildingQuery(lat, lon, radius)`, which asks relations for their members. **`buildingHeight(tags)`** and **`parseLength(text)`** are the pieces. The library makes no request itself.
 
 **`declination(lat, lon, year, heightKm)`** is the magnetic declination in degrees, east positive, from the World Magnetic Model 2025. **`headingFromAngles(alpha, beta, gamma)`** gives the compass bearing a phone faces from its DeviceOrientation angles, and **`trueHeading(magnetic, declination)`** adds the two.
 

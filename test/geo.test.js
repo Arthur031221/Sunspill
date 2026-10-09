@@ -251,6 +251,8 @@ test('only a plain building with no height or floors takes the neighbours height
   assert.equal(byId(r, 13).h, 15, 'a kind with a typical height keeps it')
   assert.equal(byId(r, 1).est, false)
   assert.ok(hasHeight({ height: '12' }) && hasHeight({ 'building:levels': '3' }) && !hasHeight({ building: 'yes' }) && !hasHeight({ height: 'tall' }))
+  // a floor count that is not a finite number is not a height to learn from
+  assert.ok(!hasHeight({ 'building:levels': '1e309' }) && !hasHeight({ 'building:levels': '5;6' }) && !hasHeight({ 'building:levels': '-2' }))
   // with too few buildings that have a height there is nothing to learn from
   const few = parseBuildings({ elements: [tall(1, 20, 30), tall(2, 40, 36), { type: 'way', id: 10, tags: { building: 'yes' }, geometry: at(50, 50) }] }, center)
   assert.equal(byId(few, 10).h, DEFAULT_HEIGHT)
