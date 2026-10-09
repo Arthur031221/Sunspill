@@ -8,8 +8,9 @@ const LANE = /\s*\d+\s*[巷弄]$/
 const UNIT = /(?:[,，\s]+|^)(?:\d+\s*(?:[Ff]|[Ff]loor|樓|楼|層|层)|[Ff]loor\s*\d+|[Ff]l\.?\s*\d+|\d+\s*(?:st|nd|rd|th)\s+[Ff]loor|[Aa]pt\.?\s*\w+|[Uu]nit\s*\w+|[Ss]uite\s*\w+|[Rr]oom\s*\w+|#\s*\w+|[Bb]\d+)\s*$/
 // "No. 45," or "Road No. 45" is a house number, but the 5 in "No. 5 Road" belongs to the street
 const LATIN_NUMBER = /\b(?:No|Nr|Num)\.?\s*\d+[-\w]*\s*(?:,\s*|$)/i
-const LEADING_NUMBER = /^(?:(?:No|Nr|Num)\.?\s*)?\d+[A-Za-z]?(?:-\d+)?\s*[,\s]\s*(?!(?:road|rd|street|st|avenue|ave|lane|ln|boulevard|blvd|drive|dr|way|highway|hwy)\b)/i
-const FLOOR_PIECE = /\d\s*(?:室|樓|楼|層|层|[Ff])\s*$/
+const LEADING_NO = /^(?:No|Nr|Num)\.?\s*\d+[A-Za-z]?(?:-\d+)?\s*[,\s]\s*(?!(?:road|rd|street|st|avenue|ave|lane|ln|boulevard|blvd|drive|dr|way|highway|hwy)\b)/i
+const LEADING_NUMBER = /^\d+[A-Za-z]?(?:-\d+)?\s*[,\s]\s*/
+const FLOOR_PIECE = /\d\s*(?:室|樓|楼|層|层|階|[Ff])(?:\s*之\s*\d+)?\s*$/
 
 /**
  * Forms of `text` that may match when the text itself does not, most exact first. Each is `{ query, exact }`:
@@ -43,8 +44,8 @@ export function addressVariants(text) {
   let bare = clean
   // a floor and a unit can follow each other
   for (let n = 0; n < 4 && UNIT.test(bare); n++) bare = bare.replace(UNIT, '')
-  add(bare, true)
-  const noNumber = bare.replace(LATIN_NUMBER, '').replace(LEADING_NUMBER, '')
+  const noNumber = bare.replace(LATIN_NUMBER, '').replace(LEADING_NO, '').replace(LEADING_NUMBER, '')
+  add(bare, bare !== noNumber)
   add(noNumber, false)
   return out
 }

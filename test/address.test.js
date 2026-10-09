@@ -68,3 +68,9 @@ test('a street called No. 5 Road keeps its number, and a floor and a unit both g
   assert.deepEqual(queries('Xinyi Road No. 45, Taipei'), ['Xinyi Road Taipei'])
   assert.deepEqual(queries('No. 45 Shifu Road, Taipei'), ['Shifu Road, Taipei'])
 })
+
+test('a number before a street called Avenue still goes, a floor after a city goes, and a street with no house number is not exact', () => {
+  assert.deepEqual(queries('5 Avenue Anatole France, Paris'), ['Avenue Anatole France, Paris'])
+  assert.deepEqual(queries('台北市信義區市府路45號, 7樓之2, 台灣'), ['台北市信義區市府路 45, 台灣', '台北市信義區市府路, 台灣'])
+  assert.deepEqual(addressVariants('No. 5 Road, Richmond, BC, Floor 7'), [{ query: 'No. 5 Road, Richmond, BC', exact: false }])
+})

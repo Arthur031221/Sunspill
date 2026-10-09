@@ -1875,8 +1875,9 @@ var CJK_NUMBER = /^(.*?)(\d+)(?:\s*([之-])\s*(\d+))?\s*[號号]/;
 var LANE = /\s*\d+\s*[巷弄]$/;
 var UNIT = /(?:[,，\s]+|^)(?:\d+\s*(?:[Ff]|[Ff]loor|樓|楼|層|层)|[Ff]loor\s*\d+|[Ff]l\.?\s*\d+|\d+\s*(?:st|nd|rd|th)\s+[Ff]loor|[Aa]pt\.?\s*\w+|[Uu]nit\s*\w+|[Ss]uite\s*\w+|[Rr]oom\s*\w+|#\s*\w+|[Bb]\d+)\s*$/;
 var LATIN_NUMBER = /\b(?:No|Nr|Num)\.?\s*\d+[-\w]*\s*(?:,\s*|$)/i;
-var LEADING_NUMBER = /^(?:(?:No|Nr|Num)\.?\s*)?\d+[A-Za-z]?(?:-\d+)?\s*[,\s]\s*(?!(?:road|rd|street|st|avenue|ave|lane|ln|boulevard|blvd|drive|dr|way|highway|hwy)\b)/i;
-var FLOOR_PIECE = /\d\s*(?:室|樓|楼|層|层|[Ff])\s*$/;
+var LEADING_NO = /^(?:No|Nr|Num)\.?\s*\d+[A-Za-z]?(?:-\d+)?\s*[,\s]\s*(?!(?:road|rd|street|st|avenue|ave|lane|ln|boulevard|blvd|drive|dr|way|highway|hwy)\b)/i;
+var LEADING_NUMBER = /^\d+[A-Za-z]?(?:-\d+)?\s*[,\s]\s*/;
+var FLOOR_PIECE = /\d\s*(?:室|樓|楼|層|层|階|[Ff])(?:\s*之\s*\d+)?\s*$/;
 function addressVariants(text) {
   const clean = String(text ?? "").normalize("NFKC").replace(/\s+/g, " ").trim();
   const out = [];
@@ -1900,8 +1901,8 @@ function addressVariants(text) {
   }
   let bare = clean;
   for (let n = 0; n < 4 && UNIT.test(bare); n++) bare = bare.replace(UNIT, "");
-  add(bare, true);
-  const noNumber = bare.replace(LATIN_NUMBER, "").replace(LEADING_NUMBER, "");
+  const noNumber = bare.replace(LATIN_NUMBER, "").replace(LEADING_NO, "").replace(LEADING_NUMBER, "");
+  add(bare, bare !== noNumber);
   add(noNumber, false);
   return out;
 }
