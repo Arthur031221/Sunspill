@@ -8,6 +8,7 @@ on:
 jobs:
   unit:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       matrix:
         node-version: [22, 24]
@@ -25,6 +26,8 @@ jobs:
 
   browser:
     runs-on: ubuntu-latest
+    # Playwright's Firefox now and then stops answering; a stuck run should fail, not hang
+    timeout-minutes: 12
     strategy:
       fail-fast: false
       matrix:
