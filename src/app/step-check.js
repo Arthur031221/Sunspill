@@ -6,13 +6,15 @@ import { h } from './dom.js'
 import { t } from './i18n.js'
 import { numberField } from './fields.js'
 import { clock, dateText, duration, monthName, lengthText } from './format.js'
-import { ITEM_KINDS, ITEM_SIZES, MAX_ITEMS, MAX_CHECKS, daysInMonth } from '../core/room.js'
+import { ITEM_KINDS, ITEM_SIZES, MAX_ITEMS, MAX_CHECKS, YEAR, daysInMonth } from '../core/room.js'
 import { itemSunHours } from './frame.js'
 import { compareCheck, fitScene, shiftAlongWall } from '../core/fit.js'
 import { flattenPhoto } from '../core/trace.js'
 import { PictureCanvas, loadPicture, dot } from './picture.js'
-import { utcToLocal } from '../core/solar.js'
-import { fromUnit } from './format.js'
+import { utcToLocal, sunTimes } from '../core/solar.js'
+import { sunAt } from '../core/hours.js'
+import { fromUnit, itemName } from './format.js'
+import { freeSpot } from '../core/snap.js'
 
 export function thingsStep(ctx) {
   const { store, stage, toast } = ctx
@@ -25,7 +27,7 @@ export function thingsStep(ctx) {
         if (store.scene.items.length >= MAX_ITEMS) return toast(t('things.max'))
         store.update((d) => {
           const size = ITEM_SIZES[kind]
-          d.items.push({ kind, x: Math.max(0, (d.room.w - size.w) / 2), y: Math.max(0, (d.room.d - size.d) / 2), rot: 0, ...size })
+          d.items.push({ kind, ...freeSpot(d, size), rot: 0, ...size })
         })
         const index = store.scene.items.length - 1
         stage.select({ type: 'item', index })
@@ -53,7 +55,7 @@ export function thingsStep(ctx) {
     }
     const turn = (deg) => store.update((d) => { if (d.items[i]) d.items[i].rot = (((d.items[i].rot + deg) % 360) + 360) % 360 }, { key: `rot${i}` })
     detail.replaceChildren(h('div', { class: 'card selected' },
-      h('div', { class: 'card-head' }, h('b', {}, t(`kind.${item.kind}`)), h('button', { class: 'mini', type: 'button', onclick: () => { store.update((d) => { d.items.splice(i, 1) }); store.setUi({ selected: null }); stage.select(null) } }, t('things.remove'))),
+      h('div', { class: 'card-head' }, h('b', {}, itemName(store.scene.items, i)), h('button', { class: 'mini', type: 'button', onclick: () => { store.update((d) => { d.items.splice(i, 1) }); store.setUi({ selected: null }); stage.select(null) } }, t('things.remove'))),
       add({ label: t('wiz.things.turn'), kind: 'deg', min: 0, max: 359, step: 1, places: 0, get: (s) => s.items[i]?.rot ?? 0, set: (d, v) => { if (d.items[i]) d.items[i].rot = v }, key: `rot${i}` }),
       h('div', { class: 'row turn' }, ...[-90, -15, 15, 90].map((n) => h('button', { class: 'btn', type: 'button', onclick: () => turn(n) }, `${n > 0 ? '+' : '−'}${Math.abs(n)}°`))),
       h('div', { class: 'grid2' },
@@ -70,7 +72,7 @@ export function thingsStep(ctx) {
     if (key !== shape) {
       shape = key
       renderDetail()
-      list.replaceChildren(...s.items.map((it, i) => h('button', { class: 'chip', type: 'button', 'aria-pressed': String(i === sel), onclick: () => { stage.select({ type: 'item', index: i }); store.setUi({ selected: { type: 'item', index: i } }) } }, t(`kind.${it.kind}`))))
+      list.replaceChildren(...s.items.map((it, i) => h('button', { class: 'chip', type: 'button', 'aria-pressed': String(i === sel), onclick: () => { stage.select({ type: 'item', index: i }); store.setUi({ selected: { type: 'item', index: i } }) } }, itemName(s.items, i))))
     }
     fields.forEach((f) => f.sync())
     const line = detail.querySelector('#item-sun')
@@ -127,6 +129,7 @@ export function checkStep(ctx) {
 
   const markBtn = h('button', { class: 'btn primary block', type: 'button', id: 'mark-toggle', 'aria-pressed': 'false', onclick: () => setMarking(!marking) }, t('wiz.check.mark'))
   const pointsLine = h('p', { class: 'note', role: 'status' })
+  const night = h('p', { class: 'note', id: 'check-night', role: 'status' })
   const undoPoint = h('button', { class: 'btn', type: 'button', onclick: () => { points.pop(); refreshOverlay(); sync() } }, t('wiz.check.undoPoint'))
   const clearPoints = h('button', { class: 'btn', type: 'button', onclick: () => { points = draft.points = []; refreshOverlay(); sync() } }, t('trace.clear'))
   const savePatch = h('button', { class: 'btn primary', type: 'button', id: 'save-patch', onclick: save }, t('wiz.check.save'))
@@ -300,6 +303,7 @@ export function checkStep(ctx) {
     month.value = String(s.date.month)
     if (document.activeElement !== day) day.value = String(s.date.day)
     if (document.activeElement !== time) time.value = clock(s.minutes)
+    night.textContent = sunAt(s.place, s.date.month, s.date.day, s.minutes).elevation > 0 ? '' : t('wiz.check.night')
     pointsLine.textContent = marking ? (points.length < 3 ? t('wiz.check.points', { n: points.length }) : t('wiz.check.pointsReady', { n: points.length })) : ''
     undoPoint.hidden = clearPoints.hidden = !marking
     savePatch.hidden = !marking
@@ -339,7 +343,7 @@ export function checkStep(ctx) {
   const main = h('div', {},
     h('p', {}, t('wiz.check.intro')),
     h('h3', {}, t('wiz.check.when')),
-    h('div', { class: 'row' }, month, day, time),
+    h('div', { class: 'row' }, month, day, time), night,
     markBtn, pointsLine, h('div', { class: 'row' }, undoPoint, clearPoints, savePatch), typed,
     photoBtn, photoOff,
     h('h3', {}, t('wiz.check.saved.title')), checksList, verdict, fitBtn, fitOut,
@@ -354,11 +358,18 @@ export function checkStep(ctx) {
       overlay.underlay = draft.underlay
       // a patch is marked for a moment that was seen, which is most often today and a little while ago
       if (!draft.dated && !store.scene.checks.length) {
-        const now = utcToLocal(Date.now(), store.scene.place.zone)
+        const { place } = store.scene
+        const now = utcToLocal(Date.now(), place.zone)
+        // at night there is no sun to have seen, so the clock starts in the middle of the day instead
+        let minutes = Math.round(now.minutes / 5) * 5
+        if (!(sunAt(place, now.month, now.day, minutes).elevation > 0)) {
+          const { sunrise, sunset } = sunTimes(YEAR, now.month, now.day, place.lat, place.lon, place.zone)
+          minutes = sunrise == null || sunset == null ? 720 : Math.round((sunrise + sunset) / 10) * 5
+        }
         store.update((d) => {
           d.date.month = now.month
           d.date.day = now.day
-          d.minutes = Math.round(now.minutes / 5) * 5
+          d.minutes = minutes
         }, { history: false })
       }
       draft.dated = true

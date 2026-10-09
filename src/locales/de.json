@@ -422,5 +422,7 @@
  "wiz.leave.title": "Einrichtung verlassen?",
  "wiz.leave.body": "Der Sonnenfleck, den du gerade markierst, oder das Bodenfoto ist noch nicht gespeichert und geht verloren.",
  "wiz.leave.stay": "Weitermachen",
- "wiz.leave.go": "Trotzdem verlassen"
+ "wiz.leave.go": "Trotzdem verlassen",
+ "wiz.sur.noSun": "An diesem Tag erreicht kein direktes Sonnenlicht den Boden, auch ohne diese. Prüfe, wohin das Fenster zeigt, das Dach oder die Verschattung darüber, und probiere ein anderes Datum.",
+ "wiz.check.night": "Zu dieser Zeit steht die Sonne unter dem Horizont, es gibt also keinen Fleck zum Vergleichen. Stelle die Uhrzeit ein, zu der du die Sonne gesehen hast."
 }

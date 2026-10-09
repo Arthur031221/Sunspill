@@ -178,6 +178,7 @@ export function surroundStep(ctx) {
   const fields = []
   const status = h('p', { class: 'where' })
   const effect = h('p', { class: 'note', role: 'status' })
+  const noSun = h('p', { class: 'note', id: 'no-sun' })
   const list = h('div', { class: 'obstacle-list' })
   const showAll = { on: false }
   let shape = ''
@@ -255,7 +256,7 @@ export function surroundStep(ctx) {
   const load = h('button', { class: 'btn primary block', type: 'button', id: 'load-buildings', onclick: async () => { load.disabled = true; await loadBuildings(ctx); load.disabled = false; shape = ''; sync() } }, t('wiz.face.outlines'))
   const el = h('section', { class: 'wiz-step' },
     h('p', {}, t('wiz.sur.intro')),
-    load, status, clockRow.el, shadeNow, effect, list,
+    load, status, clockRow.el, shadeNow, effect, noSun, list,
     h('p', { class: 'note' }, t('wiz.sur.estNote')),
     h('details', { class: 'more' }, h('summary', {}, t('wiz.sur.addBlockTitle')),
       h('div', { class: 'grid2' }, field('nb-bearing', t('wiz.sur.bearing'), bIn.bearing), field('nb-dist', t('wiz.sur.distance'), bIn.dist), field('nb-width', t('wiz.sur.width'), bIn.width), field('nb-depth', t('wiz.sur.depth'), bIn.depth), field('nb-height', t('wiz.sur.height'), bIn.height)),
@@ -279,6 +280,7 @@ export function surroundStep(ctx) {
     const withIt = sunHoursInside(s)
     const without = sunHoursInside({ ...s, obstacles: [] })
     effect.textContent = s.obstacles.some((o) => o.on) ? t('wiz.sur.effect', { date: dateText(s.date.month, s.date.day), a: duration(withIt), b: duration(without) }) : t('wiz.sur.effectNone', { date: dateText(s.date.month, s.date.day), b: duration(without) })
+    noSun.textContent = without < 1 / 60 ? t('wiz.sur.noSun') : ''
     addBlock.disabled = addTree.disabled = s.obstacles.length >= MAX_OBSTACLES
     map.selected = sel()
     map.invalidate()

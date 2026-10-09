@@ -83,3 +83,29 @@ export function snapItem(scene, index, x, y, tolerance = TOLERANCE) {
   const ny = hy ? hy.at : grid(cy)
   return { x: nx - item.w / 2, y: ny - item.d / 2, guides }
 }
+
+/**
+ * Where a new piece of furniture goes: the free place on the floor nearest the
+ * middle of the room, clear of every piece that is already there. When the
+ * floor is full it goes in the middle anyway. `size` is its width and depth.
+ * @returns {{x:number, y:number}} the corner of its box, as stored
+ */
+export function freeSpot(scene, size, gap = 0.05) {
+  const { room } = scene
+  const boxes = scene.items.map((o) => {
+    const f = itemFootprint(o)
+    return [Math.min(...f.map((p) => p[0])), Math.min(...f.map((p) => p[1])), Math.max(...f.map((p) => p[0])), Math.max(...f.map((p) => p[1]))]
+  })
+  const mid = { x: Math.max(0, (room.w - size.w) / 2), y: Math.max(0, (room.d - size.d) / 2) }
+  const free = (x, y) => boxes.every(([x0, y0, x1, y1]) => x + size.w <= x0 - gap || x >= x1 + gap || y + size.d <= y0 - gap || y >= y1 + gap)
+  if (free(mid.x, mid.y)) return mid
+  let best = null
+  for (let x = 0; x <= room.w - size.w + 1e-9; x += 0.1) {
+    for (let y = 0; y <= room.d - size.d + 1e-9; y += 0.1) {
+      if (!free(x, y)) continue
+      const away = Math.hypot(x - mid.x, y - mid.y)
+      if (!best || away < best.away) best = { x, y, away }
+    }
+  }
+  return best ? { x: Math.round(best.x * 100) / 100, y: Math.round(best.y * 100) / 100 } : mid
+}

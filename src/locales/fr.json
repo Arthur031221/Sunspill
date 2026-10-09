@@ -422,5 +422,7 @@
  "wiz.leave.title": "Quitter la configuration ?",
  "wiz.leave.body": "La tache de soleil que tu marquais, ou la photo du sol, n'est pas encore enregistrée et sera perdue.",
  "wiz.leave.stay": "Continuer",
- "wiz.leave.go": "Quitter quand même"
+ "wiz.leave.go": "Quitter quand même",
+ "wiz.sur.noSun": "Ce jour-là, aucun soleil direct n'atteint le sol, même sans ceux-ci. Vérifiez l'orientation de la fenêtre, le toit ou l'auvent au-dessus, et essayez une autre date.",
+ "wiz.check.night": "À cette heure, le soleil est sous l'horizon, donc il n'y a pas de tache à comparer. Réglez l'heure à laquelle vous avez vu le soleil."
 }

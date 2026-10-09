@@ -422,5 +422,7 @@
  "wiz.leave.title": "Leave the setup?",
  "wiz.leave.body": "The patch you were marking, or the photo of the floor, is not saved yet and will be lost.",
  "wiz.leave.stay": "Keep working",
- "wiz.leave.go": "Leave anyway"
+ "wiz.leave.go": "Leave anyway",
+ "wiz.sur.noSun": "No direct sun reaches the floor on this day, even without these. Check which way the window faces, the roof or shade above it, and try another date.",
+ "wiz.check.night": "At this time the sun is below the horizon, so there is no patch to compare. Set the time you saw the sun."
 }

@@ -1052,3 +1052,50 @@ test('on a phone every box is at least 16 pixels high text, so Safari does not z
   }
   await context.close()
 })
+
+test('a new piece of furniture lands on free floor and two of a kind are told apart', async () => {
+  const { page, context } = await open()
+  await openWizard(page, 5)
+  const before = (await scene(page)).items.length
+  await page.click('.chip[data-kind=desk]')
+  await page.click('.chip[data-kind=desk]')
+  const s = await scene(page)
+  assert.equal(s.items.length, before + 2)
+  const boxes = s.items.map((it) => [it.x, it.y, it.x + it.w, it.y + it.d])
+  for (let i = 0; i < boxes.length; i++) {
+    for (let j = i + 1; j < boxes.length; j++) {
+      const [a, b] = [boxes[i], boxes[j]]
+      assert.ok(a[2] <= b[0] || b[2] <= a[0] || a[3] <= b[1] || b[3] <= a[1], `piece ${i} and ${j} overlap`)
+    }
+  }
+  for (const it of s.items) assert.ok(it.x >= 0 && it.y >= 0 && it.x + it.w <= s.room.w + 1e-9 && it.y + it.d <= s.room.d + 1e-9)
+  const names = await page.locator('.item-list .chip').allInnerTexts()
+  assert.ok(names.includes('Desk 1') && names.includes('Desk 2'), names.join(', '))
+  assert.ok(names.includes('Bed'), 'a single piece keeps its plain name')
+  await context.close()
+})
+
+test('the check step starts in the middle of the day when it is night, and says so when the sun is down', async () => {
+  const { page, context } = await open()
+  // 04:00 in Taipei
+  await page.clock.setFixedTime(new Date('2026-10-09T20:00:00Z'))
+  await openWizard(page, 6)
+  const s = await scene(page)
+  assert.deepEqual([s.date.month, s.date.day], [10, 10])
+  assert.ok(s.minutes > 10 * 60 && s.minutes < 13 * 60, `the clock starts at ${s.minutes}`)
+  assert.equal(await page.locator('#check-night').innerText(), '')
+  await page.fill('.wiz-step input[type=time]', '03:00')
+  await page.dispatchEvent('.wiz-step input[type=time]', 'change')
+  assert.match(await page.locator('#check-night').innerText(), /below the horizon/)
+  await context.close()
+})
+
+test('with no sun on the floor all day the surroundings step says so', async () => {
+  const { page, context } = await open()
+  await page.evaluate(() => window.__sunspill.store.update((d) => { d.date.month = 12; d.date.day = 21; d.facing = 0 }))
+  await openWizard(page, 4)
+  assert.match(await page.locator('#no-sun').innerText(), /No direct sun reaches the floor/)
+  await page.evaluate(() => window.__sunspill.store.update((d) => { d.facing = 180; d.windows[0].eave.depth = 0; d.windows[0].balcony = null }))
+  await page.waitForFunction(() => document.querySelector('#no-sun').textContent === '')
+  await context.close()
+})

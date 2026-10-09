@@ -40,3 +40,10 @@ export function monthName(month, style = 'long') {
 const POINTS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
 export const compassKey = (deg) => `compass.${POINTS[Math.round((((deg % 360) + 360) % 360) / 45) % 8]}`
 export const bearingText = (deg) => `${t(compassKey(deg))} ${Math.round(((deg % 360) + 360) % 360)}°`
+
+/** "Desk", or "Desk 2" when there is more than one, so two pieces of the same kind can be told apart. */
+export function itemName(items, i) {
+  const kind = items[i].kind
+  const same = items.filter((o) => o.kind === kind)
+  return same.length > 1 ? `${t(`kind.${kind}`)} ${same.indexOf(items[i]) + 1}` : t(`kind.${kind}`)
+}

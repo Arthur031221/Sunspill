@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 (2026-10-10)
+
+Smaller things that a first walk through the setup on a phone turned up.
+
+- **Furniture.** A new piece lands on free floor near the middle and no longer on top of the bed. Two of a kind are called Desk 1 and Desk 2.
+- **Check step.** At night the clock starts in the middle of the day, and a note says when the time you set has the sun below the horizon.
+- **Surroundings step.** It says so when no direct sun reaches the floor that day, with or without the buildings, and suggests what to look at.
+- **Map.** Building heights follow the unit you chose, so the labels and the scale agree. The label of a window no longer sits on the ring that turns the room.
+
 ## 0.2.0 (2026-10-09)
 
 A room set up on a phone in a few minutes, and a way to check it against the sun you saw.

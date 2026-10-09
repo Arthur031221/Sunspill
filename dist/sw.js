@@ -1,4 +1,4 @@
-const CACHE = 'sunspill-d257da0659'
+const CACHE = 'sunspill-ff67e67b56'
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['./', 'manifest.webmanifest', 'icon-192.png'])).then(() => self.skipWaiting()))
 })

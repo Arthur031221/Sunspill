@@ -422,5 +422,7 @@
  "wiz.leave.title": "Sair da configuração?",
  "wiz.leave.body": "A mancha de sol que você estava marcando, ou a foto do chão, ainda não foi salva e será perdida.",
  "wiz.leave.stay": "Continuar",
- "wiz.leave.go": "Sair mesmo assim"
+ "wiz.leave.go": "Sair mesmo assim",
+ "wiz.sur.noSun": "Neste dia nenhum sol direto chega ao chão, nem sem estes. Confira para onde a janela está voltada, o telhado ou a sombra acima dela, e tente outra data.",
+ "wiz.check.night": "Neste horário o sol está abaixo do horizonte, então não há mancha para comparar. Defina o horário em que você viu o sol."
 }

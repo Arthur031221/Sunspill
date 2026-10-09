@@ -342,7 +342,7 @@ export class MapView {
           ctx.textBaseline = 'middle'
           ctx.lineWidth = 3
           ctx.strokeStyle = dark ? 'rgba(11, 15, 28, 0.85)' : 'rgba(255, 250, 240, 0.9)'
-          const label = o.own ? t('map.own') : `${o.est ? '~' : ''}${Math.round(o.h)} m`
+          const label = o.own ? t('map.own') : `${o.est ? '~' : ''}${this.store.ui.units === 'ft' ? `${Math.round(o.h * 3.28084)} ft` : `${Math.round(o.h)} m`}`
           ctx.strokeText(label, cx, cy)
           ctx.fillText(label, cx, cy)
         }
@@ -404,8 +404,9 @@ export class MapView {
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       const label = `${i + 1}: ${bearingText(wallBearing(scene, win.wall))}`
-      const lx = tip[0] + dir[0] * 34
-      const ly = tip[1] + dir[1] * 18
+      // clear of the turning ring at the tip, whichever way the arrow points
+      const lx = tip[0] + dir[0] * (26 + ctx.measureText(label).width / 2)
+      const ly = tip[1] + dir[1] * 28
       ctx.lineWidth = 4
       ctx.strokeStyle = pal.name === 'dark' ? 'rgba(11, 15, 28, 0.9)' : 'rgba(255, 250, 240, 0.92)'
       ctx.strokeText(label, lx, ly)

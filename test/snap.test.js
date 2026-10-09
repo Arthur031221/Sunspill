@@ -56,3 +56,27 @@ test('a turned piece snaps by the edges of its turned box', () => {
   assert.ok(Math.abs(cx - 1) < 1e-9, `centre ${cx}`)
   assert.equal(r.guides.some((g) => g.axis === 'x' && g.at === 0), true)
 })
+
+test('a new piece of furniture goes to the free place nearest the middle, clear of the others', async () => {
+  const { freeSpot } = await import('../src/core/snap.js')
+  const { itemFootprint } = await import('../src/core/room.js')
+  const size = { w: 1.2, d: 0.6 }
+  const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.d && a.y + a.d > b.y
+  const empty = scene({ items: [] })
+  assert.deepEqual(freeSpot(empty, size), { x: 1.4, y: 2.2 }, 'the middle of an empty room')
+  // the bed sits where the middle is: the desk moves just beyond it
+  const withBed = scene({ items: [{ kind: 'bed', x: 1.25, y: 1.5, w: 1.5, d: 2 }] })
+  const spot = freeSpot(withBed, size)
+  assert.ok(!overlap({ ...spot, ...size }, withBed.items[0]), JSON.stringify(spot))
+  assert.ok(spot.x >= 0 && spot.y >= 0 && spot.x + size.w <= 4 && spot.y + size.d <= 5, 'inside the room')
+  assert.ok(Math.hypot(spot.x - 1.4, spot.y - 2.2) < 1.6, 'and still near the middle')
+  // a turned piece blocks the box it sweeps
+  const turned = scene({ items: [{ kind: 'bed', x: 1.25, y: 1.5, w: 1.5, d: 2, rot: 90 }] })
+  const xs = itemFootprint(turned.items[0]).map((p) => p[0])
+  const box = { x: Math.min(...xs), y: Math.min(...itemFootprint(turned.items[0]).map((p) => p[1])), w: Math.max(...xs) - Math.min(...xs), d: 1.5 }
+  const spot2 = freeSpot(turned, size)
+  assert.ok(!overlap({ ...spot2, ...size }, { ...box, d: 2 }), JSON.stringify(spot2))
+  // a floor with no room left puts it in the middle anyway
+  const full = scene({ items: [{ kind: 'box', x: 0, y: 0, w: 4, d: 4 }, { kind: 'box', x: 0, y: 2.5, w: 4, d: 2.5 }] })
+  assert.deepEqual(freeSpot(full, size), { x: 1.4, y: 2.2 })
+})

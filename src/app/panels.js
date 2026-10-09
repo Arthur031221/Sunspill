@@ -5,10 +5,11 @@ import { h, clamp } from './dom.js'
 import { t } from './i18n.js'
 import { numberField, compassDial } from './fields.js'
 import { coordinateFields } from './place-fields.js'
-import { bearingText, clock, dateText, duration, areaText, lengthText, monthName, toUnit, fromUnit, trim } from './format.js'
+import { bearingText, clock, dateText, duration, areaText, lengthText, monthName, toUnit, fromUnit, trim, itemName } from './format.js'
 import { WALLS, ITEM_KINDS, ITEM_SIZES, MAX_WINDOWS, MAX_ITEMS, wallBearing, wallLength } from '../core/room.js'
 import { searchCities, cityPlace } from '../core/cities.js'
 import { setPlacePoint } from '../core/geo.js'
+import { freeSpot } from '../core/snap.js'
 import { isZone } from '../core/solar.js'
 import { periodDays } from './analysis.js'
 import { encodeScene, blurScene } from '../core/codec.js'
@@ -266,7 +267,7 @@ function thingsTab({ store, stage }) {
     }
     const sunLine = h('p', { class: 'note', style: 'margin:6px 0 0' })
     const card = h('div', { class: 'card', dataset: { item: i } },
-      h('div', { class: 'card-head' }, h('b', {}, t(`kind.${item.kind}`)), h('button', { class: 'mini', type: 'button', onclick: () => { store.update((d) => { d.items.splice(i, 1) }); store.setUi({ selected: null }) } }, t('things.remove'))),
+      h('div', { class: 'card-head' }, h('b', {}, itemName(store.scene.items, i)), h('button', { class: 'mini', type: 'button', onclick: () => { store.update((d) => { d.items.splice(i, 1) }); store.setUi({ selected: null }) } }, t('things.remove'))),
       h('div', { class: 'grid2' },
         addf({ label: t('f.x'), min: 0, max: (s) => s.room.w - s.items[i].w, step: 0.05, get: (s) => s.items[i].x, set: (d, v) => { d.items[i].x = v }, key: `i${i}.x` }),
         addf({ label: t('f.y'), min: 0, max: (s) => s.room.d - s.items[i].d, step: 0.05, get: (s) => s.items[i].y, set: (d, v) => { d.items[i].y = v }, key: `i${i}.y` }),
@@ -302,7 +303,7 @@ function addItem(store, kind) {
   if (store.scene.items.length >= MAX_ITEMS) return toast(t('things.max'))
   store.update((d) => {
     const size = ITEM_SIZES[kind]
-    d.items.push({ kind, x: Math.max(0, (d.room.w - size.w) / 2), y: Math.max(0, (d.room.d - size.d) / 2), ...size })
+    d.items.push({ kind, ...freeSpot(d, size), ...size })
   })
   const index = store.scene.items.length - 1
   store.setUi({ selected: { type: 'item', index } })

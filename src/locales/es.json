@@ -422,5 +422,7 @@
  "wiz.leave.title": "¿Salir de la configuración?",
  "wiz.leave.body": "La mancha de sol que estabas marcando, o la foto del suelo, aún no está guardada y se perderá.",
  "wiz.leave.stay": "Seguir",
- "wiz.leave.go": "Salir igualmente"
+ "wiz.leave.go": "Salir igualmente",
+ "wiz.sur.noSun": "Este día no llega sol directo al suelo, ni siquiera sin estos. Revisa hacia dónde mira la ventana, el techo o la sombra que tiene encima, y prueba otra fecha.",
+ "wiz.check.night": "A esta hora el sol está bajo el horizonte, así que no hay mancha que comparar. Pon la hora a la que viste el sol."
 }
