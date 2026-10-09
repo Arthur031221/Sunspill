@@ -34,7 +34,7 @@
 
 <p align="center">
   Sun elevation within <b>0.007 degrees</b> of the NREL reference. <b>0 disagreements in 54,000 probe points</b> against pvlib and shapely (4,036 lit, 1,275 of them dark only because a building, a tree or a balcony rail shades the window).<br>
-  <sub>Every geometry piece is compared with an independent reference, from the sun (pvlib, NREL SPA) and the shadows (a ray tracer and shapely) to the magnetic declination (pygeomag), the map offsets (pyproj) and the photo flattening (OpenCV). <code>node scripts/validate.mjs</code> reproduces it, and <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lists the choices that aren't checked. It hasn't been compared with a photograph of a real room yet, so there's a check mode that compares the model with what you saw. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> says how far each wrong input moves the patch.</sub>
+  <sub>Every piece of the geometry is checked against an independent reference, from the sun (pvlib, NREL SPA) and the shadows (a ray tracer and shapely) to the magnetic declination (pygeomag), the map offsets (pyproj) and the photo flattening (OpenCV). <code>node scripts/validate.mjs</code> reproduces it, and <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lists the choices that aren't checked. It hasn't been compared with a photograph of a real room yet, so there's a check mode that compares the model with what you saw. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> says how far each wrong input moves the patch.</sub>
 </p>
 
 It isn't a rendering or an AR app. The patch on your floor is an exact polygon, and you can check it against a ray tracer.
@@ -68,7 +68,7 @@ The same bedroom in Taipei at 16:30 on 15 July. Turn the window from west to eas
 
 > *West sun is a standing worry for people who rent in Taiwan, and a listing photo can't show what it will do in your room.*
 
-A compass app gives you an angle. A map shadow tool draws the buildings in the street. Neither shows the patch of light on the floor of the room you're about to sign for. Sunspill does. You describe the room, the window and what stands outside, pick a place and a date, and the patch moves as you drag the clock. The same engine answers the other questions people ask about light: how many hours a desk or a plant gets, and which corner is best.
+A compass app gives you an angle. A map shadow tool draws the buildings in the street. Neither shows the patch of light on the floor of the room you're about to sign for. Sunspill does. You describe the room, the window and what stands outside, pick a place and a date, and the patch moves as you drag the clock. The same engine answers the other light questions: how many hours a desk or a plant gets, and which corner is best.
 
 ## What it makes
 
@@ -88,8 +88,8 @@ A compass app gives you an angle. A map shadow tool draws the buildings in the s
 - **Draw the room.** Size, wall thickness, up to four windows with a shade, a balcony and a rail, up to three doors, the floor number and furniture you can turn.
 - **Scrub any day.** Pick a city, an address, your location or a latitude and longitude. The clock, the sun path and the patch follow, with daylight saving handled.
 - **See what shades it.** Buildings from OpenStreetMap with their heights, trees, and your own balcony and eave. Switch any of them off to see what it costs in hours of sun.
-- **See hours, not guesses.** The sun hours map colours the floor, or a surface at a height you set, by the hours of direct sun per day for a day, a month, a year or a range of months. Hover for the number.
-- **Check the afternoon.** A printed rule, not a score: the minutes after a time you choose when direct sun reaches the floor or a wall, averaged over the months you choose.
+- **See the hours.** The sun hours map colours the floor, or a surface at a height you set, by the hours of direct sun per day for a day, a month, a year or a range of months. Hover for the number.
+- **Check the afternoon.** A printed rule: the minutes after a time you choose when direct sun reaches the floor or a wall, averaged over the months you choose.
 - **Find a spot for a plant.** Full sun, partial sun or low light, for a 30 cm footprint, ranked, at least 60 cm apart.
 - **Compare with reality.** Mark the patch you saw, see the overlap and the offset in centimetres, and fit the direction.
 - **Share it.** A link that holds the whole room, a PNG card, a GIF, or the room as a JSON file. One switch rounds the place to whole degrees and drops the names from all of them.

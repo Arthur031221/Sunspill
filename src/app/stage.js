@@ -176,7 +176,8 @@ export class Stage {
     c.addEventListener('touchstart', (e) => {
       const t = e.touches[0]
       const r = c.getBoundingClientRect()
-      if (this.pick([t.clientX - r.left, t.clientY - r.top])) e.preventDefault()
+      // a touch that arrives while the page is already scrolling cannot be cancelled, and asking would only log a warning
+      if (e.cancelable && this.pick([t.clientX - r.left, t.clientY - r.top])) e.preventDefault()
     }, { passive: false })
   }
 
