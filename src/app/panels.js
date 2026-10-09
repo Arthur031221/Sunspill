@@ -4,6 +4,7 @@
 import { h, clamp } from './dom.js'
 import { t } from './i18n.js'
 import { numberField, compassDial } from './fields.js'
+import { coordinateFields } from './place-fields.js'
 import { bearingText, clock, dateText, duration, areaText, lengthText, monthName, toUnit, fromUnit, trim } from './format.js'
 import { WALLS, ITEM_KINDS, ITEM_SIZES, MAX_WINDOWS, MAX_ITEMS, wallBearing, wallLength } from '../core/room.js'
 import { searchCities, cityPlace } from '../core/cities.js'
@@ -221,19 +222,15 @@ function placeTab({ store, actions }) {
     else toast(t('place.zoneBad'))
     zoneInput.value = store.scene.place.zone
   })
-  const add = (opts) => {
-    const f = numberField({ store, kind: 'num', places: 3, ...opts })
-    fields.push(f)
-    return f.el
-  }
+  const coordinates = coordinateFields({ store, actions, places: 3, step: 0.001 })
+  fields.push(...coordinates)
   const locate = h('button', { class: 'btn block', type: 'button', onclick: () => actions.locate() }, t('place.use'))
   el.append(
     h('h2', {}, t('place.title')),
     search, list, h('div', { style: 'height:8px' }), locate,
     h('h3', {}, t('place.details')),
     h('div', { class: 'field', style: 'grid-template-columns:1fr' }, h('label', {}, t('place.name')), nameInput),
-    add({ label: t('place.lat'), min: -80, max: 80, step: 0.001, get: (s) => s.place.lat, set: (d, v) => { setPlacePoint(d, v, d.place.lon) }, key: 'lat' }),
-    add({ label: t('place.lon'), min: -180, max: 180, step: 0.001, get: (s) => s.place.lon, set: (d, v) => { setPlacePoint(d, d.place.lat, v) }, key: 'lon' }),
+    ...coordinates.map((f) => f.el),
     h('div', { class: 'field', style: 'grid-template-columns:1fr' }, h('label', {}, t('place.zone')), zoneInput),
     summary,
     h('p', { class: 'note' }, t('place.note')),
@@ -492,6 +489,7 @@ function shareTab({ store, actions }) {
       cancel.hidden = true
     }
   })
+  const earlier = h('div', { class: 'row', hidden: true }, h('button', { class: 'btn', type: 'button', id: 'bring-back', onclick: () => actions.bringBack() }, t('share.earlier')))
   const importer = h('input', { type: 'file', accept: 'application/json,.json', hidden: true })
   importer.addEventListener('change', () => importer.files[0] && actions.importJson(importer.files[0]))
   el.append(
@@ -510,9 +508,11 @@ function shareTab({ store, actions }) {
       h('button', { class: 'btn', type: 'button', onclick: () => importer.click() }, t('share.import')),
       h('button', { class: 'btn', type: 'button', onclick: () => actions.reset() }, t('share.reset')),
     ),
+    earlier,
     importer,
   )
   const refreshLink = () => {
+      earlier.hidden = !actions.hasEarlier()
       link.value = location.origin === 'null' ? '' : `${location.origin}${location.pathname}#${encodeScene(hide.checked ? blurScene(store.scene) : store.scene)}`
   }
   hide.addEventListener('change', refreshLink)

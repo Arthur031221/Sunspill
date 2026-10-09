@@ -20,7 +20,7 @@ import { MapView } from './mapview.js'
 import { createWizard } from './wizard.js'
 import { openCompass } from './compass-ui.js'
 import { declination, decimalYear } from '../core/declination.js'
-import { setPlacePoint } from '../core/geo.js'
+import { setPlacePoint, haversine } from '../core/geo.js'
 import { zoneAt } from '../core/zone.js'
 
 // the version in package.json, put in by the build (the test pages that load the source see the placeholder)
@@ -45,16 +45,21 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
 const dark = matchMedia('(prefers-color-scheme: dark)')
 const prefs = loadPrefs()
 const ROOM_KEY = 'sunspill.room'
-const loadRoom = () => {
+// the room that a friend's link pushed aside, so that one edit does not cost you yours
+const EARLIER_KEY = 'sunspill.room.earlier'
+const stored = (key) => {
   try {
-    return decodeScene(localStorage.getItem(ROOM_KEY) || '')
+    return localStorage.getItem(key) || ''
   } catch {
-    return null
+    return ''
   }
 }
+const loadRoom = () => decodeScene(stored(ROOM_KEY))
 const fromLink = decodeScene(location.hash.slice(1))
 // without a link, the room that was last edited here comes back
 const restored = fromLink ? null : loadRoom()
+// a link opened over a room of your own: the first edit keeps yours aside
+let aside = fromLink && stored(ROOM_KEY) && stored(ROOM_KEY) !== location.hash.slice(1) ? stored(ROOM_KEY) : ''
 const initial = fromLink ?? restored ?? defaultScene()
 let edited = false
 const lang = LOCALES[prefs.lang] ? prefs.lang : pickLocale(navigator.languages)
@@ -198,10 +203,28 @@ const actions = {
       toast(t('share.importFailed'))
     }
   },
+  hasEarlier: () => Boolean(decodeScene(stored(EARLIER_KEY))),
+  /** Swap with the room a link pushed aside, so that a second press goes back. */
+  bringBack() {
+    const earlier = decodeScene(stored(EARLIER_KEY))
+    if (!earlier) return false
+    const now = encodeScene(store.scene)
+    store.replace(earlier)
+    edited = true
+    try {
+      localStorage.setItem(EARLIER_KEY, now)
+      localStorage.setItem(ROOM_KEY, encodeScene(earlier))
+    } catch {
+      // the room is back on the page either way
+    }
+    toast(t('share.earlierBack'))
+    return true
+  },
   reset() {
     edited = false
     try {
       localStorage.removeItem(ROOM_KEY)
+      localStorage.removeItem(EARLIER_KEY)
     } catch {
       // nothing was kept
     }
@@ -440,6 +463,10 @@ const writeHash = (() => {
       // only a room that was edited here is kept: opening somebody's link must not replace your own
       if (edited) {
         try {
+          if (aside) {
+            localStorage.setItem(EARLIER_KEY, aside)
+            aside = ''
+          }
           localStorage.setItem(ROOM_KEY, lastHash.slice(1))
         } catch {
           // private mode: the link still holds the room
@@ -479,10 +506,22 @@ const afterScene = frameThrottle(() => {
 })
 
 store.onEdit = () => {
+  if (aside && !edited) toast(t('app.linkAside'))
   edited = true
   if (store.ui.playing) store.setUi({ playing: false })
   el.hint.classList.add('gone')
 }
+
+// buildings loaded for one spot go when the room is moved to another, which should not pass in silence
+let seen = { lat: store.scene.place.lat, lon: store.scene.place.lon, osm: store.scene.obstacles.filter((o) => o.src === 'osm').length }
+store.subscribe((state, what) => {
+  if (what !== 'scene') return
+  const { place, obstacles } = state.scene
+  const osm = obstacles.filter((o) => o.src === 'osm').length
+  // after the message of the step that moved the room, so that this one is the one left on screen
+  if (seen.osm > 0 && osm === 0 && haversine(seen, place) > 25) setTimeout(() => toast(t('app.buildingsCleared')), 0)
+  seen = { lat: place.lat, lon: place.lon, osm }
+})
 
 let lastLocaleBuild = ''
 store.subscribe((state, what) => {
@@ -526,7 +565,12 @@ addEventListener('resize', () => afterScene())
 addEventListener('hashchange', () => {
   if (location.hash === lastHash) return
   const next = decodeScene(location.hash.slice(1))
-  if (next) store.replace(next)
+  if (!next) return
+  // somebody's room pasted into this tab: it is not yours until you edit it, and yours stays set aside
+  const mine = stored(ROOM_KEY)
+  aside = mine && mine !== location.hash.slice(1) ? mine : ''
+  edited = false
+  store.replace(next)
 })
 addEventListener('keydown', (e) => {
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable

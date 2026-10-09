@@ -29,7 +29,7 @@ The page's Content Security Policy lists exactly those five hosts (the Nominatim
 
 ## Remembered on your device
 
-`localStorage` holds the language, the theme, the units, whether the sun path shows, which of the three services you allowed, whether you finished the setup, and the last room you edited, so that it comes back the next time you open the page. "Start over" in the Share tab forgets that room, and clearing site data forgets everything.
+`localStorage` holds the language, the theme, the units, whether the sun path shows, which of the three services you allowed, whether you finished the setup, and the last room you edited, so that it comes back the next time you open the page. If you open somebody's link over a room of your own and then edit theirs, your own room is kept under a second name until you press "Bring back my earlier room" in the Share tab. "Start over" in the Share tab forgets both rooms, and clearing site data forgets everything.
 
 The link in the address bar holds the whole room too, so it sits in your browser history, and in synced history if you use sync.
 

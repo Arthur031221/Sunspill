@@ -44,7 +44,7 @@ export function createWizard(ctx) {
     const undo = h('button', { class: 'mini', type: 'button', disabled: !store.canUndo(), onclick: () => store.undo() }, t('top.undo'))
     undo.id = 'wiz-undo'
     head.replaceChildren(
-      h('div', { class: 'wiz-top' }, h('button', { class: 'mini', type: 'button', id: 'wiz-exit', onclick: () => close(false) }, t('wiz.exit')), dots, undo),
+      h('div', { class: 'wiz-top' }, h('button', { class: 'mini', type: 'button', id: 'wiz-exit', onclick: () => leaveWith(false) }, t('wiz.exit')), dots, undo),
       h('div', { class: 'wiz-meta' },
         h('p', { class: 'wiz-count' }, t('wiz.count', { n: index + 1, total: STEPS.length })),
         h('button', { class: 'linkbtn', type: 'button', id: 'wiz-online', onclick: () => ctx.consent.settings() }, t('net.footer', { n: ctx.consent.count() }))),
@@ -53,7 +53,7 @@ export function createWizard(ctx) {
     const last = index === STEPS.length - 1
     nav.replaceChildren(
       index > 0 ? h('button', { class: 'btn', type: 'button', id: 'wiz-back', onclick: () => go(index - 1) }, t('wiz.back')) : h('span'),
-      h('button', { class: 'btn primary', type: 'button', id: 'wiz-next', onclick: () => (last ? close(true) : go(index + 1)) }, last ? t('wiz.done') : t('wiz.next')),
+      h('button', { class: 'btn primary', type: 'button', id: 'wiz-next', onclick: () => (last ? leaveWith(true) : go(index + 1)) }, last ? t('wiz.done') : t('wiz.next')),
     )
   }
 
@@ -76,6 +76,17 @@ export function createWizard(ctx) {
     document.documentElement.dataset.wizard = '1'
     root.hidden = false
     go(i)
+  }
+
+  /** Leave from a button. Corners that were marked but not saved, and a photo, would be lost, so ask first. */
+  async function leaveWith(finished) {
+    const { points, underlay } = ctx.draft ?? {}
+    if (points?.length || underlay) {
+      const stay = h('button', { class: 'btn primary', type: 'button', onclick: () => ctx.modal.close(false) }, t('wiz.leave.stay'))
+      const go = h('button', { class: 'btn', type: 'button', id: 'leave-anyway', onclick: () => ctx.modal.close(true) }, t('wiz.leave.go'))
+      if (!(await ctx.modal.show(t('wiz.leave.title'), [h('p', {}, t('wiz.leave.body'))], [stay, go]))) return
+    }
+    if (active) close(finished)
   }
 
   function close(finished) {

@@ -292,7 +292,7 @@
  "wiz.room.more": "More: wall thickness and floor height",
  "wiz.room.storey": "Height of one floor",
  "wiz.room.trace": "Or trace your own plan",
- "wiz.room.traceNote": "Use a floor plan or a listing photo of the plan. Tap a known distance for the scale, then the corners of the room.",
+ "wiz.room.traceNote": "Use a floor plan or a listing photo of the plan. Tap a known distance for the scale, then the corners of the room. A room in Sunspill is one rectangle, so for an L shaped room trace the part the window lights.",
  "wiz.room.traceButton": "Trace a floor plan or photo",
  "wiz.room.applied": "Started from: {name}. Change the size to match your room.",
  "wiz.room.traced": "Room size and openings taken from the picture. Check the window heights in the next step.",
@@ -414,5 +414,13 @@
  "wiz.check.addCorner": "Add this corner",
  "wiz.sur.shadeNow": "At {time}, {n} of these put their shadow on a window. They are outlined in orange on the map.",
  "wiz.sur.shadeNone": "At {time}, none of these puts a shadow on a window.",
- "wiz.map.sunNote": "The dotted line on the map points toward the sun at this time. Drag the clock to the time you remember the sun shining in, and see what it comes over."
+ "wiz.map.sunNote": "The dotted line on the map points toward the sun at this time. Drag the clock to the time you remember the sun shining in, and see what it comes over.",
+ "app.linkAside": "This room came from a link. Your own room is kept: open Share, then Bring back my earlier room.",
+ "app.buildingsCleared": "The room moved to a new place, so the buildings loaded for the old spot were removed. Load them again in the surroundings step.",
+ "share.earlier": "Bring back my earlier room",
+ "share.earlierBack": "Your earlier room is back. Press the button again to return to this one.",
+ "wiz.leave.title": "Leave the setup?",
+ "wiz.leave.body": "The patch you were marking, or the photo of the floor, is not saved yet and will be lost.",
+ "wiz.leave.stay": "Keep working",
+ "wiz.leave.go": "Leave anyway"
 }

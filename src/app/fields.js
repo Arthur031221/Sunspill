@@ -9,9 +9,9 @@ let counter = 0
 
 /**
  * A labelled number with a slider. `get` reads the scene, `set` writes a draft.
- * kind 'len' converts to the chosen unit, 'num' and 'deg' do not.
+ * kind 'len' converts to the chosen unit, 'num' and 'deg' do not. `after` runs once the scene has changed.
  */
-export function numberField({ store, label, kind = 'len', min, max, step, get, set, key, places, compact = false }) {
+export function numberField({ store, label, kind = 'len', min, max, step, get, set, key, places, compact = false, after }) {
   const id = `f${++counter}`
   const range = h('input', { type: 'range', id, 'aria-label': label })
   const num = h('input', { type: 'number', inputMode: 'decimal', 'aria-label': label })
@@ -28,6 +28,7 @@ export function numberField({ store, label, kind = 'len', min, max, step, get, s
     if (!Number.isFinite(value)) return
     const internal = kind === 'len' ? fromUnit(value, units()) : value
     store.update((draft) => set(draft, clamp(internal, lim(min), lim(max))), { key: key ?? id })
+    after?.()
   }
   range.addEventListener('input', () => apply(range.value))
   num.addEventListener('change', () => apply(num.value))

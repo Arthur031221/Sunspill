@@ -292,7 +292,7 @@
  "wiz.room.more": "Plus : épaisseur du mur et hauteur d'étage",
  "wiz.room.storey": "Hauteur d'un étage",
  "wiz.room.trace": "Ou décalquez votre propre plan",
- "wiz.room.traceNote": "Utilisez un plan ou la photo du plan d'une annonce. Touchez une distance connue pour l'échelle, puis les coins de la pièce.",
+ "wiz.room.traceNote": "Utilise un plan ou la photo d'un plan d'annonce. Touche une distance connue pour l'échelle, puis les coins de la pièce. Dans Sunspill une pièce est un seul rectangle : pour une pièce en L, trace la partie qu'éclaire la fenêtre.",
  "wiz.room.traceButton": "Décalquer un plan ou une photo",
  "wiz.room.applied": "Point de départ : {name}. Ajustez la taille à votre pièce.",
  "wiz.room.traced": "Taille de la pièce et ouvertures relevées sur l'image. Vérifiez la hauteur des fenêtres à l'étape suivante.",
@@ -414,5 +414,13 @@
  "wiz.check.addCorner": "Ajouter ce coin",
  "wiz.sur.shadeNow": "À {time}, {n} d'entre eux projettent leur ombre sur une fenêtre. Ils sont cerclés d'orange sur la carte.",
  "wiz.sur.shadeNone": "À {time}, aucun d'entre eux ne projette d'ombre sur une fenêtre.",
- "wiz.map.sunNote": "La ligne pointillée de la carte indique la direction du soleil à cette heure. Faites glisser l'horloge à l'heure où vous vous souvenez que le soleil entrait, et voyez au-dessus de quoi il arrive."
+ "wiz.map.sunNote": "La ligne pointillée de la carte indique la direction du soleil à cette heure. Faites glisser l'horloge à l'heure où vous vous souvenez que le soleil entrait, et voyez au-dessus de quoi il arrive.",
+ "app.linkAside": "Cette pièce vient d'un lien. La tienne est conservée : dans Partager, appuie sur Récupérer ma pièce précédente.",
+ "app.buildingsCleared": "La pièce a été déplacée ailleurs, donc les bâtiments chargés pour l'ancien emplacement ont été retirés. Recharge-les à l'étape des alentours.",
+ "share.earlier": "Récupérer ma pièce précédente",
+ "share.earlierBack": "Ta pièce précédente est de retour. Appuie à nouveau sur le bouton pour revenir à celle-ci.",
+ "wiz.leave.title": "Quitter la configuration ?",
+ "wiz.leave.body": "La tache de soleil que tu marquais, ou la photo du sol, n'est pas encore enregistrée et sera perdue.",
+ "wiz.leave.stay": "Continuer",
+ "wiz.leave.go": "Quitter quand même"
 }

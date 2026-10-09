@@ -292,7 +292,7 @@
  "wiz.room.more": "Más: grosor del muro y altura de planta",
  "wiz.room.storey": "Altura de una planta",
  "wiz.room.trace": "O calca tu propio plano",
- "wiz.room.traceNote": "Usa un plano o la foto del plano de un anuncio. Toca una distancia conocida para la escala y luego las esquinas de la habitación.",
+ "wiz.room.traceNote": "Usa un plano o la foto de un plano de un anuncio. Toca una distancia conocida para la escala y luego las esquinas de la habitación. En Sunspill una habitación es un solo rectángulo, así que en una habitación en forma de L traza la parte que ilumina la ventana.",
  "wiz.room.traceButton": "Calcar un plano o una foto",
  "wiz.room.applied": "Partiendo de: {name}. Cambia el tamaño para que coincida con tu habitación.",
  "wiz.room.traced": "Tamaño de la habitación y aberturas tomados de la imagen. Revisa la altura de las ventanas en el siguiente paso.",
@@ -414,5 +414,13 @@
  "wiz.check.addCorner": "Añadir esta esquina",
  "wiz.sur.shadeNow": "A las {time}, {n} de ellos proyectan su sombra sobre una ventana. Están marcados con un borde naranja en el mapa.",
  "wiz.sur.shadeNone": "A las {time}, ninguno de ellos proyecta sombra sobre una ventana.",
- "wiz.map.sunNote": "La línea de puntos del mapa apunta hacia el sol a esta hora. Arrastra el reloj a la hora en que recuerdas el sol entrando y mira por encima de qué viene."
+ "wiz.map.sunNote": "La línea de puntos del mapa apunta hacia el sol a esta hora. Arrastra el reloj a la hora en que recuerdas el sol entrando y mira por encima de qué viene.",
+ "app.linkAside": "Esta habitación viene de un enlace. La tuya sigue guardada: en Compartir, pulsa Recuperar mi habitación anterior.",
+ "app.buildingsCleared": "La habitación se movió a otro lugar, así que se quitaron los edificios cargados para el sitio anterior. Vuelve a cargarlos en el paso de los alrededores.",
+ "share.earlier": "Recuperar mi habitación anterior",
+ "share.earlierBack": "Tu habitación anterior ha vuelto. Pulsa de nuevo el botón para regresar a esta.",
+ "wiz.leave.title": "¿Salir de la configuración?",
+ "wiz.leave.body": "La mancha de sol que estabas marcando, o la foto del suelo, aún no está guardada y se perderá.",
+ "wiz.leave.stay": "Seguir",
+ "wiz.leave.go": "Salir igualmente"
 }

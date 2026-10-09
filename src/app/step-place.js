@@ -3,7 +3,7 @@
 
 import { h } from './dom.js'
 import { t, locale } from './i18n.js'
-import { numberField } from './fields.js'
+import { coordinateFields } from './place-fields.js'
 import { searchCities, cityPlace } from '../core/cities.js'
 import { zoneAt } from '../core/zone.js'
 import { zoneOffset, isZone } from '../core/solar.js'
@@ -92,16 +92,11 @@ export function placeStep(ctx) {
     else toast(t('place.zoneBad'))
     zoneInput.value = store.scene.place.zone
   })
-  const add = (opts) => {
-    const f = numberField({ store, kind: 'num', places: 5, compact: true, ...opts })
-    fields.push(f)
-    return f.el
-  }
+  const coordinates = coordinateFields({ store, actions: ctx.actions, places: 5, step: 0.00001, compact: true })
+  fields.push(...coordinates)
   const details = h('details', { class: 'more' }, h('summary', {}, t('wiz.place.edit')),
     h('div', { class: 'field compact' }, h('label', {}, t('place.name')), nameInput),
-    h('div', { class: 'grid2' },
-      add({ label: t('place.lat'), min: -80, max: 80, step: 0.00001, get: (s) => s.place.lat, set: (d, v) => { setPlacePoint(d, v, d.place.lon) }, key: 'lat' }),
-      add({ label: t('place.lon'), min: -180, max: 180, step: 0.00001, get: (s) => s.place.lon, set: (d, v) => { setPlacePoint(d, d.place.lat, v) }, key: 'lon' })),
+    h('div', { class: 'grid2' }, ...coordinates.map((f) => f.el)),
     h('div', { class: 'field compact' }, h('label', {}, t('place.zone')), zoneInput))
 
   const el = h('section', { class: 'wiz-step' },

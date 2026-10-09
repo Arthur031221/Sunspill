@@ -58,7 +58,7 @@ So the height of a building across the street matters more than where exactly th
 
 ## What is left out
 
-Clear sky and direct sun only. No sky light, reflections from the ground or nearby glass, window frames or tinted glass. Furniture does not cast shadows. Trees are solid shade, so they show the most shade they could cast, with the leaves on. Balcony side walls, pitched roofs on buildings across the street and the slope of the ground are not modelled. The list of modelling choices is in [VALIDATION.md](VALIDATION.md#the-modelling-choices).
+Clear sky and direct sun only. No sky light, reflections from the ground or nearby glass, window frames or tinted glass. Furniture does not cast shadows. Trees are solid shade, so they show the most shade they could cast, with the leaves on. Balcony side walls, pitched roofs on buildings across the street and the slope of the ground are not modelled. The room is one rectangle: for an L shaped or angled room, trace the part the window lights, and expect the rest to be wrong. The list of modelling choices is in [VALIDATION.md](VALIDATION.md#the-modelling-choices).
 
 ## Getting the most from it
 

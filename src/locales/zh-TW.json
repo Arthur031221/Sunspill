@@ -292,7 +292,7 @@
  "wiz.room.more": "更多：牆厚與樓層高度",
  "wiz.room.storey": "每層樓高",
  "wiz.room.trace": "或描繪你自己的平面圖",
- "wiz.room.traceNote": "使用平面圖或刊登的格局圖照片。先點一段已知距離來定比例，再點房間的角。",
+ "wiz.room.traceNote": "使用平面圖或刊登的格局圖照片。先點一段已知距離來定比例，再點房間的角。Sunspill 的房間是一個長方形，L 形的房間請描窗戶照得到的那一塊。",
  "wiz.room.traceButton": "描繪平面圖或照片",
  "wiz.room.applied": "已套用：{name}。請把尺寸改成你房間的實際大小。",
  "wiz.room.traced": "已從圖片取得房間尺寸與開口。請在下一步檢查窗戶高度。",
@@ -414,5 +414,13 @@
  "wiz.check.addCorner": "新增這個角",
  "wiz.sur.shadeNow": "{time} 時，其中 {n} 個會把影子投在窗戶上，在地圖上以橘色框線標出。",
  "wiz.sur.shadeNone": "{time} 時，這些都不會把影子投在窗戶上。",
- "wiz.map.sunNote": "地圖上的虛線指向這個時間太陽所在的方向。把時鐘拖到你記得陽光照進來的時間，看看它是從什麼上方過來的。"
+ "wiz.map.sunNote": "地圖上的虛線指向這個時間太陽所在的方向。把時鐘拖到你記得陽光照進來的時間，看看它是從什麼上方過來的。",
+ "app.linkAside": "這個房間來自連結。你自己的房間還留著：到「分享」分頁按「找回我先前的房間」。",
+ "app.buildingsCleared": "房間移到了新的地點，原本那個位置載入的建築已移除。請在「周圍有什麼？」步驟重新載入。",
+ "share.earlier": "找回我先前的房間",
+ "share.earlierBack": "已找回你先前的房間。再按一次可回到目前這間。",
+ "wiz.leave.title": "要離開設定嗎？",
+ "wiz.leave.body": "你正在標記的光斑或地板照片還沒儲存，離開後會消失。",
+ "wiz.leave.stay": "繼續設定",
+ "wiz.leave.go": "還是離開"
 }

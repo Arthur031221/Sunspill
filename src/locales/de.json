@@ -292,7 +292,7 @@
  "wiz.room.more": "Mehr: Wanddicke und Geschosshöhe",
  "wiz.room.storey": "Höhe eines Geschosses",
  "wiz.room.trace": "Oder zeichne deinen eigenen Grundriss nach",
- "wiz.room.traceNote": "Nimm einen Grundriss oder das Foto eines Grundrisses aus einer Anzeige. Tippe eine bekannte Strecke für den Maßstab an, dann die Zimmerecken.",
+ "wiz.room.traceNote": "Nimm einen Grundriss oder das Foto eines Grundrisses aus einer Anzeige. Tippe eine bekannte Strecke für den Maßstab an, dann die Zimmerecken. Ein Zimmer in Sunspill ist ein einziges Rechteck. Bei einem L-förmigen Zimmer zeichnest du den Teil nach, den das Fenster beleuchtet.",
  "wiz.room.traceButton": "Grundriss oder Foto nachzeichnen",
  "wiz.room.applied": "Ausgangspunkt: {name}. Passe die Größe an dein Zimmer an.",
  "wiz.room.traced": "Zimmergröße und Öffnungen wurden aus dem Bild übernommen. Prüfe die Fensterhöhen im nächsten Schritt.",
@@ -414,5 +414,13 @@
  "wiz.check.addCorner": "Diese Ecke hinzufügen",
  "wiz.sur.shadeNow": "Um {time} werfen {n} davon ihren Schatten auf ein Fenster. Sie sind auf der Karte orange umrandet.",
  "wiz.sur.shadeNone": "Um {time} wirft keines davon einen Schatten auf ein Fenster.",
- "wiz.map.sunNote": "Die gepunktete Linie auf der Karte zeigt zur Sonne zu dieser Uhrzeit. Ziehe die Uhr auf die Zeit, zu der die Sonne bei dir hereinschien, und sieh, worüber sie kommt."
+ "wiz.map.sunNote": "Die gepunktete Linie auf der Karte zeigt zur Sonne zu dieser Uhrzeit. Ziehe die Uhr auf die Zeit, zu der die Sonne bei dir hereinschien, und sieh, worüber sie kommt.",
+ "app.linkAside": "Dieses Zimmer stammt aus einem Link. Dein eigenes Zimmer bleibt erhalten: Im Tab Teilen findest du Mein vorheriges Zimmer zurückholen.",
+ "app.buildingsCleared": "Das Zimmer wurde an einen neuen Ort verschoben, deshalb wurden die für den alten Ort geladenen Gebäude entfernt. Lade sie im Schritt zur Umgebung neu.",
+ "share.earlier": "Mein vorheriges Zimmer zurückholen",
+ "share.earlierBack": "Dein vorheriges Zimmer ist zurück. Drücke die Taste noch einmal, um zu diesem zurückzukehren.",
+ "wiz.leave.title": "Einrichtung verlassen?",
+ "wiz.leave.body": "Der Sonnenfleck, den du gerade markierst, oder das Bodenfoto ist noch nicht gespeichert und geht verloren.",
+ "wiz.leave.stay": "Weitermachen",
+ "wiz.leave.go": "Trotzdem verlassen"
 }

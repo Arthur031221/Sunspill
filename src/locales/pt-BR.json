@@ -292,7 +292,7 @@
  "wiz.room.more": "Mais: espessura da parede e altura do andar",
  "wiz.room.storey": "Altura de um andar",
  "wiz.room.trace": "Ou trace a sua própria planta",
- "wiz.room.traceNote": "Use uma planta ou a foto da planta de um anúncio. Toque em uma distância conhecida para a escala e depois nos cantos do cômodo.",
+ "wiz.room.traceNote": "Use uma planta ou a foto da planta de um anúncio. Toque em uma distância conhecida para a escala e depois nos cantos do quarto. Um quarto no Sunspill é um único retângulo; em um quarto em L, trace a parte que a janela ilumina.",
  "wiz.room.traceButton": "Traçar uma planta ou foto",
  "wiz.room.applied": "Ponto de partida: {name}. Ajuste o tamanho para o seu cômodo.",
  "wiz.room.traced": "Tamanho do cômodo e aberturas tirados da imagem. Confira a altura das janelas no próximo passo.",
@@ -414,5 +414,13 @@
  "wiz.check.addCorner": "Adicionar este canto",
  "wiz.sur.shadeNow": "Às {time}, {n} deles projetam sombra sobre uma janela. Eles estão contornados em laranja no mapa.",
  "wiz.sur.shadeNone": "Às {time}, nenhum deles projeta sombra sobre uma janela.",
- "wiz.map.sunNote": "A linha pontilhada no mapa aponta para o sol neste horário. Arraste o relógio para a hora em que você lembra do sol entrando e veja sobre o que ele vem."
+ "wiz.map.sunNote": "A linha pontilhada no mapa aponta para o sol neste horário. Arraste o relógio para a hora em que você lembra do sol entrando e veja sobre o que ele vem.",
+ "app.linkAside": "Este quarto veio de um link. O seu continua guardado: em Compartilhar, toque em Recuperar meu quarto anterior.",
+ "app.buildingsCleared": "O quarto foi movido para outro lugar, então os prédios carregados para o local antigo foram removidos. Carregue-os de novo na etapa do entorno.",
+ "share.earlier": "Recuperar meu quarto anterior",
+ "share.earlierBack": "Seu quarto anterior voltou. Toque no botão de novo para voltar a este.",
+ "wiz.leave.title": "Sair da configuração?",
+ "wiz.leave.body": "A mancha de sol que você estava marcando, ou a foto do chão, ainda não foi salva e será perdida.",
+ "wiz.leave.stay": "Continuar",
+ "wiz.leave.go": "Sair mesmo assim"
 }
