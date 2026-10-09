@@ -25,10 +25,10 @@
     <td valign="middle">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.png">
-        <img src="assets/hero-light.png" alt="Sunspill zeigt ein nach Westen gerichtetes Schlafzimmer mit dem Sonnenfleck des Nachmittags auf Boden und Bett" width="620">
+        <img src="assets/hero-light.png" alt="Sunspill zeigt ein nach Westen gerichtetes Schlafzimmer mit dem Sonnenfleck des Nachmittags auf Boden und Bett" width="560">
       </picture>
     </td>
-    <td valign="middle"><img src="assets/setup.gif" alt="Auf dem Handy: eine Adresse wird gesucht, ein Zimmertyp gewählt, das Zimmer auf der Karte über die Gebäude gedreht, bis es zur Straße zeigt, und der Sonnenfleck wandert über den Boden" width="240"></td>
+    <td valign="middle"><img src="assets/setup.gif" alt="Auf dem Handy: eine Adresse wird gesucht, ein Zimmertyp gewählt, das Zimmer auf der Karte über die Gebäude gedreht, bis es zur Straße zeigt, und der Sonnenfleck wandert über den Boden" width="220"></td>
   </tr>
 </table>
 

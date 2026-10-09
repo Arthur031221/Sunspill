@@ -25,10 +25,10 @@
     <td valign="middle">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.png">
-        <img src="assets/hero-light.png" alt="Sunspill 显示朝西卧室，午后的阳光光斑落在地板和床上" width="620">
+        <img src="assets/hero-light.png" alt="Sunspill 显示朝西卧室，午后的阳光光斑落在地板和床上" width="560">
       </picture>
     </td>
-    <td valign="middle"><img src="assets/setup.gif" alt="手机上的操作：搜索地址、选房型、在地图上对着建筑轮廓转动房间直到朝向街道，然后阳光光斑扫过地板" width="240"></td>
+    <td valign="middle"><img src="assets/setup.gif" alt="手机上的操作：搜索地址、选房型、在地图上对着建筑轮廓转动房间直到朝向街道，然后阳光光斑扫过地板" width="220"></td>
   </tr>
 </table>
 

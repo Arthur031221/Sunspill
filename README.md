@@ -25,10 +25,10 @@
     <td valign="middle">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.png">
-        <img src="assets/hero-light.png" alt="Sunspill showing a west facing bedroom with the afternoon sun patch across the floor and the bed" width="620">
+        <img src="assets/hero-light.png" alt="Sunspill showing a west facing bedroom with the afternoon sun patch across the floor and the bed" width="560">
       </picture>
     </td>
-    <td valign="middle"><img src="assets/setup.gif" alt="On a phone: an address is searched, a room type picked, the room turned over the buildings on the map until it faces the street, and the sun patch crosses the floor" width="240"></td>
+    <td valign="middle"><img src="assets/setup.gif" alt="On a phone: an address is searched, a room type picked, the room turned over the buildings on the map until it faces the street, and the sun patch crosses the floor" width="220"></td>
   </tr>
 </table>
 

@@ -25,10 +25,10 @@
     <td valign="middle">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.png">
-        <img src="assets/hero-light.png" alt="서향 침실에서 오후의 햇빛 조각이 바닥과 침대에 떨어지는 Sunspill 화면" width="620">
+        <img src="assets/hero-light.png" alt="서향 침실에서 오후의 햇빛 조각이 바닥과 침대에 떨어지는 Sunspill 화면" width="560">
       </picture>
     </td>
-    <td valign="middle"><img src="assets/setup.gif" alt="휴대폰에서: 주소를 검색하고, 방 유형을 고르고, 지도의 건물 윤곽에 맞춰 방을 돌려 길 쪽으로 향하게 하면 햇빛 조각이 바닥을 가로지릅니다" width="240"></td>
+    <td valign="middle"><img src="assets/setup.gif" alt="휴대폰에서: 주소를 검색하고, 방 유형을 고르고, 지도의 건물 윤곽에 맞춰 방을 돌려 길 쪽으로 향하게 하면 햇빛 조각이 바닥을 가로지릅니다" width="220"></td>
   </tr>
 </table>
 

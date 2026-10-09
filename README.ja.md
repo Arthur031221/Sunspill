@@ -25,10 +25,10 @@
     <td valign="middle">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.png">
-        <img src="assets/hero-light.png" alt="西向きの寝室で、午後の日だまりが床とベッドに落ちている Sunspill の画面" width="620">
+        <img src="assets/hero-light.png" alt="西向きの寝室で、午後の日だまりが床とベッドに落ちている Sunspill の画面" width="560">
       </picture>
     </td>
-    <td valign="middle"><img src="assets/setup.gif" alt="スマホでの操作：住所を検索し、部屋のタイプを選び、地図の建物の輪郭に合わせて部屋を回して道路側に向け、日だまりが床を横切る" width="240"></td>
+    <td valign="middle"><img src="assets/setup.gif" alt="スマホでの操作：住所を検索し、部屋のタイプを選び、地図の建物の輪郭に合わせて部屋を回して道路側に向け、日だまりが床を横切る" width="220"></td>
   </tr>
 </table>
 

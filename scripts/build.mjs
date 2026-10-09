@@ -23,8 +23,10 @@ await build({
   banner: { js: '// Sunspill: sun position, window light and sun hours for a room. MIT license.\n// See docs/API.md.' },
 })
 
+const version = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')).version
 const app = await build({
   entryPoints: [resolve(root, 'src/app/main.js')],
+  define: { __VERSION__: JSON.stringify(version) },
   bundle: true,
   minify: true,
   write: false,
@@ -81,8 +83,8 @@ writeFileSync(resolve(root, 'dist/manifest.webmanifest'), JSON.stringify({
   ],
 }, null, 2) + '\n')
 // A cache-first worker, so a page opened once keeps working without a connection.
-const version = createHash('sha256').update(html).digest('hex').slice(0, 10)
-writeFileSync(resolve(root, 'dist/sw.js'), `const CACHE = 'sunspill-${version}'
+const cacheId = createHash('sha256').update(html).digest('hex').slice(0, 10)
+writeFileSync(resolve(root, 'dist/sw.js'), `const CACHE = 'sunspill-${cacheId}'
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['./', 'manifest.webmanifest', 'icon-192.png'])).then(() => self.skipWaiting()))
 })

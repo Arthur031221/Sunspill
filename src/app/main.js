@@ -23,6 +23,8 @@ import { declination, decimalYear } from '../core/declination.js'
 import { setPlacePoint } from '../core/geo.js'
 import { zoneAt } from '../core/zone.js'
 
+// the version in package.json, put in by the build (the test pages that load the source see the placeholder)
+const VERSION = typeof __VERSION__ === 'string' ? __VERSION__ : 'dev'
 const PREFS_KEY = 'sunspill.prefs'
 const loadPrefs = () => {
   try {
@@ -400,6 +402,7 @@ function chrome() {
     h('span', {}, t('foot.privacy')),
     h('button', { class: 'linkbtn', type: 'button', id: 'online', onclick: () => consent.settings() }, t('net.footer', { n: consent.count() })),
     h('a', { href: 'https://github.com/Arthur031221/Sunspill', rel: 'noopener' }, t('foot.source')),
+    h('a', { href: `https://github.com/Arthur031221/Sunspill/releases/tag/v${VERSION}`, rel: 'noopener', title: 'Sunspill' }, `v${VERSION}`),
     h('span', {}, t('foot.model')))
   $('a.skip').textContent = t('app.skip')
   undo.disabled = !store.canUndo()

@@ -474,5 +474,8 @@ test('the page can be installed: the manifest names the app and its icons exist'
   }
   const csp = await page.evaluate(() => document.querySelector('meta[http-equiv="Content-Security-Policy"]').content)
   assert.match(csp, /manifest-src 'self'/)
+  // the footer names the version that is running, for bug reports
+  const { version } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'))
+  assert.equal(await page.locator('#foot a[href*="releases/tag"]').innerText(), `v${version}`)
   await context.close()
 })

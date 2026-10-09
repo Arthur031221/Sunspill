@@ -25,10 +25,10 @@
     <td valign="middle">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.png">
-        <img src="assets/hero-light.png" alt="Sunspill montrant une chambre orientée à l'ouest avec la tache de soleil de l'après-midi sur le sol et le lit" width="620">
+        <img src="assets/hero-light.png" alt="Sunspill montrant une chambre orientée à l'ouest avec la tache de soleil de l'après-midi sur le sol et le lit" width="560">
       </picture>
     </td>
-    <td valign="middle"><img src="assets/setup.gif" alt="Sur un téléphone : on cherche une adresse, on choisit un type de pièce, on la tourne sur les bâtiments de la carte jusqu'à ce qu'elle donne sur la rue, et la tache de soleil traverse le sol" width="240"></td>
+    <td valign="middle"><img src="assets/setup.gif" alt="Sur un téléphone : on cherche une adresse, on choisit un type de pièce, on la tourne sur les bâtiments de la carte jusqu'à ce qu'elle donne sur la rue, et la tache de soleil traverse le sol" width="220"></td>
   </tr>
 </table>
 
