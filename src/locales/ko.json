@@ -279,6 +279,8 @@
  "wiz.place.builtin": "내장 도시 목록",
  "wiz.place.searching": "OpenStreetMap에서 검색하는 중입니다.",
  "wiz.place.none": "일치하는 주소가 없습니다. 단어를 줄이거나 지도에 핀을 놓아 보세요.",
+ "wiz.place.street": "OpenStreetMap에 해당 번지가 없어 같은 길의 결과를 보여 줍니다(검색어: {query}). 정확하게 하려면 지도에서 건물에 핀을 놓으세요.",
+ "wiz.place.simpler": "다음 검색어로 찾았습니다: {query}",
  "wiz.place.noneOffline": "내장 도시 목록에 일치하는 도시가 없습니다. 주소 검색을 허용하거나 지도에 핀을 놓으세요.",
  "wiz.place.offlineOnly": "주소 검색이 꺼져 있어 내장 도시 목록만 사용했습니다.",
  "wiz.place.failed": "검색에 실패했습니다: {why}. 대신 지도에 핀을 놓을 수 있습니다.",

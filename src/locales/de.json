@@ -279,6 +279,8 @@
  "wiz.place.builtin": "eingebaute Städteliste",
  "wiz.place.searching": "Suche in OpenStreetMap läuft.",
  "wiz.place.none": "Keine Adresse passt. Versuche weniger Wörter oder setze eine Nadel auf die Karte.",
+ "wiz.place.street": "OpenStreetMap kennt diese Hausnummer nicht, daher stehen hier Treffer derselben Straße (gesucht: {query}). Setze eine Nadel auf dein Gebäude, um genau zu sein.",
+ "wiz.place.simpler": "Gefunden mit der Suche: {query}",
  "wiz.place.noneOffline": "Keine Stadt der eingebauten Liste passt. Erlaube die Adresssuche oder setze eine Nadel auf die Karte.",
  "wiz.place.offlineOnly": "Die Adresssuche ist aus, daher wurde nur die eingebaute Städteliste benutzt.",
  "wiz.place.failed": "Die Suche hat nicht geklappt: {why}. Du kannst stattdessen eine Nadel auf die Karte setzen.",

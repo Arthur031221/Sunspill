@@ -279,6 +279,8 @@
  "wiz.place.builtin": "lista de ciudades incluida",
  "wiz.place.searching": "Buscando en OpenStreetMap.",
  "wiz.place.none": "Ninguna dirección coincide. Prueba con menos palabras o pon una chincheta en el mapa.",
+ "wiz.place.street": "OpenStreetMap no tiene ese número de portal, así que se muestran resultados de la misma calle (búsqueda: {query}). Pon una chincheta sobre tu edificio para afinar.",
+ "wiz.place.simpler": "Encontrado al buscar: {query}",
  "wiz.place.noneOffline": "Ninguna ciudad de la lista incluida coincide. Permite la búsqueda de direcciones o pon una chincheta en el mapa.",
  "wiz.place.offlineOnly": "La búsqueda de direcciones está desactivada, así que solo se usó la lista de ciudades incluida.",
  "wiz.place.failed": "La búsqueda falló: {why}. Puedes poner una chincheta en el mapa.",

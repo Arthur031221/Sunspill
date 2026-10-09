@@ -279,6 +279,8 @@
  "wiz.place.builtin": "内置城市列表",
  "wiz.place.searching": "正在搜索 OpenStreetMap。",
  "wiz.place.none": "没有符合的地址。请减少字词，或在地图上放置图钉。",
+ "wiz.place.street": "OpenStreetMap 没有这个门牌号，以下是同一条路上的结果（搜索：{query}）。请在地图上把图钉放在你的楼上，位置才准确。",
+ "wiz.place.simpler": "已改为搜索：{query}",
  "wiz.place.noneOffline": "内置城市列表中没有符合的城市。请允许地址搜索，或在地图上放置图钉。",
  "wiz.place.offlineOnly": "地址搜索已关闭，因此只用了内置城市列表。",
  "wiz.place.failed": "搜索失败：{why}。你可以改在地图上放置图钉。",

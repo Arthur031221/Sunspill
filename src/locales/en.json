@@ -279,6 +279,8 @@
  "wiz.place.builtin": "built in city list",
  "wiz.place.searching": "Searching OpenStreetMap.",
  "wiz.place.none": "No address matched. Try fewer words, or drop a pin on the map.",
+ "wiz.place.street": "OpenStreetMap has no entry for that house number, so these are on the same street (searched for: {query}). Drop a pin on your building to be exact.",
+ "wiz.place.simpler": "Found by searching for: {query}",
  "wiz.place.noneOffline": "No city in the built in list matched. Allow address search, or drop a pin on the map.",
  "wiz.place.offlineOnly": "Address search is off, so only the built in city list was used.",
  "wiz.place.failed": "The search did not work: {why}. You can drop a pin on the map instead.",

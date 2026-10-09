@@ -4,6 +4,7 @@
 
 import { buildingQuery, parseBuildings, parsePlaces } from '../core/osm.js'
 import { zoneAt } from '../core/zone.js'
+import { addressVariants } from '../core/address.js'
 
 export const SERVICES = {
   search: { name: 'Nominatim', hosts: ['https://nominatim.openstreetmap.org'], sends: 'the address you type' },
@@ -57,26 +58,43 @@ export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), w
     }
   }
 
+  /** Places matching an address or a name. At most one request a second, as the Nominatim usage policy asks. */
+  async function search(query, lang = 'en', signal) {
+    if (!allowed('search')) throw new Refused('search')
+    const q = String(query).trim().slice(0, 200)
+    if (q.length < 2) return []
+    // one at a time, a second apart, and a search that was cancelled while it waited is never sent
+    const run = async () => {
+      if (signal?.aborted) throw Object.assign(new Error('cancelled'), { name: 'AbortError' })
+      const gap = lastSearch + NOMINATIM_GAP - now()
+      if (gap > 0) await wait(gap)
+      lastSearch = now()
+      const url = `${SERVICES.search.hosts[0]}/search?format=jsonv2&addressdetails=1&limit=6&accept-language=${encodeURIComponent(lang)}&q=${encodeURIComponent(q)}`
+      const places = parsePlaces(await request(url, {}, signal, 'search'))
+      return places.map((p) => ({ ...p, zone: zoneAt(p.lat, p.lon) }))
+    }
+    const mine = queue.then(run, run)
+    queue = mine.catch(() => {})
+    return mine
+  }
+
+  /**
+   * `search`, and when nothing matches, plainer forms of the same address (see addressVariants), three more requests at most.
+   * `query` is the form that matched, null for the text as typed, and `exact` is false when the house number had to go.
+   */
+  async function lookup(query, lang = 'en', signal) {
+    const first = await search(query, lang, signal)
+    if (first.length) return { places: first, query: null, exact: true }
+    for (const v of addressVariants(query).slice(0, 3)) {
+      const places = await search(v.query, lang, signal)
+      if (places.length) return { places, query: v.query, exact: v.exact }
+    }
+    return { places: [], query: null, exact: true }
+  }
+
   return {
-    /** Places matching an address or a name. At most one request a second, as the Nominatim usage policy asks. */
-    async search(query, lang = 'en', signal) {
-      if (!allowed('search')) throw new Refused('search')
-      const q = String(query).trim().slice(0, 200)
-      if (q.length < 2) return []
-      // one at a time, a second apart, and a search that was cancelled while it waited is never sent
-      const run = async () => {
-        if (signal?.aborted) throw Object.assign(new Error('cancelled'), { name: 'AbortError' })
-        const gap = lastSearch + NOMINATIM_GAP - now()
-        if (gap > 0) await wait(gap)
-        lastSearch = now()
-        const url = `${SERVICES.search.hosts[0]}/search?format=jsonv2&addressdetails=1&limit=6&accept-language=${encodeURIComponent(lang)}&q=${encodeURIComponent(q)}`
-        const places = parsePlaces(await request(url, {}, signal, 'search'))
-        return places.map((p) => ({ ...p, zone: zoneAt(p.lat, p.lon) }))
-      }
-      const mine = queue.then(run, run)
-      queue = mine.catch(() => {})
-      return mine
-    },
+    search,
+    lookup,
 
     /**
      * Building outlines around a point, trying each Overpass server in turn. `options` goes to parseBuildings,

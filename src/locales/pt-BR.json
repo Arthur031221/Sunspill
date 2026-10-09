@@ -279,6 +279,8 @@
  "wiz.place.builtin": "lista de cidades embutida",
  "wiz.place.searching": "Buscando no OpenStreetMap.",
  "wiz.place.none": "Nenhum endereço correspondeu. Tente menos palavras ou coloque um alfinete no mapa.",
+ "wiz.place.street": "O OpenStreetMap não tem esse número, então estes resultados são da mesma rua (busca: {query}). Coloque um alfinete no seu prédio para ficar exato.",
+ "wiz.place.simpler": "Encontrado ao buscar: {query}",
  "wiz.place.noneOffline": "Nenhuma cidade da lista embutida correspondeu. Permita a busca de endereços ou coloque um alfinete no mapa.",
  "wiz.place.offlineOnly": "A busca de endereços está desligada, então só a lista de cidades embutida foi usada.",
  "wiz.place.failed": "A busca falhou: {why}. Você pode colocar um alfinete no mapa.",

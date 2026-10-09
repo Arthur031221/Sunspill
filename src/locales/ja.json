@@ -279,6 +279,8 @@
  "wiz.place.builtin": "内蔵の都市リスト",
  "wiz.place.searching": "OpenStreetMap を検索しています。",
  "wiz.place.none": "一致する住所がありません。語を減らすか、地図にピンを置いてください。",
+ "wiz.place.street": "OpenStreetMap にその番地はないため、同じ通りの結果を表示しています（検索語：{query}）。正確にするには、地図で建物にピンを置いてください。",
+ "wiz.place.simpler": "次の語で見つかりました：{query}",
  "wiz.place.noneOffline": "内蔵の都市リストに一致する都市がありません。住所検索を許可するか、地図にピンを置いてください。",
  "wiz.place.offlineOnly": "住所検索がオフなので、内蔵の都市リストだけを使いました。",
  "wiz.place.failed": "検索できませんでした：{why}。代わりに地図にピンを置けます。",

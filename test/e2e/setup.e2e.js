@@ -34,7 +34,7 @@ async function open({ locale = 'en-GB', answers = {}, hash = '', viewport = { wi
     const request = route.request()
     outside.push({ host: url.host, path: url.pathname, search: url.search, method: request.method(), body: request.postData() })
     if (url.host === 'nominatim.openstreetmap.org') {
-      const body = answers.nominatim ?? [{ lat: '25.0338352', lon: '121.5644995', name: '台北101', display_name: '台北101, 7, 信義路五段, 信義區, 臺北市, 臺灣', address: { city: '臺北市', country_code: 'tw' } }]
+      const body = (typeof answers.nominatim === 'function' ? answers.nominatim(url.searchParams.get('q')) : answers.nominatim) ?? [{ lat: '25.0338352', lon: '121.5644995', name: '台北101', display_name: '台北101, 7, 信義路五段, 信義區, 臺北市, 臺灣', address: { city: '臺北市', country_code: 'tw' } }]
       return route.fulfill({ status: 200, contentType: 'application/json', headers: CORS, body: JSON.stringify(body) })
     }
     if (url.host === 'tile.openstreetmap.org') return route.fulfill({ status: 200, contentType: 'image/png', headers: CORS, body: PNG })
@@ -191,6 +191,39 @@ test('a failed search says why and leaves the place alone', async () => {
   await page.press('#place-q', 'Enter')
   await page.waitForSelector('text=No address matched')
   assert.equal((await scene(page)).place.name, 'Taipei')
+  await context.close()
+})
+
+test('a Taiwanese address with a house number and a floor is found by its plainer form, and the page says which', async () => {
+  const house = [{ lat: '25.0337553', lon: '121.5643036', name: 'Apple 台北 101', display_name: 'Apple 台北 101, 45, 市府路, 信義區, 臺北市', address: { road: '市府路', house_number: '45', city: '臺北市', country_code: 'tw' } }]
+  const { page, context, errors, outside } = await open({ locale: 'zh-TW', answers: { nominatim: (q) => (q === '台北市信義區市府路 45' ? house : []) } })
+  await openWizard(page)
+  await page.evaluate(() => window.__sunspill.consent.set('search', true))
+  await page.fill('#place-q', '台北市信義區市府路45號7樓')
+  await page.press('#place-q', 'Enter')
+  await page.waitForSelector('.result-list >> text=Apple 台北 101')
+  assert.deepEqual(outside.map((o) => new URL(`https://${o.host}${o.path}${o.search}`).searchParams.get('q')), ['台北市信義區市府路45號7樓', '台北市信義區市府路 45'])
+  assert.match(await page.locator('.search-row ~ p[role=status]').innerText(), /已改為搜尋：台北市信義區市府路 45/)
+  await page.click('.result-list >> text=Apple 台北 101')
+  const s = await scene(page)
+  assert.ok(Math.abs(s.place.lat - 25.0337553) < 1e-6)
+  assert.equal(s.place.zone, 'Asia/Taipei')
+  assert.equal(await page.locator('.search-row ~ p[role=status]').innerText(), '')
+  assert.deepEqual(errors, [])
+  await context.close()
+})
+
+test('a house number nobody mapped gives the street, with a note to drop a pin on the building', async () => {
+  const road = [{ lat: '25.025', lon: '121.5425', name: '和平東路二段', display_name: '和平東路二段, 大安區, 臺北市', address: { road: '和平東路二段', city: '臺北市', country_code: 'tw' } }]
+  const { page, context } = await open({ answers: { nominatim: (q) => (q === '台北市大安區和平東路二段' ? road : []) } })
+  await openWizard(page)
+  await page.evaluate(() => window.__sunspill.consent.set('search', true))
+  await page.fill('#place-q', '台北市大安區和平東路二段106號')
+  await page.press('#place-q', 'Enter')
+  await page.waitForSelector('.result-list >> text=和平東路二段')
+  const note = await page.locator('.search-row ~ p[role=status]').innerText()
+  assert.match(note, /no entry for that house number/)
+  assert.match(note, /Drop a pin on your building/)
   await context.close()
 })
 

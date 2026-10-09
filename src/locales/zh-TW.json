@@ -279,6 +279,8 @@
  "wiz.place.builtin": "內建城市清單",
  "wiz.place.searching": "正在搜尋 OpenStreetMap。",
  "wiz.place.none": "沒有符合的地址。請減少字詞，或在地圖上放置圖釘。",
+ "wiz.place.street": "OpenStreetMap 沒有這個門牌號碼，以下是同一條路上的結果（搜尋：{query}）。請在地圖上把圖釘放在你的大樓上，位置才準確。",
+ "wiz.place.simpler": "已改為搜尋：{query}",
  "wiz.place.noneOffline": "內建城市清單中沒有符合的城市。請允許地址搜尋，或在地圖上放置圖釘。",
  "wiz.place.offlineOnly": "地址搜尋已關閉，因此只用了內建城市清單。",
  "wiz.place.failed": "搜尋失敗：{why}。你可以改在地圖上放置圖釘。",

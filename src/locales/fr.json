@@ -279,6 +279,8 @@
  "wiz.place.builtin": "liste de villes intégrée",
  "wiz.place.searching": "Recherche dans OpenStreetMap.",
  "wiz.place.none": "Aucune adresse ne correspond. Essayez moins de mots ou placez une épingle sur la carte.",
+ "wiz.place.street": "OpenStreetMap n'a pas ce numéro, voici donc des résultats de la même rue (recherche : {query}). Placez une épingle sur votre immeuble pour être précis.",
+ "wiz.place.simpler": "Trouvé en cherchant : {query}",
  "wiz.place.noneOffline": "Aucune ville de la liste intégrée ne correspond. Autorisez la recherche d'adresses ou placez une épingle sur la carte.",
  "wiz.place.offlineOnly": "La recherche d'adresses est désactivée : seule la liste de villes intégrée a servi.",
  "wiz.place.failed": "La recherche a échoué : {why}. Vous pouvez placer une épingle sur la carte.",

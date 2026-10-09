@@ -70,9 +70,9 @@ export function placeStep(ctx) {
     abort = controller
     status.textContent = t('wiz.place.searching')
     try {
-      const found = await net.search(q, locale(), controller.signal)
+      const { places: found, query: used, exact } = await net.lookup(q, locale(), controller.signal)
       if (stale()) return
-      status.textContent = found.length ? '' : t('wiz.place.none')
+      status.textContent = !found.length ? t('wiz.place.none') : used ? (exact ? t('wiz.place.simpler', { query: used }) : t('wiz.place.street', { query: used })) : ''
       show([...found.map((p) => row(p)), ...cities.map((c) => row(c, t('wiz.place.builtin')))])
     } catch (err) {
       if (controller.signal.aborted || stale()) return

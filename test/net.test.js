@@ -186,3 +186,39 @@ test('tiles are plain https images from one host, and the list of origins is wha
   assert.deepEqual(ORIGINS.connect, ['https://nominatim.openstreetmap.org', 'https://overpass-api.de', 'https://overpass.openstreetmap.fr', 'https://overpass.private.coffee'])
   assert.equal(Object.keys(SERVICES).length, 3)
 })
+
+test('an address nothing matches is tried again in plainer forms, a second apart, and stops at the first that matches', async () => {
+  const hit = json([{ lat: '25.0337', lon: '121.5643', name: 'Apple 台北 101', display_name: 'Apple 台北 101, 45, 市府路, 臺北市', address: { road: '市府路', house_number: '45', city: '臺北市', country_code: 'tw' } }])
+  const h = harness({ responses: [json([]), hit] })
+  const found = await h.net.lookup('台北市信義區市府路45號7樓', 'zh-TW')
+  assert.deepEqual(h.calls.map((c) => new URL(c.url).searchParams.get('q')), ['台北市信義區市府路45號7樓', '台北市信義區市府路 45'])
+  assert.equal(found.query, '台北市信義區市府路 45')
+  assert.equal(found.exact, true)
+  assert.equal(found.places[0].zone, 'Asia/Taipei')
+  assert.equal(h.waits.length, 1, 'the second request waited out the second')
+})
+
+test('a house number that is not mapped gives the street and says so, and a first match is not retried', async () => {
+  const street = json([{ lat: '25.025', lon: '121.5425', name: '和平東路二段', display_name: '和平東路二段, 大安區, 臺北市', address: { road: '和平東路二段', city: '臺北市', country_code: 'tw' } }])
+  const h = harness({ responses: [json([]), json([]), street] })
+  const found = await h.net.lookup('台北市大安區和平東路二段106號')
+  assert.equal(h.calls.length, 3)
+  assert.equal(found.query, '台北市大安區和平東路二段')
+  assert.equal(found.exact, false)
+  const once = harness({ responses: [street] })
+  const direct = await once.net.lookup('和平東路二段106號')
+  assert.equal(once.calls.length, 1)
+  assert.deepEqual([direct.query, direct.exact], [null, true])
+})
+
+test('nothing matching anywhere ends after four requests at most, and a switch turned off stops the retries', async () => {
+  const h = harness()
+  const none = await h.net.lookup('新北市板橋區文化路一段188巷12弄3號')
+  assert.deepEqual(none.places, [])
+  assert.equal(h.calls.length, 4)
+  let on = ['search']
+  const calls = []
+  const net = createNet({ allowed: (s) => on.includes(s), fetch: async (url) => { calls.push(url); on = []; return json([]) }, wait: async () => {}, now: () => 1_000_000 })
+  await assert.rejects(net.lookup('台北市信義區市府路45號'), Refused)
+  assert.equal(calls.length, 1, 'turned off after the first answer, the second form is never sent')
+})
