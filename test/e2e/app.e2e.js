@@ -493,7 +493,15 @@ test('the drawing says how to use the keyboard, and an arrow key on a piece or a
   const help = await page.evaluate(() => document.getElementById(document.getElementById('canvas').getAttribute('aria-describedby')).textContent)
   assert.match(help, /Arrow keys/)
   await page.click('#view button:has-text("Plan")')
-  await page.evaluate(() => window.__sunspill.stage.select({ type: 'item', index: 0 }))
+  // nothing is picked yet, so the arrow keys on the drawing do nothing
+  await canvas.focus()
+  const untouched = (await scene(page)).items[0].x
+  await page.keyboard.press('ArrowRight')
+  assert.equal((await scene(page)).items[0].x, untouched)
+  // a keyboard that moves into the card of a piece picks it, and then the drawing takes the arrow keys
+  await page.click('#tab-things')
+  await page.focus('[data-item="0"] input')
+  assert.deepEqual((await ui(page)).selected, { type: 'item', index: 0 })
   await canvas.focus()
   const x0 = (await scene(page)).items[0].x
   await page.keyboard.press('ArrowRight')
@@ -503,7 +511,10 @@ test('the drawing says how to use the keyboard, and an arrow key on a piece or a
   assert.match(said, /^Bed: [\d.]+ m from the left wall, [\d.]+ m from the bottom wall, turned 0 degrees\.$/)
   await page.keyboard.press('[')
   await page.waitForFunction(() => /turned 345 degrees/.test(document.getElementById('live').textContent))
-  await page.evaluate(() => window.__sunspill.stage.select({ type: 'window', index: 0 }))
+  await page.click('#tab-room')
+  await page.focus('[data-window="0"] input')
+  assert.deepEqual((await ui(page)).selected, { type: 'window', index: 0 })
+  await canvas.focus()
   await page.keyboard.press('ArrowRight')
   await page.waitForFunction(() => /^Window 1, Top wall: [\d.]+ m from the left end\.$/.test(document.getElementById('live').textContent))
   await context.close()

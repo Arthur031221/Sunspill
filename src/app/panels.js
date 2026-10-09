@@ -93,6 +93,8 @@ function roomTab({ store, stage }) {
       across,
     )
     card.addEventListener('pointerdown', () => pick({ type: 'window', index: i }))
+    // a keyboard moving into the card picks the window as well, so the arrow keys on the drawing move it
+    card.addEventListener('focusin', () => pick({ type: 'window', index: i }))
     card.addEventListener('focusin', () => pick({ type: 'window', index: i }))
     const sync = () => {
       const s = store.scene
@@ -277,10 +279,13 @@ function thingsTab({ store, stage }) {
       ),
       sunLine,
     )
-    card.addEventListener('pointerdown', () => {
+    const pickItem = () => {
       stage.select({ type: 'item', index: i })
       store.setUi({ selected: { type: 'item', index: i } })
-    })
+    }
+    card.addEventListener('pointerdown', pickItem)
+    // a keyboard moving into the card picks the piece as well, so the arrow keys on the drawing move it
+    card.addEventListener('focusin', pickItem)
     rows.push({ card, fs, sunLine, i })
     list.append(card)
   })
@@ -460,7 +465,7 @@ function savedSection({ store, actions }) {
   const note = h('p', { class: 'note', role: 'status' })
   const list = h('div', { class: 'saved-list' })
   const save = h('button', { class: 'btn primary fixed', type: 'button', id: 'saved-save' }, t('saved.save'))
-  let sure = -1
+  let sure = ''
   let sureTimer = 0
   const doSave = () => {
     const result = actions.saveRoom(name.value)
@@ -484,19 +489,24 @@ function savedSection({ store, actions }) {
       const del = h('button', { class: 'btn', type: 'button', onclick: () => {
         clearTimeout(sureTimer)
         note.textContent = ''
-        if (sure === i) {
-          sure = -1
-          actions.deleteRoom(i)
+        if (sure === r.id) {
+          sure = ''
+          actions.deleteRoom(r.id)
         } else {
-          sure = i
-          sureTimer = setTimeout(() => { sure = -1; render() }, 4000)
+          sure = r.id
+          sureTimer = setTimeout(() => { sure = ''; render() }, 4000)
         }
         render()
-      } }, sure === i ? t('saved.sure') : t('saved.delete'))
+      } }, sure === r.id ? t('saved.sure') : t('saved.delete'))
       return h('div', { class: 'saved-row' },
         h('div', { class: 'saved-text' }, h('b', {}, r.name), h('span', { class: 'note' }, t('saved.row', { place: where, w: lengthText(s.room.w, store.ui.units), d: lengthText(s.room.d, store.ui.units) }))),
         h('div', { class: 'saved-buttons' },
-          h('button', { class: 'btn', type: 'button', onclick: () => { note.textContent = ''; actions.openRoom(i) } }, t('saved.open')),
+          h('button', { class: 'btn', type: 'button', onclick: () => {
+            note.textContent = ''
+            const result = actions.openRoom(r.id)
+            if (result === 'full') note.textContent = t('saved.fullOpen')
+            else if (result === 'failed') note.textContent = t('saved.failed')
+          } }, t('saved.open')),
           del,
         ),
       )

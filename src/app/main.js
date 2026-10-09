@@ -8,7 +8,7 @@ import { createAnalysis } from './analysis.js'
 import { frameFor, itemSunHours, floorArea } from './frame.js'
 import { renderCard, renderGif } from './export.js'
 import { clock, dateText, duration, bearingText, areaText, lengthText, itemName } from './format.js'
-import { defaultScene } from '../core/room.js'
+import { defaultScene, normalizeScene } from '../core/room.js'
 import { encodeScene, decodeScene, blurScene } from '../core/codec.js'
 import { hoursAt } from '../core/hours.js'
 import { legendGradient } from '../render/heat.js'
@@ -58,7 +58,7 @@ const stored = (key) => {
   }
 }
 const loadRoom = () => decodeScene(stored(ROOM_KEY))
-/** The named rooms, newest first, each with the scene its link holds. Anything that does not decode is left out. */
+/** The named rooms, newest first. Each is the whole scene, not a link, so a big room loses nothing. */
 function readSaved() {
   let list = []
   try {
@@ -68,19 +68,19 @@ function readSaved() {
   }
   if (!Array.isArray(list)) return []
   return list
-    .filter((r) => r && typeof r.name === 'string' && typeof r.code === 'string')
-    .map((r) => ({ name: r.name.slice(0, 60), code: r.code, at: Number(r.at) || 0, scene: decodeScene(r.code) }))
-    .filter((r) => r.scene)
+    .filter((r) => r && typeof r.id === 'string' && typeof r.name === 'string' && r.scene && typeof r.scene === 'object')
+    .map((r) => ({ id: r.id, name: r.name.slice(0, 60), at: Number(r.at) || 0, scene: normalizeScene(r.scene) }))
     .slice(0, MAX_SAVED)
 }
 const writeSaved = (list) => {
   try {
-    localStorage.setItem(SAVED_KEY, JSON.stringify(list.map(({ name, code, at }) => ({ name, code, at }))))
+    localStorage.setItem(SAVED_KEY, JSON.stringify(list.map(({ id, name, at, scene }) => ({ id, name, at, scene }))))
     return true
   } catch {
     return false
   }
 }
+const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
 const fromLink = decodeScene(location.hash.slice(1))
 // without a link, the room that was last edited here comes back
 const restored = fromLink ? null : loadRoom()
@@ -238,7 +238,7 @@ const actions = {
     if (!clean) return 'name'
     const list = readSaved()
     const at = list.findIndex((r) => r.name.toLowerCase() === clean.toLowerCase())
-    const entry = { name: clean, code: encodeScene(store.scene), at: Date.now() }
+    const entry = { id: at >= 0 ? list[at].id : newId(), name: clean, at: Date.now(), scene: structuredClone(store.scene) }
     if (at >= 0) list.splice(at, 1)
     else if (list.length >= MAX_SAVED) return 'full'
     list.unshift(entry)
@@ -246,33 +246,41 @@ const actions = {
     toast(t('saved.saved', { name: clean }))
     return 'saved'
   },
-  /** Show a saved room. The room that was open is set aside, so Bring back my earlier room returns to it and Undo does too. */
-  openRoom(index) {
-    const room = readSaved()[index]
+  /**
+   * Show a saved room. The room on the page is saved first as "Earlier: place" when it is yours and not saved yet, so
+   * opening another room loses nothing, and when that cannot be done nothing is opened. Returns 'opened', 'full',
+   * 'failed' or false when there is no such room.
+   */
+  openRoom(id) {
+    const list = readSaved()
+    const room = list.find((r) => r.id === id)
     if (!room) return false
     flushSave()
-    const now = encodeScene(store.scene)
-    // the room to set aside is the one that is yours: the room a friend's link pushed aside, or else the one on the page,
-    // unless that is only the sample room nobody touched
-    const keep = aside || (edited || restored || fromLink ? now : '')
+    // yours is the room a friend's link pushed aside, or else the one on the page unless it is only the untouched sample
+    const mine = aside ? decodeScene(aside) : edited || restored || fromLink ? store.scene : null
+    if (mine && !list.some((r) => JSON.stringify(r.scene) === JSON.stringify(mine))) {
+      if (list.length >= MAX_SAVED) return 'full'
+      list.unshift({ id: newId(), name: t('saved.earlierName', { place: mine.place.name || '-' }).slice(0, 60), at: Date.now(), scene: structuredClone(mine) })
+      if (!writeSaved(list)) return 'failed'
+    }
     store.replace(room.scene)
     edited = true
+    aside = ''
     try {
-      if (keep && keep !== room.code) localStorage.setItem(EARLIER_KEY, keep)
-      localStorage.setItem(ROOM_KEY, room.code)
+      localStorage.setItem(ROOM_KEY, encodeScene(room.scene))
     } catch {
       // the room is on the page either way
     }
-    aside = ''
     toast(t('saved.opened', { name: room.name }))
     afterScene()
-    return true
+    return 'opened'
   },
-  deleteRoom(index) {
+  deleteRoom(id) {
     const list = readSaved()
-    const [gone] = list.splice(index, 1)
-    if (!gone) return false
-    writeSaved(list)
+    const at = list.findIndex((r) => r.id === id)
+    if (at < 0) return false
+    const [gone] = list.splice(at, 1)
+    if (!writeSaved(list)) return false
     toast(t('saved.deleted', { name: gone.name }))
     return true
   },

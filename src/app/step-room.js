@@ -136,6 +136,7 @@ export function windowsStep(ctx) {
       roof)
     card.addEventListener('pointerdown', pick)
     card.addEventListener('focusin', pick)
+    card.addEventListener('focusin', pick)
     syncs.push(() => {
       const s = store.scene
       const w = s.windows[i]

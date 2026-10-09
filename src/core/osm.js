@@ -138,6 +138,29 @@ const ringOf = (geometry, center) => {
 const pointKey = (g) => `${g.lat},${g.lon}`
 
 /**
+ * A closed chain that passes through one node twice is two rings that touch there, such as two buildings that
+ * share a corner. It is cut at each repeated node, so neither ring loses its area to the other.
+ */
+function splitPinches(chain) {
+  const rings = []
+  const stack = []
+  const at = new Map()
+  for (const p of chain) {
+    const key = pointKey(p)
+    if (at.has(key)) {
+      const from = at.get(key)
+      const loop = stack.splice(from + 1)
+      for (const q of loop) at.delete(pointKey(q))
+      if (loop.length >= 2) rings.push([stack[from], ...loop, p])
+    } else {
+      at.set(key, stack.length)
+      stack.push(p)
+    }
+  }
+  return rings
+}
+
+/**
  * Closed outlines from the outer members of a multipolygon. A big building is often drawn as several ways that
  * meet end to end, none of them closed on its own, so ways that share an end node are joined, in either
  * direction. A chain that never closes is left out. Inner members (courtyards) are not read, so a courtyard is
@@ -150,7 +173,8 @@ export function outerRings(members) {
     if (m?.type !== 'way' || m.role !== 'outer' || !Array.isArray(m.geometry)) continue
     const pts = m.geometry.filter((g) => g && Number.isFinite(g.lat) && Number.isFinite(g.lon))
     if (pts.length < 2) continue
-    ;(pts.length >= 4 && pointKey(pts[0]) === pointKey(pts[pts.length - 1]) ? closed : open).push(pts)
+    if (pts.length >= 4 && pointKey(pts[0]) === pointKey(pts[pts.length - 1])) closed.push(...splitPinches(pts))
+    else open.push(pts)
   }
   while (open.length) {
     let chain = open.shift()
@@ -168,7 +192,7 @@ export function outerRings(members) {
         break
       }
     }
-    if (chain.length >= 4 && pointKey(chain[0]) === pointKey(chain[chain.length - 1])) closed.push(chain)
+    if (chain.length >= 4 && pointKey(chain[0]) === pointKey(chain[chain.length - 1])) closed.push(...splitPinches(chain))
   }
   return closed
 }

@@ -295,9 +295,10 @@ export class MapView {
     const dark = pal.name === 'dark'
     const ppm = this.pixelsPerMetre
     const shading = this.sunNow().shading
-    // the boxes of the heights written so far: a height that would land on another is left off, the list being
-    // sorted with the buildings that matter most first (a tower made of parts carries one label, not five)
-    const written = []
+    // heights are written after every building is drawn: the selected one first, then the list, which is sorted with
+    // the buildings that matter most first, and a height that would land on one already written is left off
+    // (a tower made of parts carries one label, not five)
+    const labels = []
     this.scene.obstacles.forEach((o, i) => {
       const picked = this.selected === i
       ctx.save()
@@ -347,18 +348,31 @@ export class MapView {
           ctx.strokeStyle = dark ? 'rgba(11, 15, 28, 0.85)' : 'rgba(255, 250, 240, 0.9)'
           const label = o.own ? t('map.own') : `${o.est ? '~' : ''}${this.store.ui.units === 'ft' ? `${Math.round(o.h * 3.28084)} ft` : `${Math.round(o.h)} m`}`
           const half = ctx.measureText(label).width / 2 + 3
-          const box = [cx - half, cy - 8, cx + half, cy + 8]
-          const clear = !written.some((b) => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])
-          if (picked || clear) {
-            written.push(box)
-            ctx.strokeText(label, cx, cy)
-            ctx.fillText(label, cx, cy)
-          }
+          labels.push({ index: i, picked, label, cx, cy, box: [cx - half, cy - 8, cx + half, cy + 8] })
         }
       }
       ctx.restore()
     })
+    const written = []
+    const owners = []
+    ctx.save()
+    ctx.setLineDash([])
+    ctx.fillStyle = pal.ink
+    ctx.font = `600 11px ${pal.ui}`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.lineWidth = 3
+    ctx.strokeStyle = dark ? 'rgba(11, 15, 28, 0.85)' : 'rgba(255, 250, 240, 0.9)'
+    for (const l of [...labels].sort((a, b) => Number(b.picked) - Number(a.picked))) {
+      if (written.some((b) => l.box[0] < b[2] && l.box[2] > b[0] && l.box[1] < b[3] && l.box[3] > b[1])) continue
+      written.push(l.box)
+      owners.push(l.index)
+      ctx.strokeText(l.label, l.cx, l.cy)
+      ctx.fillText(l.label, l.cx, l.cy)
+    }
+    ctx.restore()
     this.labelBoxes = written
+    this.labelOwners = owners
   }
 
   windowEnds(win) {

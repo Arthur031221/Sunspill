@@ -315,6 +315,28 @@ test('the order and the direction of the ways in a relation do not change the ou
   }
 })
 
+test('two outlines that touch at a corner stay two outlines, whatever order and direction their ways come in', () => {
+  const way = (pts) => ({ type: 'way', role: 'outer', geometry: pts.map(([lat, lon]) => ({ lat: lat / 1000, lon: lon / 1000 })) })
+  // two squares of 1 by 1 that meet only at (0, 0), one wound each way round
+  const pieces = [
+    [[0, -1], [1, -1], [1, 0], [0, 0]],
+    [[0, 0], [0, 1], [-1, 1]],
+    [[-1, 1], [-1, 0], [0, 0]],
+    [[0, 0], [0, -1]],
+  ]
+  const orders = [[0, 1, 2, 3], [3, 2, 1, 0], [1, 3, 0, 2], [2, 0, 3, 1]]
+  for (const order of orders) for (let flips = 0; flips < 16; flips++) {
+    const members = order.map((i, k) => way(flips & (1 << k) ? [...pieces[i]].reverse() : pieces[i]))
+    const rings = outerRings(members)
+    assert.equal(rings.length, 2, `order ${order} flips ${flips}`)
+    assert.deepEqual(rings.map((r) => r.length), [5, 5])
+    const json = { elements: [{ type: 'relation', id: 7, tags: { building: 'yes', height: '10' }, members }] }
+    assert.equal(parseBuildings(json, { lat: 0, lon: 0 }).buildings.length, 2, 'both come out as buildings')
+  }
+  // a closed way that pinches itself is two outlines as well
+  assert.equal(outerRings([way([[0, 0], [0, 1], [1, 1], [0, 0], [0, -1], [-1, -1], [0, 0]])]).length, 2)
+})
+
 test('a relation that Overpass answers without members, an open chain and inner rings are handled plainly', () => {
   // what `out geom tags` returns for a relation: bounds and tags, nothing to draw
   const bare = { type: 'relation', id: 5, bounds: { minlat: 0, minlon: 0, maxlat: 0.001, maxlon: 0.001 }, tags: { building: 'yes', type: 'multipolygon' } }

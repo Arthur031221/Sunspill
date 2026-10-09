@@ -433,6 +433,15 @@ test('surroundings: a tower drawn as stacked parts carries one height label, and
     const b = boxes[j]
     assert.ok(!(a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1]), 'two labels overlap')
   }
+  // pick one of the later parts of the tower: its height is written, and it still does not sit on another label
+  await page.evaluate(() => { const m = window.__sunspill.map; m.selected = 3; m.invalidate() })
+  await page.waitForFunction(() => window.__sunspill.map.labelOwners?.[0] === 3)
+  const after = await page.evaluate(() => window.__sunspill.map.labelBoxes)
+  for (let i = 0; i < after.length; i++) for (let j = i + 1; j < after.length; j++) {
+    const a = after[i]
+    const b = after[j]
+    assert.ok(!(a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1]), 'two labels overlap with one picked')
+  }
   await context.close()
 })
 
@@ -1175,66 +1184,96 @@ test('with no sun on the floor all day the surroundings step says so', async () 
   await context.close()
 })
 
-test('saved rooms: name two rooms, they survive a reload, opening one sets the other aside, delete asks twice, and a full or refusing browser says so', { skip: engine !== chromium }, async () => {
+test('saved rooms: two named rooms survive a reload, opening saves the room on the page first, a big room loses nothing, delete asks twice and a refusing or full browser says so', { skip: engine !== chromium }, async () => {
   const { page, context, errors } = await open({ viewport: { width: 390, height: 844 } })
   const share = async () => {
     await page.click('#tab-share')
     await page.waitForSelector('#saved-name')
   }
+  const rows = () => page.locator('.saved-row')
+  const note = () => page.locator('.saved .note[role=status]').innerText()
+  const openSaved = (name) => page.locator('.saved-row', { hasText: name }).getByRole('button', { name: 'Open' }).click()
   await page.evaluate(() => window.__sunspill.store.update((d) => { d.facing = 90; d.place = { name: 'Zhongxiao', lat: 25.0418, lon: 121.5436, zone: 'Asia/Taipei' } }))
   await share()
   assert.match(await page.locator('.saved-list').innerText(), /Nothing saved yet/)
   await page.click('#saved-save')
-  assert.match(await page.locator('.saved .note[role=status]').innerText(), /Give the room a name first/)
+  assert.match(await note(), /Give the room a name first/)
   await page.fill('#saved-name', 'Flat A, bedroom')
   await page.click('#saved-save')
-  assert.match(await page.locator('.saved-list').innerText(), /Flat A, bedroom/)
   assert.match(await page.locator('.saved-list').innerText(), /Zhongxiao, 3\.6 m by 4\.4 m/)
   await page.evaluate(() => window.__sunspill.store.update((d) => { d.facing = 200; d.room.w = 4.2 }))
   await page.fill('#saved-name', 'Flat B')
   await page.click('#saved-save')
-  assert.equal(await page.locator('.saved-row').count(), 2)
-  assert.match(await page.locator('.saved-row').first().innerText(), /Flat B/, 'newest first')
+  assert.equal(await rows().count(), 2)
+  assert.match(await rows().first().innerText(), /Flat B/, 'newest first')
   // the same name again replaces that room and does not add one
   await page.evaluate(() => window.__sunspill.store.update((d) => { d.room.w = 4.4 }))
   await page.fill('#saved-name', 'flat b')
   await page.click('#saved-save')
-  assert.equal(await page.locator('.saved-row').count(), 2)
+  assert.equal(await rows().count(), 2)
   await page.waitForTimeout(900)
   await page.reload()
   await page.waitForSelector('html[data-ready]')
   await share()
-  assert.equal(await page.locator('.saved-row').count(), 2, 'both are still there after a reload')
+  assert.equal(await rows().count(), 2, 'both are still there after a reload')
   assert.equal((await scene(page)).facing, 200, 'the room last edited came back')
-  // open Flat A: it replaces the room on the page, and the room that was open is set aside
-  await page.locator('.saved-row', { hasText: 'Flat A' }).getByRole('button', { name: 'Open' }).click()
+  // opening a saved room replaces the one on the page, which is saved already, so nothing is added
+  await openSaved('Flat A')
   await page.waitForFunction(() => window.__sunspill.store.scene.facing === 90)
   assert.equal((await scene(page)).room.w, 3.6)
-  await page.waitForSelector('#bring-back', { state: 'visible' })
-  await page.click('#bring-back')
+  assert.equal(await rows().count(), 2)
+  // a change that was not saved is saved first, as Earlier with its place, and opening that brings it back
+  await page.evaluate(() => window.__sunspill.store.update((d) => { d.facing = 123 }))
+  await openSaved('flat b')
   await page.waitForFunction(() => window.__sunspill.store.scene.facing === 200)
-  assert.equal((await scene(page)).room.w, 4.4, 'Flat B as it was replaced')
-  // delete asks a second time
+  await page.waitForFunction(() => document.querySelectorAll('.saved-row').length === 3)
+  assert.match(await rows().first().innerText(), /Earlier: Zhongxiao/)
+  await openSaved('Earlier: Zhongxiao')
+  await page.waitForFunction(() => window.__sunspill.store.scene.facing === 123)
+  // delete asks a second time, and means the room that was shown, even when the list changed under it
   const row = page.locator('.saved-row', { hasText: 'Flat A' })
   await row.getByRole('button', { name: 'Delete' }).click()
-  assert.equal(await page.locator('.saved-row').count(), 2)
+  assert.equal(await rows().count(), 3)
+  await page.evaluate(() => window.__sunspill.panelActions.saveRoom('Added in another tab'))
   await row.getByRole('button', { name: 'Delete it?' }).click()
-  assert.equal(await page.locator('.saved-row').count(), 1)
-  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sunspill.saved')).length), 1)
-  // twelve at most
-  const results = await page.evaluate(() => Array.from({ length: 12 }, (_, i) => window.__sunspill.panelActions.saveRoom(`Room ${i}`)))
-  assert.deepEqual(results.slice(0, 11), Array(11).fill('saved'))
-  assert.equal(results[11], 'full')
+  assert.deepEqual(await page.evaluate(() => window.__sunspill.panelActions.savedRooms().map((r) => r.name).sort()), ['Added in another tab', 'Earlier: Zhongxiao', 'flat b'])
+  // a room too big for a link keeps everything: 60 buildings of 40 corners and a mark of the sun on the floor
+  await page.evaluate(() => window.__sunspill.store.update((d) => {
+    d.obstacles = Array.from({ length: 60 }, (_, k) => ({ type: 'building', src: 'osm', name: '', ring: Array.from({ length: 40 }, (_, c) => [Math.round((60 + k * 3) * Math.cos((c / 40) * 2 * Math.PI) * 10) / 10 + 120, Math.round((60 + k * 3) * Math.sin((c / 40) * 2 * Math.PI) * 10) / 10]), h: 20 + k, base: 0, est: false, own: false, on: true }))
+    d.checks = [{ month: 7, day: 15, minutes: 16 * 60, poly: [[0.5, 0.5], [1.5, 0.5], [1.5, 1.5], [0.5, 1.5]] }]
+  }))
+  const big = await scene(page)
+  assert.equal(big.obstacles.length, 60)
+  assert.equal(big.checks.length, 1)
+  await page.fill('#saved-name', 'Big')
+  await page.click('#saved-save')
+  await page.evaluate(() => window.__sunspill.store.update((d) => { d.obstacles = []; d.checks = [] }))
+  await openSaved('Big')
+  await page.waitForFunction(() => window.__sunspill.store.scene.obstacles.length > 0)
+  const again = await scene(page)
+  assert.deepEqual(again.obstacles, big.obstacles, 'every corner of every building came back')
+  assert.deepEqual(again.checks, big.checks)
+  // a full list: twelve at most, and no room is opened when the one on the page could not be kept
+  const saved = await page.evaluate(() => { const a = window.__sunspill.panelActions; const out = []; for (let i = 0; i < 12; i++) out.push(a.saveRoom(`Room ${i}`)); return out })
+  assert.equal(saved.at(-1), 'full')
   await share()
   await page.fill('#saved-name', 'One more')
   await page.click('#saved-save')
-  assert.match(await page.locator('.saved .note[role=status]').innerText(), /Twelve rooms are saved/)
-  // a browser that refuses to keep anything
-  await page.evaluate(() => window.__sunspill.panelActions.deleteRoom(0))
-  await page.evaluate(() => { Storage.prototype.setItem = () => { throw new Error('quota') } })
+  assert.match(await note(), /Twelve rooms are saved/)
+  await page.evaluate(() => window.__sunspill.store.update((d) => { d.facing = 301 }))
+  await openSaved('Room 3')
+  assert.match(await note(), /not saved, and twelve rooms are saved already/)
+  assert.equal((await scene(page)).facing, 301, 'the room on the page stayed')
+  // a browser that refuses to keep the saved list: the open is stopped and says so, and the room on the page stays
+  await page.evaluate(() => { const id = window.__sunspill.panelActions.savedRooms().find((r) => r.name === 'Room 0').id; window.__sunspill.panelActions.deleteRoom(id) })
+  await page.evaluate(() => { const set = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k === 'sunspill.saved') throw new Error('quota'); return set.call(this, k, v) } })
+  await share()
+  await openSaved('Room 3')
+  assert.match(await note(), /would not keep the room/)
+  assert.equal((await scene(page)).facing, 301, 'nothing was opened over the room on the page')
   await page.fill('#saved-name', 'Refused')
   await page.click('#saved-save')
-  assert.match(await page.locator('.saved .note[role=status]').innerText(), /would not keep the room/)
+  assert.match(await note(), /would not keep the room/)
   assert.deepEqual(errors, [])
   await context.close()
 })

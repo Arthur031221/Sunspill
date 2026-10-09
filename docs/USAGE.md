@@ -43,7 +43,7 @@ The tabs under the room are for changes after the setup. **Room** has the size, 
 | Space | play or pause the day |
 | Left and Right on the time bar | move 5 minutes (Shift: 30) |
 | Left and Right on the room | turn the view (Shift: bigger steps) |
-| Arrow keys on a selected piece in the plan | move it 5 cm (Shift: 25 cm) |
+| Arrow keys on a selected piece in the plan (with Alt held in 3D) | move it 5 cm (Shift: 25 cm) |
 | `[` and `]` on a selected piece | turn it 15 degrees (Shift: 90) |
 | Left and Right on a selected window in the plan | slide it 5 cm |
 | Delete on a selected piece or window | remove it |
@@ -52,7 +52,7 @@ The tabs under the room are for changes after the setup. **Room** has the size, 
 | Shift + arrow keys on the map in the facing step | move the room 50 cm (Alt: 25 cm) |
 | Ctrl or Cmd + Z, Shift + Z | undo, redo |
 
-On a phone, drag to turn the room, drag pieces and windows to move them, and use the steps under the room. Reduced motion settings stop the autoplay and the view animations.
+To pick a piece or a window with the keyboard, Tab into its card (in the Things or Room tab, or in the furniture and windows steps) and then Tab or click to the drawing, which tells a screen reader what the keys do. Each move of a piece or a window is read out with its place. On a phone, drag to turn the room, drag pieces and windows to move them, and use the steps under the room. Reduced motion settings stop the autoplay and the view animations.
 
 ## What it does not model
 
