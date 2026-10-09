@@ -490,7 +490,11 @@ const writeHash = () => {
   writeTimer = setTimeout(() => {
     writeTimer = 0
     lastHash = `#${encodeScene(store.scene)}`
-    history.replaceState(null, '', lastHash)
+    try {
+      history.replaceState(null, '', lastHash)
+    } catch {
+      // Safari allows a hundred of these in thirty seconds; the room is still kept below
+    }
     keepRoom(lastHash.slice(1))
   }, 300)
 }

@@ -15,7 +15,7 @@ jobs:
       - run: npm run build
       - name: probe
         run: |
-          cat > /tmp/probe.mjs <<'JS'
+          cat > probe-tmp.mjs <<'JS'
           import { webkit } from 'playwright'
           import { serve } from '/home/runner/work/Sunspill/Sunspill/test/serve.js'
           const site = await serve()
@@ -53,4 +53,4 @@ jobs:
           console.log('PROBE4 replaceState error', err)
           await browser.close(); await site.close()
           JS
-          node /tmp/probe.mjs
+          node probe-tmp.mjs
