@@ -27,7 +27,7 @@ after(async () => {
 
 /** A phone with the three services answered by the test. `answers` can replace any of them. */
 async function open({ locale = 'en-GB', answers = {}, hash = '', viewport = { width: 390, height: 844 } } = {}) {
-  const context = await browser.newContext({ viewport, ...(engine === firefox ? {} : { isMobile: true }), hasTouch: true, deviceScaleFactor: 2, reducedMotion: 'reduce', locale })
+  const context = await browser.newContext({ viewport, ...(engine === firefox ? { serviceWorkers: 'block' } : { isMobile: true }), hasTouch: true, deviceScaleFactor: 2, reducedMotion: 'reduce', locale })
   const outside = []
   await context.route((url) => url.hostname !== '127.0.0.1', async (route) => {
     const url = new URL(route.request().url())
