@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0
+## 0.2.0 (2026-10-09)
 
 A room set up on a phone in a few minutes, and a way to check it against the sun you saw.
 
@@ -15,7 +15,7 @@ A room set up on a phone in a few minutes, and a way to check it against the sun
 - **Sharing.** A new link format (`r2`) that carries buildings, floors, balconies and observations. Old links still open. "Hide my exact location" also drops building names.
 - **Install on a phone.** A web manifest and icons, so "Add to Home Screen" opens the page full screen.
 - **Library.** New exports for obstacles, geography, declination, the compass, fitting and tracing.
-- **Fixed.** A sun running exactly along a wall no longer lights it. An outline that crosses itself no longer disappears.
+- **Fixed.** A sun running exactly along a wall no longer lights it. An outline that crosses itself no longer disappears. A latitude and longitude typed in another time zone bring that zone along. A friend's link that you edit no longer replaces your own room: yours is set aside and "Bring back my earlier room" in the Share tab returns it. Closing the setup with corners marked but not saved asks first. Moving the room to a new place says that the buildings loaded for the old one were removed.
 
 ## 0.1.0
 

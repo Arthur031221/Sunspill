@@ -32,21 +32,16 @@
   </tr>
 </table>
 
-<p align="center">
-  Sonnenhöhe innerhalb von <b>0,007 Grad</b> der NREL-Referenz. <b>0 Abweichungen bei 54.000 Prüfpunkten</b> gegen pvlib und shapely (davon 1.275 nur dunkel, weil ein Gebäude, ein Baum oder eine Balkonbrüstung das Fenster beschattet).<br>
-  <sub>Jedes geometrische Teil wird mit einer unabhängigen Referenz verglichen: die Sonne (pvlib, NREL SPA), die Schatten (ein Strahlenverfolger und shapely), die magnetische Deklination (pygeomag), die Verschiebungen auf der Karte (pyproj) und das Entzerren von Fotos (OpenCV). <code>node scripts/validate.mjs</code> reproduziert das, und <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> nennt, was nicht geprüft ist. Mit dem Foto eines echten Zimmers wurde es noch nicht verglichen, deshalb gibt es einen Prüfmodus, der das Modell mit der Sonne vergleicht, die du gesehen hast. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> sagt, wie weit jede falsche Eingabe den Fleck verschiebt.</sub>
-</p>
+**[Live-Demo öffnen](https://arthur031221.github.io/Sunspill/)** . Kostenlos, ohne Anmeldung, und nach dem ersten Besuch auch offline. Für das Handy gemacht: sieben Schritte und ein paar Minuten von einer Adresse bis zu deinem eigenen Zimmer. Dein Zimmer bleibt in deinem Browser. Adresssuche, Karte und Gebäudeumrisse fragen OpenStreetMap, aber nur, wenn du jedem einzelnen zustimmst.
 
 Es ist weder ein Rendering noch eine AR-App. Der Sonnenfleck auf dem Boden ist ein exaktes Polygon, und du kannst ihn mit einem Strahlenverfolger prüfen.
-
-**[Live-Demo öffnen](https://arthur031221.github.io/Sunspill/)** . Kostenlos, ohne Anmeldung, und nach dem ersten Besuch auch offline. Dein Zimmer bleibt in deinem Browser. Adresssuche, Karte und Gebäudeumrisse fragen OpenStreetMap, aber nur, wenn du jedem einzelnen zustimmst.
 
 ## Dein eigenes Zimmer einrichten
 
 Tippe auf **Mein Zimmer einrichten**. Auf dem Handy dauert es ein paar Minuten, in sieben Schritten mit Zurück und Weiter.
 
 1. **Wo.** Gib eine Adresse ein oder setze eine Nadel auf die OpenStreetMap-Karte. Breite, Länge und Zeitzone füllen sich von selbst.
-2. **Das Zimmer.** Starte mit einem typischen taiwanischen Apartment, Schlafzimmer, Wohnzimmer oder Arbeitszimmer, oder zeichne deinen eigenen Grundriss oder das Foto aus einer Anzeige mit einem Zwei-Punkte-Maßstab nach. Gib die Etage an.
+2. **Das Zimmer.** Starte mit einem Apartment, Schlafzimmer, Wohnzimmer oder Arbeitszimmer (die Maße folgen typischen taiwanischen Wohnungen, korrigiere sie), oder zeichne deinen eigenen Grundriss oder das Foto aus einer Anzeige mit einem Zwei-Punkte-Maßstab nach. Gib die Etage an.
 3. **Fenster und Türen.** Echte Maße entlang der Wände, mit Einrasten an Wandenden, Mitte und aneinander, Balkone mit Brüstung, Vordächer und Türen.
 4. **Wohin es zeigt.** Drehe das Zimmer auf der Karte über den Umriss deines Hauses, oder halte das Handy ans Fenster und lies den Kompass mit addierter magnetischer Deklination ab. Norden bleibt immer sichtbar.
 5. **Was drumherum steht.** Nachbargebäude und ihre Höhen kommen von OpenStreetMap. Eine geschätzte Höhe ist markiert und lässt sich ändern. Gebäude und Bäume kannst du selbst hinzufügen. Eine Uhr auf der Karte zeigt, wo die Sonne steht, und umrandet die Gebäude, die zu dieser Zeit ein Fenster beschatten.
@@ -77,6 +72,12 @@ Dasselbe Schlafzimmer in Taipeh um 16:30 am 15. Juli. Drehe das Fenster von West
 - **Überall nutzen.** Neun Sprachen, helles und dunkles Thema, Tastatur und Touch, Rückgängig und Wiederholen, nach dem ersten Besuch offline.
 
 Nicht enthalten: Reflexionen, Himmelslicht, Schatten von Möbeln. Nur klarer Himmel und direkte Sonne. Gebäude sind Prismen mit flachem Dach, Bäume werfen vollen Schatten. Mit dem Foto eines echten Zimmers wurde das Modell noch nicht verglichen. Wenn du eines machen kannst, öffne ein Issue.
+
+## Wie genau es ist
+
+Sonnenhöhe innerhalb von <b>0,007 Grad</b> der NREL-Referenz. <b>0 Abweichungen bei 54.000 Prüfpunkten</b> gegen pvlib und shapely (davon 1.275 nur dunkel, weil ein Gebäude, ein Baum oder eine Balkonbrüstung das Fenster beschattet).
+
+Jedes geometrische Teil wird mit einer unabhängigen Referenz verglichen: die Sonne (pvlib, NREL SPA), die Schatten (ein Strahlenverfolger und shapely), die magnetische Deklination (pygeomag), die Verschiebungen auf der Karte (pyproj) und das Entzerren von Fotos (OpenCV). <code>node scripts/validate.mjs</code> reproduziert das, und <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> nennt, was nicht geprüft ist. Mit dem Foto eines echten Zimmers wurde es noch nicht verglichen, deshalb gibt es einen Prüfmodus, der das Modell mit der Sonne vergleicht, die du gesehen hast. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> sagt, wie weit jede falsche Eingabe den Fleck verschiebt.
 
 ## Datenschutz
 

@@ -32,21 +32,16 @@
   </tr>
 </table>
 
-<p align="center">
-  Elevação do sol a menos de <b>0,007 grau</b> da referência NREL. <b>0 divergências em 54.000 pontos de teste</b> contra pvlib e shapely (1.275 deles escuros só porque um prédio, uma árvore ou um guarda-corpo de varanda faz sombra na janela).<br>
-  <sub>Cada peça de geometria é comparada com uma referência independente: o sol (pvlib, NREL SPA), as sombras (um traçador de raios e o shapely), a declinação magnética (pygeomag), os deslocamentos no mapa (pyproj) e a planificação de fotos (OpenCV). <code>node scripts/validate.mjs</code> reproduz isso e <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lista o que não é verificado. Ainda não foi comparado com a foto de um cômodo real, por isso há um modo de conferência que compara o modelo com o sol que você viu. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> diz quanto cada dado errado desloca a mancha.</sub>
-</p>
+**[Abrir a demonstração ao vivo](https://arthur031221.github.io/Sunspill/)** . É grátis, não pede login e abre offline depois da primeira visita. Feita para o celular: sete etapas e poucos minutos de um endereço até o seu próprio cômodo. O seu cômodo fica no seu navegador. A busca de endereços, o mapa e os contornos de prédios consultam o OpenStreetMap, mas só depois que você diz sim a cada um.
 
 Não é uma renderização nem um app de realidade aumentada. A mancha de sol no chão é um polígono exato, e você pode conferi-la com um traçador de raios.
-
-**[Abrir a demonstração ao vivo](https://arthur031221.github.io/Sunspill/)** . É grátis, não pede login e abre offline depois da primeira visita. O seu cômodo fica no seu navegador. A busca de endereços, o mapa e os contornos de prédios consultam o OpenStreetMap, mas só depois que você diz sim a cada um.
 
 ## Configure o seu próprio cômodo
 
 Toque em **Configurar meu cômodo**. No celular leva alguns minutos, em sete passos com botões Voltar e Próximo.
 
 1. **Onde.** Digite um endereço ou coloque um alfinete no mapa do OpenStreetMap. Latitude, longitude e fuso horário são preenchidos sozinhos.
-2. **O cômodo.** Comece por um studio, quarto, sala ou escritório típicos de Taiwan, ou trace a sua própria planta ou a foto de um anúncio com uma escala de dois pontos. Informe o andar.
+2. **O cômodo.** Comece por um studio, quarto, sala ou escritório (as medidas seguem apartamentos típicos de Taiwan, então corrija-as), ou trace a sua própria planta ou a foto de um anúncio com uma escala de dois pontos. Informe o andar.
 3. **Janelas e portas.** Medidas reais ao longo das paredes, com encaixe nas pontas da parede, no meio e entre si, varandas com guarda-corpo, beirais e portas.
 4. **Para onde aponta.** Gire o cômodo no mapa sobre o contorno do seu prédio, ou encoste o celular na janela e leia a bússola com a declinação magnética somada. O norte está sempre à vista.
 5. **O que há ao redor.** Os prédios vizinhos e suas alturas vêm do OpenStreetMap. Uma altura estimada fica marcada e pode ser editada. Adicione prédios e árvores à mão. Um relógio no mapa mostra onde está o sol e contorna os prédios que fazem sombra numa janela nesse horário.
@@ -77,6 +72,12 @@ O mesmo quarto em Taipé às 16:30 de 15 de julho. Gire a janela de oeste para l
 - **Usar em qualquer lugar.** Nove idiomas, temas claro e escuro, teclado e toque, desfazer e refazer, offline depois da primeira visita.
 
 Fora do modelo: reflexos, luz do céu, sombras de móveis. Só céu limpo e sol direto. Os prédios são prismas de topo plano e as árvores dão sombra cheia. O modelo ainda não foi comparado com a foto de um cômodo real. Se você puder tirar uma, abra uma issue.
+
+## Quão preciso é
+
+Elevação do sol a menos de <b>0,007 grau</b> da referência NREL. <b>0 divergências em 54.000 pontos de teste</b> contra pvlib e shapely (1.275 deles escuros só porque um prédio, uma árvore ou um guarda-corpo de varanda faz sombra na janela).
+
+Cada peça de geometria é comparada com uma referência independente: o sol (pvlib, NREL SPA), as sombras (um traçador de raios e o shapely), a declinação magnética (pygeomag), os deslocamentos no mapa (pyproj) e a planificação de fotos (OpenCV). <code>node scripts/validate.mjs</code> reproduz isso e <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lista o que não é verificado. Ainda não foi comparado com a foto de um cômodo real, por isso há um modo de conferência que compara o modelo com o sol que você viu. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> diz quanto cada dado errado desloca a mancha.
 
 ## Privacidade
 

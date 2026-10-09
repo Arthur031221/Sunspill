@@ -33,23 +33,21 @@
 </table>
 
 <p align="center">
-  Sun elevation within <b>0.007 degrees</b> of the NREL reference. <b>0 disagreements in 54,000 probe points</b> against pvlib and shapely (4,036 lit, 1,275 of them dark only because a building, a tree or a balcony rail shades the window).<br>
-  <sub>Every piece of the geometry is checked against an independent reference, from the sun (pvlib, NREL SPA) and the shadows (a ray tracer and shapely) to the magnetic declination (pygeomag), the map offsets (pyproj) and the photo flattening (OpenCV). <code>node scripts/validate.mjs</code> reproduces it, and <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lists the choices that aren't checked. It hasn't been compared with a photograph of a real room yet, so there's a check mode that compares the model with what you saw. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> says how far each wrong input moves the patch.</sub>
+  <a href="https://arthur031221.github.io/Sunspill/"><b>Open the live demo</b></a> &nbsp;|&nbsp; free, no login, opens offline after the first visit<br>
+  <sub>Made for a phone. Seven steps and a few minutes get you from an address to your own room. Your room stays in your browser, and the last one you edited is kept on your device. Address search, the map and building outlines ask public OpenStreetMap servers, and only after you say yes to each one.</sub>
 </p>
 
 It isn't a rendering or an AR app. The patch on your floor is an exact polygon, and you can check it against a ray tracer.
-
-**[Open the live demo](https://arthur031221.github.io/Sunspill/)**. It's free, needs no login and opens offline after the first visit. Your room stays in your browser, and the last one you edited is kept on your device. Address search, the map and building outlines ask public OpenStreetMap servers, but only after you say yes to each one.
 
 ## Set up your own room
 
 Press **Set up my room**. On a phone it takes a few minutes, in seven steps with a Back and a Next button.
 
-1. **Where.** Type an address or drop a pin on the OpenStreetMap map. The latitude, longitude and time zone fill in by themselves.
-2. **The room.** Start from a typical Taiwanese studio suite, bedroom, living room or home office, or trace your own floor plan or listing photo with a two point scale. Set the floor number.
+1. **Where.** Type an address or drop a pin on the OpenStreetMap map. The latitude, longitude and time zone fill themselves in.
+2. **The room.** Start from a studio suite, bedroom, living room or home office (the sizes follow typical Taiwanese flats, so correct them), or trace your own floor plan or listing photo with a two point scale. Set the floor number.
 3. **Windows and doors.** Real dimensions along the walls, snapping to the wall ends, the middle and each other, balconies with a railing, eaves and doors.
 4. **Which way it faces.** Turn the room over the outline of your building on the map, or hold the phone against the window and read its compass with the magnetic declination added. North is always on screen.
-5. **What stands around it.** Neighbouring buildings and their heights load from OpenStreetMap. A height that was guessed is marked and can be edited. Add buildings and trees by hand. A clock on the map shows where the sun is and outlines the buildings that shade a window at that time.
+5. **What stands around it.** Neighbouring buildings and their heights load from OpenStreetMap. A guessed height is marked and you can edit it. Add buildings and trees by hand. A clock on the map shows where the sun is and outlines the buildings that shade a window at that time.
 6. **Furniture.** Place, drag and turn beds, desks, sofas, shelves and plants, and see the sun land on them.
 7. **Check against the real sun.** Mark where the sun really was on the floor at a time you saw it, or lay a photo of the floor under the plan. Sunspill shows how far the model is off and can fit the facing and the window to your marks.
 
@@ -86,7 +84,7 @@ A compass app gives you an angle. A map shadow tool draws the buildings in the s
 ## What you can do
 
 - **Draw the room.** Size, wall thickness, up to four windows with a shade, a balcony and a rail, up to three doors, the floor number and furniture you can turn.
-- **Scrub any day.** Pick a city, an address, your location or a latitude and longitude. The clock, the sun path and the patch follow, with daylight saving handled.
+- **Scrub any day.** Pick a city, an address, your location or a latitude and longitude. The clock, the sun path and the patch follow, and daylight saving is handled.
 - **See what shades it.** Buildings from OpenStreetMap with their heights, trees, and your own balcony and eave. Switch any of them off to see what it costs in hours of sun.
 - **See the hours.** The sun hours map colours the floor, or a surface at a height you set, by the hours of direct sun per day for a day, a month, a year or a range of months. Hover for the number.
 - **Check the afternoon.** A printed rule: the minutes after a time you choose when direct sun reaches the floor or a wall, averaged over the months you choose.
@@ -95,9 +93,17 @@ A compass app gives you an angle. A map shadow tool draws the buildings in the s
 - **Share it.** A link that holds the whole room, a PNG card, a GIF, or the room as a JSON file. One switch rounds the place to whole degrees and drops the names from all of them.
 - **Use it anywhere.** Nine languages, light and dark themes, keyboard and touch, undo and redo, offline after the first visit.
 
+## How accurate it is
+
+Sun elevation is within 0.007 degrees of the NREL reference. Against pvlib and shapely there were 0 disagreements in 54,000 probe points (4,036 lit, 1,275 of them dark only because a building, a tree or a balcony rail shades the window).
+
+Every piece of the geometry is checked against an independent reference, from the sun (pvlib, NREL SPA) and the shadows (a ray tracer and shapely) to the magnetic declination (pygeomag), the map offsets (pyproj) and the photo flattening (OpenCV). `node scripts/validate.mjs` reproduces it, and [docs/VALIDATION.md](docs/VALIDATION.md) lists the choices that aren't checked.
+
+The checks can't tell you how close your inputs are to the real room. Sunspill hasn't been compared with a photograph of a real room yet, so it has a check mode that compares the model with the sun you saw. [docs/ACCURACY.md](docs/ACCURACY.md) says how far each wrong input moves the patch. The direction of the window and the height of the building across the street matter most.
+
 ## Privacy
 
-Your room, the pictures you trace and the marks you make never leave your browser. There's no account, no analytics and no cookie. Three optional services talk to public OpenStreetMap servers (the building outlines may come from one of three Overpass servers run by others), each off until you allow it, with the page saying what it sends first:
+Your room, the pictures you trace and the marks you make never leave your browser. There's no account, no analytics and no cookie. Three optional services talk to public OpenStreetMap servers (the building outlines may come from one of three Overpass servers run by others). Each is off until you allow it, and the page says what it sends first:
 
 | Service | Sends |
 | --- | --- |
@@ -113,6 +119,12 @@ You can switch each one off again under "Online services". The page's Content Se
 <summary><b>In the browser (recommended)</b></summary>
 
 Open <https://arthur031221.github.io/Sunspill/>. Nothing to install. After one visit it opens with no connection, and on a phone "Add to Home Screen" gives it an icon and a full screen window. CI tests it in Chromium and Firefox. Safari and a real iPhone haven't been tried, so the phone compass is untested on iOS.
+</details>
+
+<details>
+<summary><b>As one file</b></summary>
+
+Download <code>sunspill.html</code> from the <a href="https://github.com/Arthur031221/Sunspill/releases/latest">latest release</a> and open it in any current browser. It's the whole app in one file, with nothing to install and nothing to host. The three optional services stay off until you allow them.
 </details>
 
 <details>

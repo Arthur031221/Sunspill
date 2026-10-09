@@ -6,6 +6,10 @@ Sunspill is one static HTML file. There is nothing to install to use it.
 
 Open https://arthur031221.github.io/Sunspill/ in any current browser. After the first visit it also opens with no network connection, because the page installs a small cache worker.
 
+## Use it from one file
+
+Each [release](https://github.com/Arthur031221/Sunspill/releases) has `sunspill.html`, the whole app in one file. Download it and open it in a browser, from disk or from any host. From disk there is no offline worker, and no network is needed anyway. The release is made by `.github/workflows/release.yml` when a tag such as `v0.2.0` is pushed, and the tag has to match the version in `package.json`.
+
 ## Run it from the repository
 
 ```sh

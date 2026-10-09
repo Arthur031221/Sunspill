@@ -32,21 +32,16 @@
   </tr>
 </table>
 
-<p align="center">
-  Hauteur du soleil à moins de <b>0,007 degré</b> de la référence NREL. <b>0 désaccord sur 54 000 points de test</b> face à pvlib et shapely (dont 1 275 ne sont sombres que parce qu'un bâtiment, un arbre ou un garde-corps de balcon ombrage la fenêtre).<br>
-  <sub>Chaque morceau de géométrie est comparé à une référence indépendante : le soleil (pvlib, NREL SPA), les ombres (un traceur de rayons et shapely), la déclinaison magnétique (pygeomag), les décalages sur la carte (pyproj) et la mise à plat des photos (OpenCV). <code>node scripts/validate.mjs</code> le reproduit et <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> liste ce qui n'est pas vérifié. Il n'a pas encore été comparé à la photo d'une vraie pièce, d'où un mode de contrôle qui compare le modèle à ce que vous avez vu. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> dit de combien chaque erreur déplace la tache.</sub>
-</p>
+**[Ouvrir la démo en ligne](https://arthur031221.github.io/Sunspill/)** . C'est gratuit, sans compte, et ça s'ouvre hors ligne après la première visite. Pensée pour le téléphone : sept étapes et quelques minutes d'une adresse à votre propre pièce. Votre pièce reste dans votre navigateur. La recherche d'adresse, la carte et les contours de bâtiments interrogent OpenStreetMap, mais seulement après votre accord pour chacun.
 
 Ce n'est ni un rendu ni une application de réalité augmentée. La tache de soleil au sol est un polygone exact, et vous pouvez la comparer à un traceur de rayons.
-
-**[Ouvrir la démo en ligne](https://arthur031221.github.io/Sunspill/)** . C'est gratuit, sans compte, et ça s'ouvre hors ligne après la première visite. Votre pièce reste dans votre navigateur. La recherche d'adresse, la carte et les contours de bâtiments interrogent OpenStreetMap, mais seulement après votre accord pour chacun.
 
 ## Configurer votre propre pièce
 
 Appuyez sur **Configurer ma pièce**. Sur un téléphone, il faut quelques minutes, en sept étapes avec des boutons Retour et Suivant.
 
 1. **Où.** Saisissez une adresse ou posez une épingle sur la carte OpenStreetMap. La latitude, la longitude et le fuseau horaire se remplissent seuls.
-2. **La pièce.** Partez d'un studio, d'une chambre, d'un salon ou d'un bureau typiques de Taïwan, ou décalquez votre plan ou la photo d'une annonce avec une échelle à deux points. Indiquez l'étage.
+2. **La pièce.** Partez d'un studio, d'une chambre, d'un salon ou d'un bureau (les dimensions suivent les logements typiques de Taïwan, corrigez-les), ou décalquez votre plan ou la photo d'une annonce avec une échelle à deux points. Indiquez l'étage.
 3. **Fenêtres et portes.** Dimensions réelles le long des murs, avec aimantation aux bouts du mur, au milieu et entre elles, balcons avec garde-corps, auvents et portes.
 4. **Vers où ça donne.** Tournez la pièce sur le contour de votre immeuble dans la carte, ou posez le téléphone contre la fenêtre et lisez sa boussole avec la déclinaison magnétique ajoutée. Le nord reste toujours visible.
 5. **Ce qui l'entoure.** Les bâtiments voisins et leur hauteur viennent d'OpenStreetMap. Une hauteur estimée est marquée et modifiable. Ajoutez des bâtiments et des arbres à la main. Une horloge sur la carte montre où est le soleil et cerne les bâtiments qui font de l'ombre à une fenêtre à cette heure.
@@ -77,6 +72,12 @@ La même chambre à Taipei à 16:30 le 15 juillet. Tournez la fenêtre de l'oues
 - **L'utiliser partout.** Neuf langues, thèmes clair et sombre, clavier et tactile, annuler et rétablir, hors ligne après la première visite.
 
 Ne sont pas inclus : les reflets, la lumière du ciel, les ombres des meubles. Ciel dégagé et soleil direct seulement. Les bâtiments sont des prismes à toit plat et les arbres donnent une ombre pleine. Le modèle n'a pas encore été comparé à la photo d'une vraie pièce. Si vous pouvez en prendre une, ouvrez une issue.
+
+## Quelle est sa précision
+
+Hauteur du soleil à moins de <b>0,007 degré</b> de la référence NREL. <b>0 désaccord sur 54 000 points de test</b> face à pvlib et shapely (dont 1 275 ne sont sombres que parce qu'un bâtiment, un arbre ou un garde-corps de balcon ombrage la fenêtre).
+
+Chaque morceau de géométrie est comparé à une référence indépendante : le soleil (pvlib, NREL SPA), les ombres (un traceur de rayons et shapely), la déclinaison magnétique (pygeomag), les décalages sur la carte (pyproj) et la mise à plat des photos (OpenCV). <code>node scripts/validate.mjs</code> le reproduit et <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> liste ce qui n'est pas vérifié. Il n'a pas encore été comparé à la photo d'une vraie pièce, d'où un mode de contrôle qui compare le modèle à ce que vous avez vu. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> dit de combien chaque erreur déplace la tache.
 
 ## Vie privée
 

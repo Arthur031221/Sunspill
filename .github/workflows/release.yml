@@ -1,0 +1,41 @@
+name: Release
+
+# Pushing a tag such as v0.2.0 builds the page, runs the tests and publishes a
+# release with the app as one file and the library. The tag has to match the
+# version in package.json, and the notes are that version's section of the
+# changelog.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: The tag matches package.json
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - run: npm run build
+      - name: The committed build is current
+        run: git diff --exit-code -- dist
+      - run: npm test
+      - name: Notes from the changelog
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" 'index($0, "## " v) == 1 { on = 1; next } /^## / { on = 0 } on' CHANGELOG.md > notes.md
+          test -s notes.md
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp dist/index.html sunspill.html
+          cp dist/sunspill.js sunspill.js
+          gh release create "$GITHUB_REF_NAME" sunspill.html sunspill.js --title "Sunspill ${GITHUB_REF_NAME#v}" --notes-file notes.md

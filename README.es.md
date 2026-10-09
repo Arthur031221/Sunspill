@@ -32,21 +32,16 @@
   </tr>
 </table>
 
-<p align="center">
-  Elevación solar a menos de <b>0,007 grados</b> de la referencia NREL. <b>0 desacuerdos en 54.000 puntos de prueba</b> frente a pvlib y shapely (1.275 de ellos oscuros solo porque un edificio, un árbol o una barandilla de balcón da sombra a la ventana).<br>
-  <sub>Cada pieza de geometría se compara con una referencia independiente: el sol (pvlib, NREL SPA), las sombras (un trazador de rayos y shapely), la declinación magnética (pygeomag), los desplazamientos del mapa (pyproj) y el aplanado de fotos (OpenCV). <code>node scripts/validate.mjs</code> lo reproduce y <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lista lo que no se comprueba. Aún no se ha comparado con la foto de una habitación real, así que hay un modo de comprobación que compara el modelo con lo que viste. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> dice cuánto mueve la mancha cada dato erróneo.</sub>
-</p>
+**[Abre la demo en vivo](https://arthur031221.github.io/Sunspill/)** . Es gratis, no pide registro y se abre sin conexión tras la primera visita. Pensada para el móvil: siete pasos y unos minutos desde una dirección hasta tu propia habitación. Tu habitación se queda en tu navegador. La búsqueda de direcciones, el mapa y los contornos de edificios consultan a OpenStreetMap, pero solo cuando dices que sí a cada uno.
 
 No es un render ni una app de realidad aumentada. La mancha de sol del suelo es un polígono exacto y puedes compararla con un trazador de rayos.
-
-**[Abre la demo en vivo](https://arthur031221.github.io/Sunspill/)** . Es gratis, no pide registro y se abre sin conexión tras la primera visita. Tu habitación se queda en tu navegador. La búsqueda de direcciones, el mapa y los contornos de edificios consultan a OpenStreetMap, pero solo cuando dices que sí a cada uno.
 
 ## Configura tu propia habitación
 
 Pulsa **Configurar mi habitación**. En un móvil lleva unos minutos, en siete pasos con botones Atrás y Siguiente.
 
 1. **Dónde.** Escribe una dirección o pon una chincheta en el mapa de OpenStreetMap. La latitud, la longitud y la zona horaria se rellenan solas.
-2. **La habitación.** Empieza por un estudio, dormitorio, salón o despacho típicos de Taiwán, o calca tu propio plano o la foto de un anuncio con una escala de dos puntos. Indica la planta.
+2. **La habitación.** Empieza por un estudio, dormitorio, salón o despacho (las medidas siguen los pisos típicos de Taiwán, así que corrígelas), o calca tu propio plano o la foto de un anuncio con una escala de dos puntos. Indica la planta.
 3. **Ventanas y puertas.** Medidas reales a lo largo de los muros, con ajuste a los extremos, al centro y entre sí, balcones con barandilla, aleros y puertas.
 4. **Hacia dónde mira.** Gira la habitación sobre el contorno de tu edificio en el mapa, o apoya el móvil en la ventana y lee su brújula con la declinación magnética sumada. El norte siempre está a la vista.
 5. **Qué hay alrededor.** Los edificios vecinos y sus alturas se cargan de OpenStreetMap. Una altura supuesta queda marcada y se puede cambiar. Añade edificios y árboles a mano. Un reloj en el mapa muestra dónde está el sol y marca los edificios que dan sombra a una ventana a esa hora.
@@ -77,6 +72,12 @@ El mismo dormitorio en Taipéi a las 16:30 del 15 de julio. Gira la ventana de o
 - **Usarlo donde sea.** Nueve idiomas, temas claro y oscuro, teclado y táctil, deshacer y rehacer, sin conexión tras la primera visita.
 
 No incluye reflejos, luz del cielo ni sombras de muebles. Solo cielo despejado y sol directo. Los edificios son prismas de techo plano y los árboles dan sombra maciza. Aún no se ha comparado con la foto de una habitación real. Si puedes hacer una, abre un issue.
+
+## Qué tan preciso es
+
+Elevación solar a menos de <b>0,007 grados</b> de la referencia NREL. <b>0 desacuerdos en 54.000 puntos de prueba</b> frente a pvlib y shapely (1.275 de ellos oscuros solo porque un edificio, un árbol o una barandilla de balcón da sombra a la ventana).
+
+Cada pieza de geometría se compara con una referencia independiente: el sol (pvlib, NREL SPA), las sombras (un trazador de rayos y shapely), la declinación magnética (pygeomag), los desplazamientos del mapa (pyproj) y el aplanado de fotos (OpenCV). <code>node scripts/validate.mjs</code> lo reproduce y <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lista lo que no se comprueba. Aún no se ha comparado con la foto de una habitación real, así que hay un modo de comprobación que compara el modelo con lo que viste. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> dice cuánto mueve la mancha cada dato erróneo.
 
 ## Privacidad
 
