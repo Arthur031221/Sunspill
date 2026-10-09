@@ -41,7 +41,7 @@ It isn't a rendering or an AR app. The patch on your floor is an exact polygon, 
 
 ## Set up your own room
 
-Press **Set up my room**. On a phone it takes a few minutes, in seven steps with a Back and a Next button.
+Press **Set up my room**. It's seven steps with a Back and a Next button, and on a phone it takes a few minutes.
 
 1. **Where.** Type an address or drop a pin on the OpenStreetMap map. The latitude, longitude and time zone fill themselves in.
 2. **The room.** Start from a studio suite, bedroom, living room or home office (the sizes follow typical Taiwanese flats, so correct them), or trace your own floor plan or listing photo with a two point scale. Set the floor number.
@@ -118,7 +118,7 @@ You can switch each one off again under "Online services". The page's Content Se
 <details>
 <summary><b>In the browser (recommended)</b></summary>
 
-Open <https://arthur031221.github.io/Sunspill/>. Nothing to install. After one visit it opens with no connection, and on a phone "Add to Home Screen" gives it an icon and a full screen window. CI tests it in Chromium and Firefox. Safari and a real iPhone haven't been tried, so the phone compass is untested on iOS.
+Open <https://arthur031221.github.io/Sunspill/>. Nothing to install. After one visit it opens with no connection, and on a phone "Add to Home Screen" gives it an icon and a full screen window. CI tests it in Chromium and Firefox, and a WebKit job you can start by hand runs most of the same tests on Linux. That isn't Safari on an iPhone, which hasn't been tried, so the phone compass is untested on iOS.
 </details>
 
 <details>
