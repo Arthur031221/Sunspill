@@ -65,8 +65,8 @@ export function itemSunHours(scene) {
 export const floorArea = (patches) => totalArea(patches.floor)
 
 /** Hours of direct sun that reach the floor on the day shown, from the sun's own steps through the day. */
-export function sunHoursInside(scene) {
-  const { steps } = daySteps(scene.place, scene.date.month, scene.date.day, 10)
+export function sunHoursInside(scene, stepMinutes = 10) {
+  const { steps } = daySteps(scene.place, scene.date.month, scene.date.day, stepMinutes)
   let hours = 0
   for (const step of steps) {
     const p = scenePatches(scene, step)

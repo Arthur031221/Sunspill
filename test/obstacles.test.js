@@ -4,21 +4,12 @@ import { windowPatches, scenePatches, totalArea } from '../src/core/light.js'
 import { convexParts, hullOf, prismShadow, sceneObstacles, crownRing } from '../src/core/obstacles.js'
 import { area, insideConvex } from '../src/core/poly.js'
 import { normalizeScene, sunInRoom, wallFrame, roomToLocal, localToRoom, itemFootprint } from '../src/core/room.js'
-import { isLit, isWallLit, casterRings, rayHitsPrism } from './helpers/raytrace.js'
+import { rayHitsPrism } from './helpers/raytrace.js'
+import { compareWithTracer, compareWithReference } from './helpers/obstacle-cases.js'
 
 const RAD = Math.PI / 180
 const sunAt = (azimuth, elevation) => [Math.cos(elevation * RAD) * Math.sin(azimuth * RAD), Math.cos(elevation * RAD) * Math.cos(azimuth * RAD), Math.sin(elevation * RAD)]
 const plain = (over = {}) => ({ wall: 'top', pos: 1.5, w: 2, h: 1.2, sill: 0.8, eave: { depth: 0, gap: 0.1, ext: 0.3 }, across: null, balcony: null, ...over })
-
-function rng(seed) {
-  let a = seed
-  return () => {
-    a = (a + 0x6d2b79f5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
 
 test('a very wide tall prism reproduces the flat building across the street', () => {
   const room = { w: 6, d: 8, h: 2.8, wall: 0.2 }
@@ -145,105 +136,15 @@ test('turned furniture stays inside the room', () => {
   }
 })
 
-function randomScene(rand) {
-  const between = (lo, hi) => lo + (hi - lo) * rand()
-  const room = { w: between(2.5, 7), d: between(2.5, 7), h: between(2.4, 3.2), wall: rand() < 0.4 ? 0 : between(0.05, 0.3) }
-  const windows = []
-  for (const wall of ['top', 'right', 'bottom', 'left'].filter(() => rand() < 0.45)) {
-    const length = wall === 'top' || wall === 'bottom' ? room.w : room.d
-    const w = between(0.6, Math.min(3, length - 0.2))
-    const h = between(0.6, 1.8)
-    windows.push({
-      wall, w, h, pos: between(0.05, length - w - 0.05), sill: between(0, room.h - h - 0.05),
-      eave: { depth: rand() < 0.4 ? 0 : between(0.2, 1), gap: between(0, 0.3), ext: between(0, 0.6) },
-      across: null,
-      balcony: rand() < 0.35 ? { depth: between(0.6, 2), rail: between(0.4, 1.3), ext: between(0, 0.8) } : null,
-    })
-  }
-  if (!windows.length) return null
-  const obstacles = []
-  const count = 1 + Math.floor(rand() * 5)
-  for (let i = 0; i < count; i++) {
-    const bearing = rand() * 2 * Math.PI
-    const dist = between(6, 70)
-    const cx = Math.sin(bearing) * dist
-    const cy = Math.cos(bearing) * dist
-    if (rand() < 0.3) {
-      obstacles.push({ type: 'tree', x: cx, y: cy, r: between(1.5, 5), h: between(5, 20), base: between(1, 4) })
-    } else {
-      // a random simple polygon: points sorted by angle round a centre, or an L shape
-      const size = between(5, 25)
-      const turn = rand() * Math.PI
-      const base = rand() < 0.5
-        ? [[-1, -1], [1, -1], [1, 0], [0, 0], [0, 1], [-1, 1]]
-        : ((sides) => Array.from({ length: sides }, (_, k) => {
-          const radius = 0.6 + 0.4 * rand()
-          return [Math.cos((2 * Math.PI * k) / sides) * radius, Math.sin((2 * Math.PI * k) / sides) * radius]
-        }))(3 + Math.floor(rand() * 5))
-      obstacles.push({ type: 'building', ring: base.map(([u, v]) => [cx + size * (u * Math.cos(turn) - v * Math.sin(turn)), cy + size * (u * Math.sin(turn) + v * Math.cos(turn))]), h: between(6, 60), base: 0 })
-    }
-  }
-  return normalizeScene({ room, windows, obstacles, facing: rand() * 360, floor: { n: 1 + Math.floor(rand() * 6), storey: between(2.8, 3.4) }, items: [] })
-}
-
 test('agrees with the independent ray tracer on random rooms with buildings, trees and balconies', () => {
-  const rand = rng(11)
-  const between = (lo, hi) => lo + (hi - lo) * rand()
-  let cases = 0
-  let points = 0
-  let lit = 0
-  let shadedByCasters = 0
-  let mismatches = 0
-  for (let n = 0; n < 400; n++) {
-    const scene = randomScene(rand)
-    if (!scene) continue
-    const r = scene.room
-    const casters = casterRings(scene)
-    const f = wallFrame(r, scene.windows[Math.floor(rand() * scene.windows.length)].wall)
-    const el = between(5, 60) * RAD
-    const off = between(-60, 60) * RAD
-    const s = [Math.cos(el) * (f.n[0] * Math.cos(off) + f.t[0] * Math.sin(off)), Math.cos(el) * (f.n[1] * Math.cos(off) + f.t[1] * Math.sin(off)), Math.sin(el)]
-    const planeZ = rand() < 0.6 ? 0 : between(0.3, 1)
-    const patches = scene.windows.map((win) => windowPatches(r, win, s, { planeZ, obstacles: sceneObstacles(scene) }))
-    const floor = patches.flatMap((p) => p.floor)
-    cases++
-    const box = floor.flat()
-    const near = box.length ? { x0: Math.min(...box.map((q) => q[0])) - 0.3, x1: Math.max(...box.map((q) => q[0])) + 0.3, y0: Math.min(...box.map((q) => q[1])) - 0.3, y1: Math.max(...box.map((q) => q[1])) + 0.3 } : null
-    for (let i = 0; i < 300; i++) {
-      const focus = near && i % 2 === 1
-      const x = focus ? between(Math.max(0.01, near.x0), Math.min(r.w - 0.01, near.x1)) : between(0.01, r.w - 0.01)
-      const y = focus ? between(Math.max(0.01, near.y0), Math.min(r.d - 0.01, near.y1)) : between(0.01, r.d - 0.01)
-      if (!(x > 0 && x < r.w && y > 0 && y < r.d)) continue
-      const expected = isLit(r, scene.windows, s, [x, y, planeZ], casters)
-      const got = floor.some((poly) => insideConvex(poly, x, y))
-      points++
-      if (expected) lit++
-      if (!expected && isLit(r, scene.windows, s, [x, y, planeZ], [])) shadedByCasters++
-      if (expected !== got) {
-        mismatches++
-        if (process.env.DEBUG_SUN && mismatches < 4) console.log('MISMATCH', JSON.stringify({ expected, got, x, y, planeZ, scene, s }))
-      }
-    }
-    for (const wall of ['top', 'right', 'bottom', 'left']) {
-      const length = wall === 'top' || wall === 'bottom' ? r.w : r.d
-      const flat = patches.flatMap((p) => p.walls.filter((q) => q.wall === wall))
-      for (let i = 0; i < 60; i++) {
-        const u = between(0.01, length - 0.01)
-        const z = between(0.05, r.h - 0.05)
-        const expected = isWallLit(r, scene.windows, s, wall, [u, z], casters)
-        const got = flat.some((q) => insideConvex(q.poly.map((p) => (wall === 'left' || wall === 'right' ? [p[1], p[2]] : [p[0], p[2]])), u, z))
-        points++
-        if (expected) lit++
-        if (expected !== got) mismatches++
-      }
-    }
-  }
-  console.log(`# ${cases} random rooms with obstacles, ${points} probes (${lit} lit, ${shadedByCasters} floor probes darkened by obstacles), ${mismatches} disagreements`)
-  assert.ok(cases >= 150)
-  assert.ok(lit > 4000, `only ${lit} lit probes`)
-  assert.ok(shadedByCasters > 500, `only ${shadedByCasters} probes were darkened by obstacles, the test is too weak`)
-  assert.equal(mismatches, 0)
+  const r = compareWithTracer(11, 400)
+  console.log(`# ${r.cases} random rooms with obstacles, ${r.points} probes (${r.lit} lit, ${r.shadedByCasters} floor probes darkened by obstacles), ${r.mismatches} disagreements`)
+  assert.ok(r.cases >= 150)
+  assert.ok(r.lit > 4000, `only ${r.lit} lit probes`)
+  assert.ok(r.shadedByCasters > 500, `only ${r.shadedByCasters} probes were darkened by obstacles, the test is too weak`)
+  assert.equal(r.mismatches, 0)
 })
+
 
 test('the ray and prism test itself: concave footprints, levels and starting inside', () => {
   const l = [[0, 0], [10, 0], [10, 4], [4, 4], [4, 10], [0, 10]]
@@ -253,4 +154,19 @@ test('the ray and prism test itself: concave footprints, levels and starting ins
   assert.equal(rayHitsPrism([12, 6, 0.5], [-1, 0, 0.01], l.map(([x, y]) => [x, y + 20]), 0, 2), false, 'the same ray misses a prism moved aside')
   assert.equal(rayHitsPrism([2, 2, 0], [0, 0.2, 0.98], l, 1, 100), true, 'starting inside, rising into the solid')
   assert.equal(rayHitsPrism([2, 2, 0], [0, 0.2, 0.98], l, 50, 100), false, 'the ray leaves the footprint before it reaches the level')
+})
+
+// Whether Sunspill agrees with a reference made without any of its code: the sun from pvlib (NREL SPA),
+// the room, windows and obstacles placed in a world frame by compass bearings, and the rays traced with
+// shapely against extruded polygons. scripts/make-obstacle-reference.py writes it.
+// Whether Sunspill agrees with a reference made without any of its code: the sun from pvlib (NREL SPA),
+// the room, windows and obstacles placed in a world frame by compass bearings, and the rays traced with
+// shapely against extruded polygons. scripts/make-obstacle-reference.py writes it.
+test('agrees with a reference made in Python with pvlib and shapely: sun, rays and polygons that share no code with it', async () => {
+  const { readFileSync } = await import('node:fs')
+  const reference = JSON.parse(readFileSync(new URL('./fixtures/obstacle-reference.json', import.meta.url), 'utf8'))
+  const r = compareWithReference(reference)
+  console.log(`# against pvlib and shapely: ${r.cases} rooms, ${r.probes} probes (${r.lit} lit, ${r.darkened} darkened by buildings, trees or rails), ${r.misses.length} disagreements`)
+  assert.ok(r.cases >= 250 && r.lit > 1500 && r.darkened > 400, 'the reference must have plenty of lit and shaded probes')
+  assert.deepEqual(r.misses.slice(0, 5), [])
 })

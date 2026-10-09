@@ -114,3 +114,69 @@ if (total.misses.length) {
   console.log(`  the farthest disagreement lies ${worst.d.toExponential(2)} m from a patch edge (${worst.kind})`)
   if (process.env.SHOW) console.log(JSON.stringify(worst))
 }
+
+// ---------------------------------------------------------------- buildings, trees, balconies
+
+import { compareWithTracer, compareWithReference } from '../test/helpers/obstacle-cases.js'
+
+const obstacle = { cases: 0, points: 0, lit: 0, shaded: 0, misses: 0 }
+for (const seed of seeds) {
+  const r = compareWithTracer(100 + seed, 400)
+  obstacle.cases += r.cases
+  obstacle.points += r.points
+  obstacle.lit += r.lit
+  obstacle.shaded += r.shadedByCasters
+  obstacle.misses += r.mismatches
+}
+console.log(`buildings, trees and balconies against the ray tracer (seeds ${seeds.join(', ')}): ${obstacle.cases} random rooms, ${obstacle.points} probe points (${obstacle.lit} lit, ${obstacle.shaded} floor probes darkened by obstacles), ${obstacle.misses} disagreements`)
+
+const ref = compareWithReference(JSON.parse(readFileSync(new URL('../test/fixtures/obstacle-reference.json', import.meta.url), 'utf8')))
+console.log(`buildings, trees and balconies against pvlib and shapely: ${ref.cases} rooms, ${ref.probes} probe points (${ref.lit} lit, ${ref.darkened} darkened), ${ref.misses.length} disagreements`)
+
+// ---------------------------------------------------------------- places, magnets, phones, pictures
+
+import { toLocal, lonLatToTile } from '../src/core/geo.js'
+import { declination } from '../src/core/declination.js'
+import { rotationMatrix } from '../src/core/compass.js'
+import { zoneAt } from '../src/core/zone.js'
+import { homography, applyHomography } from '../src/core/trace.js'
+
+const fixture = (name) => JSON.parse(readFileSync(new URL(`../test/fixtures/${name}`, import.meta.url), 'utf8'))
+{
+  const rows = fixture('geo-reference.json').rows
+  const worst = Math.max(...rows.map(([lat0, lon0, lat, lon, e, n]) => Math.hypot(toLocal({ lat: lat0, lon: lon0 }, lat, lon)[0] - e, toLocal({ lat: lat0, lon: lon0 }, lat, lon)[1] - n)))
+  console.log(`east and north offsets against pyproj: ${rows.length} points within 400 m, worst ${(worst * 100).toFixed(1)} cm`)
+}
+{
+  const rows = fixture('tile-reference.json').rows
+  const worst = Math.max(...rows.map(([lat, lon, z, x, y]) => Math.max(Math.abs(lonLatToTile(lon, lat, z).x - x), Math.abs(lonLatToTile(lon, lat, z).y - y)) / 2 ** z))
+  console.log(`map tile positions against the slippy map formula: ${rows.length} points, worst ${worst.toExponential(1)} of the world width`)
+}
+{
+  const rows = fixture('declination-reference.json').rows
+  const worst = Math.max(...rows.map(([lat, lon, year, h, d]) => Math.abs(declination(lat, lon, year, h) - d)))
+  console.log(`magnetic declination against pygeomag (World Magnetic Model 2025): ${rows.length} points, worst ${worst.toFixed(4)} degrees`)
+}
+{
+  const rows = fixture('compass-reference.json').rows
+  const worst = Math.max(...rows.map(([a, b, g, back]) => {
+    const R = rotationMatrix(a, b, g)
+    const h = ((Math.atan2(-R[0][2], -R[1][2]) * 180) / Math.PI + 360) % 360
+    return Math.abs(((h - back + 540) % 360) - 180)
+  }))
+  console.log(`phone angles to a heading against numpy rotation matrices: ${rows.length} orientations, worst ${worst.toExponential(1)} degrees`)
+}
+{
+  const rows = fixture('zone-reference.json').rows.filter((r) => !r[2].startsWith('Etc/'))
+  const same = rows.filter(([lat, lon, zone]) => zoneAt(lat, lon) === zone).length
+  console.log(`time zone at a point against timezonefinder: ${same} of ${rows.length} land points name the same zone`)
+}
+{
+  const rows = fixture('homography-reference.json').rows
+  let worst = 0
+  for (const [src, dst, pts, mapped] of rows) {
+    const H = homography(src, dst)
+    pts.forEach((p, i) => { const q = applyHomography(H, p); worst = Math.max(worst, Math.hypot(q[0] - mapped[i][0], q[1] - mapped[i][1])) })
+  }
+  console.log(`four point perspective maps against OpenCV: ${rows.length} maps, worst ${worst.toFixed(5)} pixels`)
+}
