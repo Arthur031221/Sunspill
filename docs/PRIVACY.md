@@ -12,7 +12,7 @@ Three optional services talk to public servers. Each one is off until you allow 
 
 Every request also carries what any web request carries: your network address, your browser's name and the site this page is on (not its full address, and never the part after the `#`). OpenStreetMap's own [privacy policy](https://wiki.osmfoundation.org/wiki/Privacy_Policy) and the policies of the Overpass server operators say what they do with it.
 
-The page's Content Security Policy lists exactly those five hosts (the Nominatim server, three Overpass servers and the tile server) and no others, so the browser blocks a script request to anything else. It does not stop a link that someone clicks. `test/e2e/setup.e2e.js` checks that:
+The page's Content Security Policy lists exactly those five hosts (the Nominatim server, three Overpass servers and the tile server) and no others, so the browser blocks a script request to anything else (the page's own address is also allowed, for its icon). It does not stop a link that someone clicks. `test/e2e/setup.e2e.js` checks that:
 
 - a fresh page makes no request but its own,
 - a "Not now" sends nothing,

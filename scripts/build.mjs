@@ -2,7 +2,7 @@
 // sun and light library on its own).
 import { build } from 'esbuild'
 import { createHash } from 'node:crypto'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ORIGINS } from '../src/app/net.js'
@@ -47,9 +47,10 @@ const csp = [
   `script-src 'sha256-${hash}'`,
   "style-src 'unsafe-inline'",
   'font-src data:',
-  `img-src data: blob: ${ORIGINS.images.join(' ')}`,
+  `img-src 'self' data: blob: ${ORIGINS.images.join(' ')}`,
   `connect-src ${ORIGINS.connect.join(' ')}`,
   "worker-src 'self'",
+  "manifest-src 'self'",
   "form-action 'none'",
   "base-uri 'none'",
 ].join('; ')
@@ -61,11 +62,29 @@ const html = read('src/app/template.html')
   .replace('__CSS__', () => css)
   .replace('__JS__', () => js)
 writeFileSync(resolve(root, 'dist/index.html'), html)
+// what lets a phone add the page to its home screen and open it full screen
+const ICONS = ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png']
+for (const name of ICONS) copyFileSync(resolve(root, 'assets', name), resolve(root, 'dist', name))
+writeFileSync(resolve(root, 'dist/manifest.webmanifest'), JSON.stringify({
+  name: 'Sunspill',
+  short_name: 'Sunspill',
+  description: 'Set up your own room and see where the sun lands on its floor, by the hour and the season.',
+  start_url: './',
+  scope: './',
+  display: 'standalone',
+  background_color: '#f7f1e6',
+  theme_color: '#f7f1e6',
+  icons: [
+    { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+    { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+    { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+  ],
+}, null, 2) + '\n')
 // A cache-first worker, so a page opened once keeps working without a connection.
 const version = createHash('sha256').update(html).digest('hex').slice(0, 10)
 writeFileSync(resolve(root, 'dist/sw.js'), `const CACHE = 'sunspill-${version}'
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['./'])).then(() => self.skipWaiting()))
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['./', 'manifest.webmanifest', 'icon-192.png'])).then(() => self.skipWaiting()))
 })
 self.addEventListener('activate', (event) => {
   event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith('sunspill-') && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()))

@@ -112,7 +112,7 @@ You can switch each one off again under "Online services". The page's Content Se
 <details>
 <summary><b>In the browser (recommended)</b></summary>
 
-Open <https://arthur031221.github.io/Sunspill/>. Nothing to install. After one visit it opens with no connection. CI tests it in Chromium and Firefox. Safari and a real iPhone haven't been tried, so the phone compass is untested on iOS.
+Open <https://arthur031221.github.io/Sunspill/>. Nothing to install. After one visit it opens with no connection, and on a phone "Add to Home Screen" gives it an icon and a full screen window. CI tests it in Chromium and Firefox. Safari and a real iPhone haven't been tried, so the phone compass is untested on iOS.
 </details>
 
 <details>
@@ -130,7 +130,7 @@ npx --yes serve dist
 <details>
 <summary><b>On your own site</b></summary>
 
-Copy `dist/index.html` and `dist/sw.js` to any static host. Only the three optional services above reach out, and they stay off until you allow them. See [docs/INSTALL.md](docs/INSTALL.md).
+Copy `dist/index.html`, `dist/sw.js`, `dist/manifest.webmanifest` and the three `dist/icon-*.png` files to any static host. Only the three optional services above reach out, and they stay off until you allow them. See [docs/INSTALL.md](docs/INSTALL.md).
 </details>
 
 <details>

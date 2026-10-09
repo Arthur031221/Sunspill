@@ -131,7 +131,7 @@ test('the sample page still asks nothing of anyone: no outside request, and the 
   const csp = await page.evaluate(() => document.querySelector('meta[http-equiv="Content-Security-Policy"]').content)
   const connect = csp.match(/connect-src ([^;]+)/)[1].split(' ').sort()
   assert.deepEqual(connect, ['https://nominatim.openstreetmap.org', 'https://overpass-api.de', 'https://overpass.openstreetmap.fr', 'https://overpass.private.coffee'])
-  assert.match(csp, /img-src data: blob: https:\/\/tile\.openstreetmap\.org(;|$)/)
+  assert.match(csp, /img-src 'self' data: blob: https:\/\/tile\.openstreetmap\.org(;|$)/)
   assert.match(csp, /default-src 'none'/)
   await context.close()
 })

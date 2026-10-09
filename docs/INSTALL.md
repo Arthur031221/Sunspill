@@ -16,11 +16,11 @@ npm run build
 npx --yes serve dist
 ```
 
-`npm run build` writes `dist/index.html` (the whole app, fonts included), `dist/sw.js` (the offline worker) and `dist/sunspill.js` (the library). The committed `dist` is always current: CI rebuilds it and fails if it differs.
+`npm run build` writes `dist/index.html` (the whole app, fonts included), `dist/sw.js` (the offline worker), `dist/manifest.webmanifest` with the icons (for "Add to Home Screen") and `dist/sunspill.js` (the library). The committed `dist` is always current: CI rebuilds it and fails if it differs.
 
 ## Host it yourself
 
-Copy `dist/index.html` and `dist/sw.js` to any static host, side by side. The page sets a Content Security Policy that allows no network requests except the three optional OpenStreetMap services (address search, map pictures and building outlines), which stay off until a person allows them, see [PRIVACY.md](PRIVACY.md). A host that adds its own `connect-src` rules can stop those three and nothing else. Serve it over HTTPS if you want the offline worker, which browsers only allow on secure origins and on localhost.
+Copy `dist/index.html`, `dist/sw.js`, `dist/manifest.webmanifest` and the three `dist/icon-*.png` files to any static host, side by side. The manifest and the icons only matter for "Add to Home Screen", and the page works without them. The page sets a Content Security Policy that allows no network requests except the three optional OpenStreetMap services (address search, map pictures and building outlines), which stay off until a person allows them, see [PRIVACY.md](PRIVACY.md). A host that adds its own `connect-src` rules can stop those three and nothing else. Serve it over HTTPS if you want the offline worker, which browsers only allow on secure origins and on localhost.
 
 ## Use the library
 

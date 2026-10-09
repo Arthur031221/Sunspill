@@ -16,6 +16,7 @@
     "test:e2e": "node --test --test-concurrency=1 test/e2e/*.e2e.js",
     "reference": "python3 scripts/make-reference.py",
     "assets": "node scripts/make-assets.mjs",
+    "icons": "node scripts/make-icons.mjs",
     "demo": "node scripts/record-demo.mjs",
     "demo:setup": "node scripts/record-setup-demo.mjs",
     "validate": "node scripts/validate.mjs",

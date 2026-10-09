@@ -31,7 +31,7 @@ jobs:
       - name: Collect the site
         run: |
           mkdir -p site/dist site/examples
-          cp dist/index.html dist/sw.js site/
+          cp dist/index.html dist/sw.js dist/manifest.webmanifest dist/icon-192.png dist/icon-512.png dist/icon-maskable-512.png site/
           cp dist/sunspill.js site/dist/
           cp examples/library.html examples/room.json site/examples/
           cp assets/social-card.png site/social-card.png

@@ -36,7 +36,7 @@ const floorArea = (page) => page.evaluate(() => window.__sunspill.floorArea())
 
 test('opens with the sample room, nothing else is fetched and the console is clean', async () => {
   const { page, context, errors } = await open()
-  assert.deepEqual(site.seen.filter((u) => u !== '/' && u !== '/sw.js'), [], 'only the page and its offline worker are ever requested')
+  assert.deepEqual(site.seen.filter((u) => !['/', '/sw.js', '/manifest.webmanifest', '/icon-192.png'].includes(u)), [], 'only the page, its offline worker, its install manifest and its icon are ever requested')
   assert.equal((await scene(page)).place.name, 'Taipei')
   assert.deepEqual(errors, [])
   await context.close()
@@ -456,5 +456,23 @@ test('the tabs work with the arrow keys and keep the focus', async () => {
   await page.keyboard.press('ArrowLeft')
   assert.equal(await page.evaluate(() => document.activeElement.id), 'tab-share')
   assert.equal(await page.getAttribute('#tab-body', 'role'), 'tabpanel')
+  await context.close()
+})
+
+test('the page can be installed: the manifest names the app and its icons exist', async () => {
+  const { page, context } = await open()
+  assert.equal(await page.evaluate(() => document.querySelector('link[rel=manifest]')?.getAttribute('href')), 'manifest.webmanifest')
+  const manifest = await (await page.request.get(site.url + 'manifest.webmanifest')).json()
+  assert.equal(manifest.name, 'Sunspill')
+  assert.equal(manifest.display, 'standalone')
+  assert.equal(manifest.start_url, './')
+  assert.ok(manifest.icons.some((i) => i.sizes === '512x512' && i.purpose === 'maskable'))
+  for (const icon of manifest.icons) {
+    const res = await page.request.get(site.url + icon.src)
+    assert.equal(res.status(), 200, icon.src)
+    assert.equal(res.headers()['content-type'], 'image/png')
+  }
+  const csp = await page.evaluate(() => document.querySelector('meta[http-equiv="Content-Security-Policy"]').content)
+  assert.match(csp, /manifest-src 'self'/)
   await context.close()
 })

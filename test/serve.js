@@ -4,6 +4,10 @@ import { readFileSync, existsSync } from 'node:fs'
 const FILES = {
   '/': ['dist/index.html', 'text/html; charset=utf-8'],
   '/sw.js': ['dist/sw.js', 'text/javascript'],
+  '/manifest.webmanifest': ['dist/manifest.webmanifest', 'application/manifest+json'],
+  '/icon-192.png': ['dist/icon-192.png', 'image/png'],
+  '/icon-512.png': ['dist/icon-512.png', 'image/png'],
+  '/icon-maskable-512.png': ['dist/icon-maskable-512.png', 'image/png'],
   '/dist/sunspill.js': ['dist/sunspill.js', 'text/javascript'],
   '/examples/library.html': ['examples/library.html', 'text/html; charset=utf-8'],
 }
