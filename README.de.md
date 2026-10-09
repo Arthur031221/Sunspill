@@ -40,7 +40,7 @@ Es ist weder ein Rendering noch eine AR-App. Der Sonnenfleck auf dem Boden ist e
 
 Tippe auf **Mein Zimmer einrichten**. Auf dem Handy dauert es ein paar Minuten, in sieben Schritten mit Zurück und Weiter.
 
-1. **Wo.** Gib eine Adresse ein oder setze eine Nadel auf die OpenStreetMap-Karte. Breite, Länge und Zeitzone füllen sich von selbst.
+1. **Wo.** Gib eine Adresse ein oder setze eine Nadel auf die OpenStreetMap-Karte. Breite, Länge und Zeitzone füllen sich von selbst. Eine Adresse mit Hausnummer und Stockwerk funktioniert, etwa 台北市信義區市府路45號7樓. Fehlt die Nummer bei OpenStreetMap, bekommst du die Straße und den Hinweis, eine Nadel auf dein Gebäude zu setzen.
 2. **Das Zimmer.** Starte mit einem Apartment, Schlafzimmer, Wohnzimmer oder Arbeitszimmer (die Maße folgen typischen taiwanischen Wohnungen, korrigiere sie), oder zeichne deinen eigenen Grundriss oder das Foto aus einer Anzeige mit einem Zwei-Punkte-Maßstab nach. Gib die Etage an.
 3. **Fenster und Türen.** Echte Maße entlang der Wände, mit Einrasten an Wandenden, Mitte und aneinander, Balkone mit Brüstung, Vordächer und Türen.
 4. **Wohin es zeigt.** Drehe das Zimmer auf der Karte über den Umriss deines Hauses, oder halte das Handy ans Fenster und lies den Kompass mit addierter magnetischer Deklination ab. Norden bleibt immer sichtbar.

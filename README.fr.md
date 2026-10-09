@@ -40,7 +40,7 @@ Ce n'est ni un rendu ni une application de réalité augmentée. La tache de sol
 
 Appuyez sur **Configurer ma pièce**. Sur un téléphone, il faut quelques minutes, en sept étapes avec des boutons Retour et Suivant.
 
-1. **Où.** Saisissez une adresse ou posez une épingle sur la carte OpenStreetMap. La latitude, la longitude et le fuseau horaire se remplissent seuls.
+1. **Où.** Saisissez une adresse ou posez une épingle sur la carte OpenStreetMap. La latitude, la longitude et le fuseau horaire se remplissent seuls. Une adresse avec numéro et étage fonctionne, comme 台北市信義區市府路45號7樓. Si OpenStreetMap n'a pas le numéro, vous obtenez la rue et un rappel de placer une épingle sur votre immeuble.
 2. **La pièce.** Partez d'un studio, d'une chambre, d'un salon ou d'un bureau (les dimensions suivent les logements typiques de Taïwan, corrigez-les), ou décalquez votre plan ou la photo d'une annonce avec une échelle à deux points. Indiquez l'étage.
 3. **Fenêtres et portes.** Dimensions réelles le long des murs, avec aimantation aux bouts du mur, au milieu et entre elles, balcons avec garde-corps, auvents et portes.
 4. **Vers où ça donne.** Tournez la pièce sur le contour de votre immeuble dans la carte, ou posez le téléphone contre la fenêtre et lisez sa boussole avec la déclinaison magnétique ajoutée. Le nord reste toujours visible.

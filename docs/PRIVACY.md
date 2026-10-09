@@ -6,7 +6,7 @@ Three optional services talk to public servers. Each one is off until you allow 
 
 | Service | Used for | Server | What it receives |
 | --- | --- | --- | --- |
-| Address search | Finding your address or building | nominatim.openstreetmap.org (OpenStreetMap Foundation) | The text you type in the search box |
+| Address search | Finding your address or building | nominatim.openstreetmap.org (OpenStreetMap Foundation) | The text you type in the search box. When nothing matches, plainer forms of the same words follow, without the floor or the house number,so a Taiwanese address with a house number and a floor is found. Four requests at most, a second apart, and nothing that you did not type |
 | Map pictures | The map behind the pin and the room | tile.openstreetmap.org (OpenStreetMap Foundation) | The map tiles for the part of the world you are looking at |
 | Building outlines | Neighbouring buildings and their heights | overpass-api.de, or if it fails overpass.kumi.systems and then overpass.private.coffee (run by Kumi Systems and by the private.coffee collective, not by the OpenStreetMap Foundation) | The latitude and longitude of the room, rounded to five decimals (about one metre), and the radius of 200 metres |
 

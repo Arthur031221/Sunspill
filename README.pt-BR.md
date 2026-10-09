@@ -40,7 +40,7 @@ Não é uma renderização nem um app de realidade aumentada. A mancha de sol no
 
 Toque em **Configurar meu cômodo**. No celular leva alguns minutos, em sete passos com botões Voltar e Próximo.
 
-1. **Onde.** Digite um endereço ou coloque um alfinete no mapa do OpenStreetMap. Latitude, longitude e fuso horário são preenchidos sozinhos.
+1. **Onde.** Digite um endereço ou coloque um alfinete no mapa do OpenStreetMap. Latitude, longitude e fuso horário são preenchidos sozinhos. Um endereço com número e andar funciona, como 台北市信義區市府路45號7樓. Se o OpenStreetMap não tiver o número, você recebe a rua e um aviso para colocar um alfinete no seu prédio.
 2. **O cômodo.** Comece por um studio, quarto, sala ou escritório (as medidas seguem apartamentos típicos de Taiwan, então corrija-as), ou trace a sua própria planta ou a foto de um anúncio com uma escala de dois pontos. Informe o andar.
 3. **Janelas e portas.** Medidas reais ao longo das paredes, com encaixe nas pontas da parede, no meio e entre si, varandas com guarda-corpo, beirais e portas.
 4. **Para onde aponta.** Gire o cômodo no mapa sobre o contorno do seu prédio, ou encoste o celular na janela e leia a bússola com a declinação magnética somada. O norte está sempre à vista.

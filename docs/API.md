@@ -76,7 +76,7 @@ A scene's `obstacles` are buildings and trees in metres east and north of the ro
 
 ## Links and cities
 
-**`encodeScene(scene)`** and **`decodeScene(hash)`** (null for anything that is not a valid link, and both link formats open). **`blurScene(scene)`** rounds the place and drops the names of places and buildings. **`CITIES`** is the built-in list and **`searchCities(query, limit)`** searches names and spellings in several scripts.
+**`encodeScene(scene)`** and **`decodeScene(hash)`** (null for anything that is not a valid link, and both link formats open). **`blurScene(scene)`** rounds the place and drops the names of places and buildings. **`CITIES`** is the built-in list and **`searchCities(query, limit)`** searches names and spellings in several scripts. **`addressVariants(text)`** gives the plainer forms of an address to try when a search finds nothing, most exact first, each as `{ query, exact }`: a Taiwanese address ending in a house number and a floor becomes the road, a space and the number, and then the street, a Latin address loses its floor and unit and then its house number.
 
 ## Example
 

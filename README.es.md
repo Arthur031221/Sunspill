@@ -40,7 +40,7 @@ No es un render ni una app de realidad aumentada. La mancha de sol del suelo es 
 
 Pulsa **Configurar mi habitación**. En un móvil lleva unos minutos, en siete pasos con botones Atrás y Siguiente.
 
-1. **Dónde.** Escribe una dirección o pon una chincheta en el mapa de OpenStreetMap. La latitud, la longitud y la zona horaria se rellenan solas.
+1. **Dónde.** Escribe una dirección o pon una chincheta en el mapa de OpenStreetMap. La latitud, la longitud y la zona horaria se rellenan solas. Una dirección con número de portal y piso funciona, como 台北市信義區市府路45號7樓. Si OpenStreetMap no tiene el número, ves la calle y un aviso para poner una chincheta sobre tu edificio.
 2. **La habitación.** Empieza por un estudio, dormitorio, salón o despacho (las medidas siguen los pisos típicos de Taiwán, así que corrígelas), o calca tu propio plano o la foto de un anuncio con una escala de dos puntos. Indica la planta.
 3. **Ventanas y puertas.** Medidas reales a lo largo de los muros, con ajuste a los extremos, al centro y entre sí, balcones con barandilla, aleros y puertas.
 4. **Hacia dónde mira.** Gira la habitación sobre el contorno de tu edificio en el mapa, o apoya el móvil en la ventana y lee su brújula con la declinación magnética sumada. El norte siempre está a la vista.

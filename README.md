@@ -34,16 +34,16 @@
 
 <p align="center">
   <a href="https://arthur031221.github.io/Sunspill/"><b>Open the live demo</b></a> &nbsp;|&nbsp; free, no login, opens offline after the first visit<br>
-  <sub>Made for a phone. Seven steps and a few minutes get you from an address to your own room. Your room stays in your browser, and the last one you edited, with any you name and save, is kept on your device. Address search, the map and building outlines ask public OpenStreetMap servers, and only after you say yes to each one.</sub>
+  <sub>Made for a phone. Seven steps and a few minutes get you from an address to your own room. Your room stays in your browser. The last one you edited is kept on your device, along with any you name and save. Address search, the map and building outlines ask public OpenStreetMap servers, and only after you say yes to each one.</sub>
 </p>
 
-It isn't a rendering or an AR app. The patch on your floor is an exact polygon, and you can check it against a ray tracer.
+No rendering, no AR. The patch on your floor is an exact polygon, and you can check it against a ray tracer.
 
 ## Set up your own room
 
 Press **Set up my room**. Seven steps, a Back and a Next button, a few minutes on a phone.
 
-1. **Where.** Type an address or drop a pin on the OpenStreetMap map. The latitude, longitude and time zone fill themselves in.
+1. **Where.** Type an address or drop a pin on the OpenStreetMap map. The latitude, longitude and time zone fill themselves in. An address written the Taiwanese way, with a house number and a floor, works. When OpenStreetMap lacks the number, you get the street and a note to drop a pin on your building.
 2. **The room.** Start from a studio suite, bedroom, living room or home office (the sizes follow typical Taiwanese flats, so correct them), or trace your own floor plan or listing photo with a two point scale. Set the floor number.
 3. **Windows and doors.** Real dimensions along the walls, snapping to the wall ends, the middle and each other, balconies with a railing, eaves and doors.
 4. **Which way it faces.** Turn the room over the outline of your building on the map, or hold the phone against the window and read its compass with the magnetic declination added. North is always on screen.
@@ -79,6 +79,8 @@ A compass app gives you an angle. A map shadow tool draws the buildings in the s
   </tr>
 </table>
 
+*New in 0.2.3: a Taiwanese address with a house number and a floor is found, a building load survives pressing Next, a plain note says when the public servers are busy, and the Overpass server that refused every browser is replaced.*
+
 *New in 0.2.2: buildings that OpenStreetMap draws in several parts now load, a missing height is guessed from the buildings next to it, rooms can be saved by name, the drawing tells a screen reader what the keys do, and the room step shows the floor area, in ping on the Traditional Chinese page.*
 
 *New in 0.2: a guided setup for a phone, address search and a map pin, the phone compass with declination, neighbouring buildings and trees from OpenStreetMap, balconies, doors, floors and turned furniture, tracing a floor plan, and a check against the sun you saw.*
@@ -110,7 +112,7 @@ Your room, the pictures you trace and the marks you make never leave your browse
 
 | Service | Sends |
 | --- | --- |
-| Address search (Nominatim) | the text you type |
+| Address search (Nominatim) | the text you type and, if nothing matches, shorter forms of it (without the floor or the house number), four requests at most |
 | Map pictures (OpenStreetMap tiles) | the part of the map you look at |
 | Building outlines (Overpass) | the position of the room, to about one metre |
 

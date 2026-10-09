@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.3 (2026-10-10)
+
+Walking the live page with real addresses and the real OpenStreetMap servers found four things that fixtures had hidden.
+
+- **Taiwanese addresses.** Nominatim found nothing for a Taiwanese address that ends in a house number and a floor, because it wants the number after a space and has no word for the floor. A search that finds nothing now tries plainer forms of the same words, at most three more, a second apart: the road and the number after a space (the building), then the street, then the road a lane or alley leaves from. A Latin address loses its floor and unit first, then its house number. When the house number had to go, the page says so and asks you to drop a pin on your building. Checked against the real servers on three Taipei addresses, which now land on the right building. Only words you typed are sent, and the privacy notes say so. `addressVariants` is exported.
+- **Buildings.** `overpass.openstreetmap.fr` answers every browser with 403 ("white-listed usages") and no CORS header, so one of the three servers could never help. `overpass.kumi.systems` takes its place. When no server sends the buildings, the page now says so in plain words, stays on the page after the toast, and offers the way on (try again, or add them by hand), where it showed a raw error list that was gone in a few seconds.
+- **Pressing Next while buildings load.** Leaving the facing or surroundings step cancelled the request, so a person who tapped Load and then Next arrived at a step that said "No buildings". The load now goes on across steps and stops only when the setup is closed, and a second tap says it is loading.
+- **Check step.** Putting right the date or time no longer clears the corners already marked.
+- **Screen reader.** A door's width box said "Window width" and now says "Door width", a door's wall shows its compass direction, and the remove and copy buttons and the shade boxes name the piece they belong to.
+
 ## 0.2.2 (2026-10-10)
 
 Buildings from OpenStreetMap that were silently missing now load, and rooms can be kept by name.

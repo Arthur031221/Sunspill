@@ -1,6 +1,6 @@
 {
   "name": "sunspill",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Set up your own room on a phone, then see where the sun lands on its floor by the hour and the season. Buildings and trees from OpenStreetMap, a check against the real sun. Your room stays in the browser.",
   "type": "module",
   "files": [
