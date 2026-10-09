@@ -51,7 +51,7 @@ export function thingsStep(ctx) {
       fields.push(f)
       return f.el
     }
-    const turn = (deg) => store.update((d) => { d.items[i].rot = (((d.items[i].rot + deg) % 360) + 360) % 360 }, { key: `rot${i}` })
+    const turn = (deg) => store.update((d) => { if (d.items[i]) d.items[i].rot = (((d.items[i].rot + deg) % 360) + 360) % 360 }, { key: `rot${i}` })
     detail.replaceChildren(h('div', { class: 'card selected' },
       h('div', { class: 'card-head' }, h('b', {}, t(`kind.${item.kind}`)), h('button', { class: 'mini', type: 'button', onclick: () => { store.update((d) => { d.items.splice(i, 1) }); store.setUi({ selected: null }); stage.select(null) } }, t('things.remove'))),
       add({ label: t('wiz.things.turn'), kind: 'deg', min: 0, max: 359, step: 1, places: 0, get: (s) => s.items[i]?.rot ?? 0, set: (d, v) => { if (d.items[i]) d.items[i].rot = v }, key: `rot${i}` }),

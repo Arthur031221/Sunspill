@@ -65,10 +65,10 @@ function roomTab({ store, stage }) {
       return f.el
     }
     const wallSel = h('select', { class: 'select', style: 'max-width:none;width:100%', 'aria-label': t('win.wall') }, ...WALLS.map((w) => h('option', { value: w }, w)))
-    wallSel.addEventListener('change', () => store.update((d) => { d.windows[i].wall = wallSel.value }, { key: `w${i}.wall` }))
+    wallSel.addEventListener('change', () => store.update((d) => { if (d.windows[i]) d.windows[i].wall = wallSel.value }, { key: `w${i}.wall` }))
     const len = (s) => wallLength(s.room, s.windows[i].wall)
     const acrossOn = h('input', { type: 'checkbox', id: `across${i}` })
-    acrossOn.addEventListener('change', () => store.update((d) => { d.windows[i].across = acrossOn.checked ? { height: 30, distance: 15 } : null }))
+    acrossOn.addEventListener('change', () => store.update((d) => { if (d.windows[i]) d.windows[i].across = acrossOn.checked ? { height: 30, distance: 15 } : null }))
     const title = h('b', {}, t('win.name', { n: i + 1 }))
     const dup = h('button', { class: 'mini', type: 'button', onclick: () => duplicateWindow(store, i), title: t('win.duplicate') }, t('win.duplicate'))
     const del = h('button', { class: 'mini', type: 'button', onclick: () => removeWindow(store, i), title: t('win.remove') }, t('win.remove'))

@@ -208,7 +208,7 @@ export function surroundStep(ctx) {
 
   function row(o, i) {
     const on = h('input', { type: 'checkbox', checked: o.on, id: `ob-on${i}`, 'aria-label': t('wiz.sur.on') })
-    on.addEventListener('change', () => store.update((d) => { d.obstacles[i].on = on.checked }))
+    on.addEventListener('change', () => store.update((d) => { if (d.obstacles[i]) d.obstacles[i].on = on.checked }))
     const height = numberField({ store, compact: true, label: o.type === 'tree' ? t('wiz.sur.treeHeight') : t('wiz.sur.height'), min: 1, max: o.type === 'tree' ? 45 : 600, step: 0.5, get: (s) => s.obstacles[i]?.h ?? 1, set: (d, v) => { if (d.obstacles[i]) { d.obstacles[i].h = v; d.obstacles[i].est = false } }, key: `ob${i}.h` })
     fields.push(height)
     const del = h('button', { class: 'mini', type: 'button', onclick: () => { store.update((d) => { d.obstacles.splice(i, 1) }); select(null) } }, t('things.remove'))

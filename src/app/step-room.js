@@ -106,12 +106,12 @@ export function windowsStep(ctx) {
       stage.select({ type: 'window', index: i })
       store.setUi({ selected: { type: 'window', index: i }, selectedWindow: i })
     }
-    const wall = selectWall(null, (v) => store.update((d) => { d.windows[i].wall = v }, { key: `w${i}.wall` }), t('win.wall'))
+    const wall = selectWall(null, (v) => store.update((d) => { if (d.windows[i]) d.windows[i].wall = v }, { key: `w${i}.wall` }), t('win.wall'))
     const len = (s) => wallLength(s.room, s.windows[i].wall)
     const balconyOn = h('input', { type: 'checkbox', id: `bal${i}` })
-    balconyOn.addEventListener('change', () => store.update((d) => { d.windows[i].balcony = balconyOn.checked ? { depth: 1.2, rail: 1, ext: 0.3 } : null }))
+    balconyOn.addEventListener('change', () => store.update((d) => { if (d.windows[i]) d.windows[i].balcony = balconyOn.checked ? { depth: 1.2, rail: 1, ext: 0.3 } : null }))
     const roofOn = h('input', { type: 'checkbox', id: `roof${i}` })
-    roofOn.addEventListener('change', () => store.update((d) => { d.windows[i].eave.depth = roofOn.checked ? Math.max(1, d.windows[i].balcony?.depth ?? 1) : 0 }))
+    roofOn.addEventListener('change', () => store.update((d) => { if (d.windows[i]) d.windows[i].eave.depth = roofOn.checked ? Math.max(1, d.windows[i].balcony?.depth ?? 1) : 0 }))
     const balcony = h('div', { class: 'grid2' },
       add({ label: t('wiz.win.balconyDepth'), min: 0.3, max: 4, step: 0.05, get: (s) => s.windows[i].balcony?.depth ?? 1.2, set: (d, v) => { if (d.windows[i].balcony) d.windows[i].balcony.depth = v }, key: `w${i}.bd` }),
       add({ label: t('wiz.win.rail'), min: 0, max: 2, step: 0.05, get: (s) => s.windows[i].balcony?.rail ?? 1, set: (d, v) => { if (d.windows[i].balcony) d.windows[i].balcony.rail = v }, key: `w${i}.br` }))
@@ -150,7 +150,7 @@ export function windowsStep(ctx) {
   }
 
   function doorCard(i) {
-    const wall = selectWall(null, (v) => store.update((d) => { d.doors[i].wall = v }), t('win.wall'))
+    const wall = selectWall(null, (v) => store.update((d) => { if (d.doors[i]) d.doors[i].wall = v }), t('win.wall'))
     const len = (s) => wallLength(s.room, s.doors[i].wall)
     const card = h('div', { class: 'card' },
       h('div', { class: 'card-head' }, h('b', {}, t('wiz.door.name', { n: i + 1 })), h('button', { class: 'mini', type: 'button', onclick: () => store.update((d) => { d.doors.splice(i, 1) }) }, t('win.remove'))),

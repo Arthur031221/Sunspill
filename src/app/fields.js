@@ -27,6 +27,12 @@ export function numberField({ store, label, kind = 'len', min, max, step, get, s
     const value = Number(raw)
     if (!Number.isFinite(value)) return
     const internal = kind === 'len' ? fromUnit(value, units()) : value
+    // the thing this box edits may have been removed since the box was drawn
+    try {
+      if (get(store.scene) === undefined) return
+    } catch {
+      return
+    }
     store.update((draft) => set(draft, clamp(internal, lim(min), lim(max))), { key: key ?? id })
     after?.()
   }

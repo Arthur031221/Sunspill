@@ -916,3 +916,23 @@ test('leaving the setup with marks that were not saved asks first, and a plain e
   assert.equal((await ui(page)).setupDone, true, 'finishing counts after the question')
   await context.close()
 })
+
+test('a box that belongs to a window which was just removed does nothing and does not throw', async () => {
+  const { page, context, errors } = await open()
+  await openWizard(page, 2)
+  await page.evaluate(() => {
+    const { store } = window.__sunspill
+    const card = document.querySelector('[data-window="0"]')
+    const box = card.querySelectorAll('input[type=number]')[1]
+    const roof = document.getElementById('roof0')
+    store.update((d) => { d.windows.splice(0, 1) })
+    // both events arrive before the cards are drawn again
+    box.value = '1'
+    box.dispatchEvent(new Event('change'))
+    roof.click()
+  })
+  await page.waitForTimeout(200)
+  assert.deepEqual(errors, [])
+  assert.equal((await scene(page)).windows.length, 0)
+  await context.close()
+})
