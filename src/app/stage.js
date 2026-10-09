@@ -4,7 +4,7 @@
 import { makeCamera } from '../render/camera.js'
 import { drawStage, arcRadius, sunPoint } from '../render/draw.js'
 import { PALETTES } from '../render/palette.js'
-import { wallFrame, itemFootprint } from '../core/room.js'
+import { wallFrame } from '../core/room.js'
 import { insideConvex } from '../core/poly.js'
 import { snapItem, snapWindow } from '../core/snap.js'
 import { clamp } from './dom.js'
@@ -218,9 +218,13 @@ export class Stage {
     } else if (hit?.type === 'window' && this.camera) {
       const win = scene.windows[hit.index]
       const at = this.camera.wallAt(win.wall, p[0], p[1])
+      const onFloor = this.camera.planeAt(p[0], p[1], 0)
       if (at) {
         const [lo] = spanOf(scene.room, win)
         this.drag = { type: 'window', index: hit.index, du: at[0] - lo, dz: at[1] - win.sill }
+      } else if (onFloor) {
+        // seen from above the wall is edge on: slide the window along it by where the finger is on the floor
+        this.drag = { type: 'window-plan', index: hit.index, du: alongWall(scene.room, win.wall, onFloor) - win.pos }
       }
     }
     if (!this.drag) this.drag = { type: 'orbit', x: p[0], y: p[1] }
@@ -266,6 +270,14 @@ export class Stage {
         this.guides = snapped.guides
       }, { key: `item${d.index}` })
       this.invalidate()
+    } else if (d.type === 'window-plan') {
+      const win = scene.windows[d.index]
+      const at = this.camera.planeAt(p[0], p[1], 0)
+      if (!at || !win) return
+      this.store.update((s) => {
+        s.windows[d.index].pos = clamp(alongWall(s.room, win.wall, at) - d.du, 0, 1e6)
+        s.windows[d.index].pos = snapWindow(s, d.index, s.windows[d.index].pos).pos
+      }, { key: `window${d.index}` })
     } else if (d.type === 'window') {
       const win = scene.windows[d.index]
       const at = this.camera.wallAt(win.wall, p[0], p[1])
@@ -335,6 +347,12 @@ export class Stage {
       e.preventDefault()
     }
   }
+}
+
+/** How far along a wall, read left to right from inside, a floor point is. */
+export function alongWall(room, wall, [x, y]) {
+  const f = wallFrame(room, wall)
+  return (x - f.o[0]) * f.t[0] + (y - f.o[1]) * f.t[1]
 }
 
 /** The span of a window along the camera's u axis (x for top and bottom walls, y for left and right). */

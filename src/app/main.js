@@ -455,6 +455,7 @@ store.subscribe((state, what) => {
     return
   }
   // interface settings changed
+  map.paintChrome()
   resolveTheme()
   savePrefs(state.ui)
   chrome()

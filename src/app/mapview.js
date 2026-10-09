@@ -160,7 +160,7 @@ export class MapView {
     this.credit.hidden = !on
     this.cta.hidden = on
     if (!on) {
-      this.cta.replaceChildren(h('p', {}, t('map.off')), h('button', { class: 'btn primary', type: 'button', onclick: () => this.askTiles() }, t('map.show')))
+      this.cta.replaceChildren(h('button', { class: 'btn primary', type: 'button', title: t('map.off'), onclick: () => this.askTiles() }, t('map.show')))
     }
     this.zoomIn.setAttribute('aria-label', t('map.zoomIn'))
     this.zoomOut.setAttribute('aria-label', t('map.zoomOut'))
@@ -552,7 +552,11 @@ export class MapView {
 
   down(e) {
     this.canvas.focus({ preventScroll: true })
-    this.canvas.setPointerCapture(e.pointerId)
+    try {
+      this.canvas.setPointerCapture(e.pointerId)
+    } catch {
+      // a pointer that is already gone cannot be captured, and the gesture still works
+    }
     const p = this.point(e)
     this.pointers.set(e.pointerId, { x: p[0], y: p[1], sx: p[0], sy: p[1], at: performance.now() })
     if (this.pointers.size === 2) {

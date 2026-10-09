@@ -174,7 +174,7 @@ export function openTrace({ pane, card, store, done, toast }) {
       body.push(h('p', {}, t('trace.scaleHelp')))
       if (state.scalePts.length === 2) {
         const unit = units() === 'ft' ? 'ft' : 'm'
-        const input = h('input', { type: 'number', inputMode: 'decimal', min: '0.1', step: 'any', 'aria-label': t('trace.distance', { unit }), value: state.distance ?? '' })
+        const input = h('input', { type: 'number', id: 'trace-distance', inputMode: 'decimal', min: '0.1', step: 'any', 'aria-label': t('trace.distance', { unit }), value: state.distance ?? '' })
         input.addEventListener('input', () => { state.distance = input.value })
         body.push(h('div', { class: 'field', style: 'grid-template-columns:1fr 110px' }, h('label', {}, t('trace.distance', { unit })), input))
         body.push(h('button', {

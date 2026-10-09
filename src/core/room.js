@@ -243,8 +243,8 @@ export function normalizeScene(raw) {
   const p = input.place && typeof input.place === 'object' ? input.place : {}
   const place = {
     name: typeof p.name === 'string' ? p.name.slice(0, 60) : base.place.name,
-    lat: round(num(p.lat, [-80, 80], base.place.lat), 5),
-    lon: round(num(p.lon, [-180, 180], base.place.lon), 5),
+    lat: round(num(p.lat, [-80, 80], base.place.lat), 7),
+    lon: round(num(p.lon, [-180, 180], base.place.lon), 7),
     zone: isZone(p.zone) ? p.zone : base.place.zone,
   }
   const f = input.floor && typeof input.floor === 'object' ? input.floor : {}

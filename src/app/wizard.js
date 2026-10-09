@@ -45,7 +45,9 @@ export function createWizard(ctx) {
     undo.id = 'wiz-undo'
     head.replaceChildren(
       h('div', { class: 'wiz-top' }, h('button', { class: 'mini', type: 'button', id: 'wiz-exit', onclick: () => close(false) }, t('wiz.exit')), dots, undo),
-      h('p', { class: 'wiz-count' }, t('wiz.count', { n: index + 1, total: STEPS.length })),
+      h('div', { class: 'wiz-meta' },
+        h('p', { class: 'wiz-count' }, t('wiz.count', { n: index + 1, total: STEPS.length })),
+        h('button', { class: 'linkbtn', type: 'button', id: 'wiz-online', onclick: () => ctx.consent.settings() }, t('net.footer', { n: ctx.consent.count() }))),
       h('h2', { class: 'wiz-title', tabIndex: -1, id: 'wiz-title' }, t(`wiz.title.${step.id}`)),
     )
     const last = index === STEPS.length - 1
@@ -96,6 +98,8 @@ export function createWizard(ctx) {
       if (!active) return
       const undo = head.querySelector('#wiz-undo')
       if (undo) undo.disabled = !store.canUndo()
+      const online = head.querySelector('#wiz-online')
+      if (online) online.textContent = t('net.footer', { n: ctx.consent.count() })
       current?.sync?.()
     },
     /** The language or the units changed: build the step again. */
