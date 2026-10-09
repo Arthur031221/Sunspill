@@ -1,0 +1,42 @@
+name: Publish demo page
+
+# Hosts the app so a shared link opens with one tap. It runs after CI passes on
+# main. Until Pages is switched on (Settings, Pages, Source: GitHub Actions) the
+# job reports success without publishing, so a fork stays green.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/configure-pages@v5
+      - name: Collect the site
+        run: |
+          mkdir -p site/dist site/examples
+          cp dist/index.html dist/sw.js site/
+          cp dist/sunspill.js site/dist/
+          cp examples/library.html examples/room.json site/examples/
+          cp assets/social-card.png site/social-card.png
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="__CSP__">
+<title>Sunspill: where the sun lands in your room</title>
+<meta name="description" content="Draw your room and its windows, then watch where the sun lands on the floor and walls by the hour and the season. Runs in your browser and sends nothing.">
+<meta name="theme-color" content="#f7f1e6">
+<meta property="og:title" content="Sunspill: where the sun lands in your room">
+<meta property="og:description" content="Draw a room and its windows and scrub the clock. Free, open source, nothing leaves your browser.">
+<meta property="og:image" content="https://raw.githubusercontent.com/Arthur031221/Sunspill/main/assets/social-card.png">
+<link rel="icon" href="__FAVICON__">
+<style>__CSS__</style>
+</head>
+<body>
+<a class="skip" href="#panel">Skip to the controls</a>
+<div class="app">
+  <header class="top">
+    <h1 class="brand-h1"><a class="brand" href="https://github.com/Arthur031221/Sunspill" aria-label="Sunspill on GitHub">__LOGO__<span class="brand-name">Sunspill</span></a></h1>
+    <span class="brand-tag" id="tagline"></span>
+    <div class="top-tools">
+      <button class="icon-btn" id="undo" type="button"></button>
+      <button class="icon-btn" id="redo" type="button"></button>
+      <select id="lang" class="select" aria-label="Language"></select>
+      <button class="icon-btn wide" id="theme" type="button"></button>
+      <div class="seg small" id="units" role="group"></div>
+    </div>
+  </header>
+  <main class="layout">
+    <section class="stage-wrap" aria-label="Room">
+      <div class="stage" id="stage">
+        <canvas id="canvas" tabindex="0" role="img"></canvas>
+        <div class="stage-top">
+          <div class="seg" id="view" role="group"></div>
+          <button class="chip" id="arc" type="button" aria-pressed="true"></button>
+        </div>
+        <div class="legend" id="legend" hidden></div>
+        <div class="tip" id="tip" hidden></div>
+        <p class="hint" id="hint"></p>
+        <div class="busy" id="busy" hidden><span class="bar"><i></i></span><span id="busy-text"></span></div>
+      </div>
+      <div class="dock" id="dock"></div>
+    </section>
+    <aside class="panel" id="panel" aria-label="Controls">
+      <div class="tabs" id="tabs" role="tablist"></div>
+      <div class="tab-body" id="tab-body"></div>
+      <footer class="foot" id="foot"></footer>
+    </aside>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="live" id="live" aria-live="polite" role="status"></div>
+<script>__JS__</script>
+</body>
+</html>

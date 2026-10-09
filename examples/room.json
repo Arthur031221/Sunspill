@@ -1,0 +1,54 @@
+{
+  "v": 1,
+  "room": {
+    "w": 3.6,
+    "d": 4.4,
+    "h": 2.6,
+    "wall": 0.15
+  },
+  "facing": 270,
+  "windows": [
+    {
+      "wall": "top",
+      "pos": 0.9,
+      "w": 1.8,
+      "h": 1.4,
+      "sill": 0.9,
+      "eave": {
+        "depth": 0,
+        "gap": 0.15,
+        "ext": 0.3
+      },
+      "across": null
+    }
+  ],
+  "place": {
+    "name": "Taipei",
+    "lat": 25.033,
+    "lon": 121.565,
+    "zone": "Asia/Taipei"
+  },
+  "date": {
+    "month": 7,
+    "day": 15
+  },
+  "minutes": 990,
+  "items": [
+    {
+      "kind": "bed",
+      "x": 0.25,
+      "y": 1.5,
+      "w": 1.5,
+      "d": 2,
+      "h": 0.5
+    },
+    {
+      "kind": "desk",
+      "x": 2.2,
+      "y": 3.5,
+      "w": 1.2,
+      "d": 0.6,
+      "h": 0.75
+    }
+  ]
+}

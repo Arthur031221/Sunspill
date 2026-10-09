@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Sunspill as a library</title>
+<style>body{font:15px/1.5 system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem}pre{background:#f3ead9;padding:1rem;border-radius:8px;overflow:auto}</style>
+<h1>Sunspill as a library</h1>
+<p>The sun and light code runs with no page around it. This page imports <code>dist/sunspill.js</code> and prints what the sample room looks like at 16:30 on 15 July.</p>
+<pre id="out">working</pre>
+<script type="module">
+import { defaultScene, sunAt, scenePatches, totalArea, sunHours, hoursAt } from '../dist/sunspill.js'
+
+const scene = defaultScene()
+const sun = sunAt(scene.place, scene.date.month, scene.date.day, scene.minutes)
+const patches = scenePatches(scene, { azimuth: sun.azimuth, elevation: sun.elevation })
+const grid = await sunHours(scene, [scene.date], { planeZ: 0.75, cell: 0.05 })
+const lines = [
+  `sun: azimuth ${sun.azimuth.toFixed(1)}, elevation ${sun.elevation.toFixed(1)} degrees`,
+  `floor patches: ${patches.floor.length}, area ${totalArea(patches.floor).toFixed(2)} square metres`,
+  ...patches.floor.map((poly) => '  ' + poly.map(([x, y]) => `(${x.toFixed(2)}, ${y.toFixed(2)})`).join(' ')),
+  `wall patches: ${patches.walls.length}`,
+  `direct sun on a desk top at 0.75 m near the window: ${hoursAt(grid, scene.room, 2.8, 3.8).toFixed(2)} hours`,
+]
+document.getElementById('out').textContent = lines.join('\n')
+</script>
+</html>

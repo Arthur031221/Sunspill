@@ -1,0 +1,36 @@
+{
+  "name": "sunspill",
+  "version": "0.1.0",
+  "description": "Draw your room and its windows, then watch where the sun lands on the floor and walls by hour and season. Runs in the browser, sends nothing.",
+  "type": "module",
+  "files": [
+    "dist/sunspill.js",
+    "docs"
+  ],
+  "exports": {
+    ".": "./dist/sunspill.js"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.js",
+    "test:e2e": "node --test --test-concurrency=1 test/e2e/*.e2e.js",
+    "reference": "python3 scripts/make-reference.py",
+    "assets": "node scripts/make-assets.mjs",
+    "demo": "node scripts/record-demo.mjs"
+  },
+  "author": "Arthur031221",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arthur031221/Sunspill.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@fontsource-variable/fraunces": "^5.2.0",
+    "esbuild": "^0.28.2",
+    "playwright": "1.63.0"
+  },
+  "private": true
+}
