@@ -30,8 +30,14 @@ export function parseLength(text) {
   return m[2] === 'ft' || m[2] === 'feet' ? v * 0.3048 : v
 }
 
-/** Height of a building and whether it is a guess, from its tags. */
-export function buildingHeight(tags = {}) {
+/** True when the tags give a height or a number of floors, so the building does not need a guess. */
+export const hasHeight = (tags = {}) => parseLength(tags.height) > 0 || Number(tags['building:levels']) > 0
+
+/**
+ * Height of a building and whether it is a guess, from its tags. `prior` is what to use for a kind of building
+ * that has no typical height of its own (a plain `building=yes`), instead of a fixed nine metres.
+ */
+export function buildingHeight(tags = {}, prior = null) {
   const top = parseLength(tags.height)
   const base = parseLength(tags.min_height)
   if (top != null && top > 0) return { h: top, base: base ?? 0, est: false }
@@ -42,7 +48,18 @@ export function buildingHeight(tags = {}) {
     const roof = tags['roof:shape'] && tags['roof:shape'] !== 'flat' ? 1.5 : 0
     return { h: levels * LEVEL + roof, base: Number.isFinite(minLevel) && minLevel > 0 ? minLevel * LEVEL : base ?? 0, est: true }
   }
-  return { h: TYPICAL[tags.building] ?? DEFAULT_HEIGHT, base: base ?? 0, est: true }
+  return { h: TYPICAL[tags.building] ?? prior ?? DEFAULT_HEIGHT, base: base ?? 0, est: true }
+}
+
+/**
+ * A guess for a building with no height: the middle one of the heights of the nearest buildings that have one.
+ * Buildings next to each other tend to be about as tall, which a fixed value cannot know. `known` is a list of
+ * {x, y, h} in metres, and the answer is null when there are fewer than three.
+ */
+export function neighbourHeight([x, y], known, k = 5) {
+  if (known.length < 3) return null
+  const near = known.map((o) => ({ h: o.h, d: Math.hypot(o.x - x, o.y - y) })).sort((a, b) => a.d - b.d).slice(0, k).map((o) => o.h).sort((a, b) => a - b)
+  return near[Math.floor(near.length / 2)]
 }
 
 const area2 = (r) => r.reduce((s, p, i) => s + p[0] * r[(i + 1) % r.length][1] - r[(i + 1) % r.length][0] * p[1], 0) / 2
@@ -163,7 +180,8 @@ export function outerRings(members) {
  * is split into parts that carry their own heights, the parts replace it.
  * Only `limit` of them are kept: the ones that rise highest above the window, which sits `eye` metres above the
  * ground (a building lower than that cannot shade it). `cutoff` is how many degrees above the window the
- * highest building that was left out rises, or 0 when nothing was left out.
+ * highest building that was left out rises, or 0 when nothing was left out. A plain building with no height or
+ * floor count takes the middle height of the five nearest buildings that have one, and is marked as a guess.
  * @returns {{buildings: object[], total: number, cutoff: number}}
  */
 export function parseBuildings(json, center, { limit = OSM_LIMIT, eye = 0 } = {}) {
@@ -181,8 +199,11 @@ export function parseBuildings(json, center, { limit = OSM_LIMIT, eye = 0 } = {}
   }
   const parts = found.filter((b) => b.part)
   const kept = found.filter((b) => b.part || !parts.some((p) => insideRing(b.ring, centroid(p.ring))))
+  // buildings that carry a height tell what the ones without one are likely to be
+  const known = kept.filter((b) => hasHeight(b.tags)).map((b) => { const [x, y] = centroid(b.ring); return { x, y, h: buildingHeight(b.tags).h } })
   const mapped = kept.map((b) => {
-    const { h, base, est } = buildingHeight(b.tags)
+    const prior = !hasHeight(b.tags) && TYPICAL[b.tags.building] == null ? neighbourHeight(centroid(b.ring), known) : null
+    const { h, base, est } = buildingHeight(b.tags, prior)
     const own = insideRing(b.ring, [0, 0])
     const name = typeof b.tags.name === 'string' ? b.tags.name.slice(0, 40) : ''
     return { type: 'building', src: 'osm', id: b.id, name, ring: fitRing(b.ring), h: Math.min(h, LIMITS.building.h[1]), base: Math.min(base, Math.max(0, h - 1)), est, own, on: !own }

@@ -344,7 +344,7 @@
  "wiz.sur.treeHeight": "樹高",
  "wiz.sur.crown": "樹冠寬度（公尺）",
  "wiz.sur.est": "推測",
- "wiz.sur.estNote": "標示為「推測」的高度，來自樓層數（每層 3.2 公尺）或該類建築的典型值，因為 OpenStreetMap 沒有它的高度。請改成你實際看到的。",
+ "wiz.sur.estNote": "標示為「推測」的高度，來自樓層數（每層 3.2 公尺）、周圍的建築或該類建築的典型值，因為 OpenStreetMap 沒有它的高度。請改成你實際看到的。",
  "wiz.sur.tree": "樹",
  "wiz.sur.block": "你新增的建築",
  "wiz.sur.osm": "建築",

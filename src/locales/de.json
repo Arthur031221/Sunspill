@@ -344,7 +344,7 @@
  "wiz.sur.treeHeight": "Baumhöhe",
  "wiz.sur.crown": "Kronenbreite (m)",
  "wiz.sur.est": "geschätzt",
- "wiz.sur.estNote": "Als geschätzt markierte Höhen stammen aus der Geschosszahl (je 3,2 m) oder einem typischen Wert für diese Gebäudeart, weil OpenStreetMap keine Höhe kennt. Ändere sie auf das, was du siehst.",
+ "wiz.sur.estNote": "Als geschätzt markierte Höhen stammen aus der Geschosszahl (je 3,2 m), aus den Gebäuden in der Nähe oder einem typischen Wert für diese Gebäudeart, weil OpenStreetMap keine Höhe kennt. Ändere sie auf das, was du siehst.",
  "wiz.sur.tree": "Baum",
  "wiz.sur.block": "Von dir hinzugefügtes Gebäude",
  "wiz.sur.osm": "Gebäude",

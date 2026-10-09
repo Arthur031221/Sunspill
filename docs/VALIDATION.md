@@ -16,6 +16,7 @@ Every geometry piece in Sunspill is compared with a reference that shares no cod
 | Phone angles to a heading | numpy rotation matrices in the DeviceOrientation order | 120 orientations, worst 1e-13 degrees |
 | Time zone at a point | timezonefinder | 121 of 125 land points name the same zone |
 | Perspective map for a photo of the floor | OpenCV `getPerspectiveTransform` | 40 maps, worst 0.0001 pixel |
+| Guessing the height of a building that has none | Leave one out: each building with a height is guessed from the others and compared with its real height, `test/fixtures/height-reference.json` | 5 stretches of Taipei, 607 buildings, off by a middle factor of 1.2 to 1.3 against 1.7 to 5.7 for a fixed nine metres |
 | Fitting the facing and the window | Synthetic rooms with known answers and a marked patch that wobbles by 3 cm | Facing within 1.5 degrees and window position within 8 cm, in `test/fit.test.js` |
 
 ## Sun position

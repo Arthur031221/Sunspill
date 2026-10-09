@@ -344,7 +344,7 @@
  "wiz.sur.treeHeight": "Altura del árbol",
  "wiz.sur.crown": "Ancho de copa (m)",
  "wiz.sur.est": "estimada",
- "wiz.sur.estNote": "Las alturas marcadas como estimadas salen del número de plantas (3,2 m cada una) o de un valor típico para ese tipo de edificio, porque OpenStreetMap no tiene su altura. Cámbialas por lo que veas.",
+ "wiz.sur.estNote": "Las alturas marcadas como estimadas salen del número de plantas (3,2 m cada una), de los edificios de alrededor o de un valor típico para ese tipo de edificio, porque OpenStreetMap no tiene su altura. Cámbialas por lo que veas.",
  "wiz.sur.tree": "Árbol",
  "wiz.sur.block": "Edificio añadido por ti",
  "wiz.sur.osm": "Edificio",

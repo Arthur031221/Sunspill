@@ -344,7 +344,7 @@
  "wiz.sur.treeHeight": "木の高さ",
  "wiz.sur.crown": "樹冠の幅（m）",
  "wiz.sur.est": "推定",
- "wiz.sur.estNote": "「推定」と表示された高さは、階数（1 階あたり 3.2 m）またはその種類の建物の標準値から出したもので、OpenStreetMap にその建物の高さがないためです。見たとおりに直してください。",
+ "wiz.sur.estNote": "「推定」と表示された高さは、階数（1 階あたり 3.2 m）、周囲の建物、またはその種類の建物の標準値から出したもので、OpenStreetMap にその建物の高さがないためです。見たとおりに直してください。",
  "wiz.sur.tree": "木",
  "wiz.sur.block": "追加した建物",
  "wiz.sur.osm": "建物",

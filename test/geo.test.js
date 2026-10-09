@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { toLocal, fromLocal, metresPerDegree, haversine, lonLatToTile, tileToLonLat, moveRoom, insideRing, ownBuilding, roomCorners, metresPerPixel, setPlacePoint, snapToOutline } from '../src/core/geo.js'
-import { parseBuildings, parseLength, buildingHeight, buildingQuery, fitRing, simplifyRing, parsePlaces, shortLabel, outerRings } from '../src/core/osm.js'
+import { parseBuildings, parseLength, buildingHeight, buildingQuery, fitRing, simplifyRing, parsePlaces, shortLabel, outerRings, neighbourHeight, hasHeight, DEFAULT_HEIGHT } from '../src/core/osm.js'
 import { declination, decimalYear, inRange } from '../src/core/declination.js'
 import { headingFromAngles, rotationMatrix, circularMean, circularSpread, createAverager, trueHeading } from '../src/core/compass.js'
 import { zoneAt } from '../src/core/zone.js'
@@ -210,6 +210,51 @@ test('only the buildings that rise highest above the window are kept, and the pa
   // nothing left out means nothing to say
   assert.equal(parseBuildings(json, center).cutoff, 0)
   assert.equal(parseBuildings(json, center).buildings.length, 3)
+})
+
+test('a building without a height is guessed from the five nearest that have one, and that beats a fixed nine metres on real Taipei data', () => {
+  const sets = fixture('height-reference.json').sets
+  assert.equal(sets.length, 5)
+  const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)]
+  for (const set of sets) {
+    // leave each building that has a height out in turn, and guess it from the others
+    const fixed = []
+    const near = []
+    for (const [i, [x, y, h]] of set.rows.entries()) {
+      const others = set.rows.filter((_, j) => j !== i).map(([ox, oy, oh]) => ({ x: ox, y: oy, h: oh }))
+      fixed.push(Math.abs(Math.log(DEFAULT_HEIGHT / h)))
+      near.push(Math.abs(Math.log(neighbourHeight([x, y], others) / h)))
+    }
+    // the middle error is the number to read: a factor of exp(median), 1 being right
+    assert.ok(median(near) < Math.log(1.4), `${set.name}: off by a factor ${Math.exp(median(near)).toFixed(2)}`)
+    assert.ok(median(near) < median(fixed), `${set.name}: ${Math.exp(median(near)).toFixed(2)} against ${Math.exp(median(fixed)).toFixed(2)} for nine metres`)
+    assert.ok(near.reduce((a, b) => a + b) < fixed.reduce((a, b) => a + b), `${set.name}: on average too`)
+  }
+})
+
+test('only a plain building with no height or floors takes the neighbours height, and it is marked as a guess', () => {
+  const at = (east, north, size = 10) => [[east, north], [east + size, north], [east + size, north + size], [east, north + size], [east, north]].map(([e, n]) => ({ lat: n / 111195, lon: e / 111320 }))
+  const tall = (id, east, h) => ({ type: 'way', id, tags: { building: 'yes', height: String(h) }, geometry: at(east, 30) })
+  const json = (extra) => ({ elements: [tall(1, 20, 30), tall(2, 40, 36), tall(3, 60, 30), tall(4, 80, 24), tall(5, 100, 30), ...extra] })
+  const center = { lat: 0, lon: 0 }
+  const byId = (r, id) => r.buildings.find((b) => b.id === id)
+  const r = parseBuildings(json([
+    { type: 'way', id: 10, tags: { building: 'yes' }, geometry: at(50, 50) },
+    { type: 'way', id: 11, tags: { building: 'shed' }, geometry: at(50, 70, 4) },
+    { type: 'way', id: 12, tags: { building: 'yes', 'building:levels': '4' }, geometry: at(50, 90) },
+    { type: 'way', id: 13, tags: { building: 'apartments' }, geometry: at(55, 110) },
+  ]), center)
+  assert.equal(byId(r, 10).h, 30, 'the middle of 30, 36, 30, 24 and 30')
+  assert.equal(byId(r, 10).est, true)
+  assert.equal(byId(r, 11).h, 3, 'a shed stays a shed')
+  assert.equal(byId(r, 12).h, 12.8, 'floors win over the neighbours')
+  assert.equal(byId(r, 13).h, 15, 'a kind with a typical height keeps it')
+  assert.equal(byId(r, 1).est, false)
+  assert.ok(hasHeight({ height: '12' }) && hasHeight({ 'building:levels': '3' }) && !hasHeight({ building: 'yes' }) && !hasHeight({ height: 'tall' }))
+  // with too few buildings that have a height there is nothing to learn from
+  const few = parseBuildings({ elements: [tall(1, 20, 30), tall(2, 40, 36), { type: 'way', id: 10, tags: { building: 'yes' }, geometry: at(50, 50) }] }, center)
+  assert.equal(byId(few, 10).h, DEFAULT_HEIGHT)
+  assert.equal(neighbourHeight([0, 0], [{ x: 1, y: 1, h: 5 }]), null)
 })
 
 test('outlines are thinned to a small corner count that keeps their shape', () => {

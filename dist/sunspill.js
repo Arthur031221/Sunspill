@@ -1141,7 +1141,8 @@ function parseLength(text) {
   const v = Number(m[1]);
   return m[2] === "ft" || m[2] === "feet" ? v * 0.3048 : v;
 }
-function buildingHeight(tags = {}) {
+var hasHeight = (tags = {}) => parseLength(tags.height) > 0 || Number(tags["building:levels"]) > 0;
+function buildingHeight(tags = {}, prior = null) {
   const top = parseLength(tags.height);
   const base = parseLength(tags.min_height);
   if (top != null && top > 0) return { h: top, base: base ?? 0, est: false };
@@ -1151,7 +1152,12 @@ function buildingHeight(tags = {}) {
     const roof = tags["roof:shape"] && tags["roof:shape"] !== "flat" ? 1.5 : 0;
     return { h: levels * LEVEL + roof, base: Number.isFinite(minLevel) && minLevel > 0 ? minLevel * LEVEL : base ?? 0, est: true };
   }
-  return { h: TYPICAL[tags.building] ?? DEFAULT_HEIGHT, base: base ?? 0, est: true };
+  return { h: TYPICAL[tags.building] ?? prior ?? DEFAULT_HEIGHT, base: base ?? 0, est: true };
+}
+function neighbourHeight([x, y], known, k = 5) {
+  if (known.length < 3) return null;
+  const near = known.map((o) => ({ h: o.h, d: Math.hypot(o.x - x, o.y - y) })).sort((a, b) => a.d - b.d).slice(0, k).map((o) => o.h).sort((a, b) => a - b);
+  return near[Math.floor(near.length / 2)];
 }
 var area2 = (r) => r.reduce((s, p, i) => s + p[0] * r[(i + 1) % r.length][1] - r[(i + 1) % r.length][0] * p[1], 0) / 2;
 var centroid2 = (r) => [r.reduce((s, p) => s + p[0], 0) / r.length, r.reduce((s, p) => s + p[1], 0) / r.length];
@@ -1263,8 +1269,13 @@ function parseBuildings(json, center, { limit = OSM_LIMIT, eye = 0 } = {}) {
   }
   const parts = found.filter((b) => b.part);
   const kept = found.filter((b) => b.part || !parts.some((p) => insideRing(b.ring, centroid2(p.ring))));
+  const known = kept.filter((b) => hasHeight(b.tags)).map((b) => {
+    const [x, y] = centroid2(b.ring);
+    return { x, y, h: buildingHeight(b.tags).h };
+  });
   const mapped = kept.map((b) => {
-    const { h, base, est } = buildingHeight(b.tags);
+    const prior = !hasHeight(b.tags) && TYPICAL[b.tags.building] == null ? neighbourHeight(centroid2(b.ring), known) : null;
+    const { h, base, est } = buildingHeight(b.tags, prior);
     const own = insideRing(b.ring, [0, 0]);
     const name = typeof b.tags.name === "string" ? b.tags.name.slice(0, 40) : "";
     return { type: "building", src: "osm", id: b.id, name, ring: fitRing(b.ring), h: Math.min(h, LIMITS.building.h[1]), base: Math.min(base, Math.max(0, h - 1)), est, own, on: !own };

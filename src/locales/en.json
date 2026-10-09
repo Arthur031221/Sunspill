@@ -344,7 +344,7 @@
  "wiz.sur.treeHeight": "Tree height",
  "wiz.sur.crown": "Crown width (m)",
  "wiz.sur.est": "estimated",
- "wiz.sur.estNote": "Heights marked estimated come from the number of floors (3.2 m each) or a typical value for that kind of building, because OpenStreetMap has no height for it. Change them to what you see.",
+ "wiz.sur.estNote": "Heights marked estimated come from the number of floors (3.2 m each), from the buildings around it, or from a typical value for that kind of building, because OpenStreetMap has no height for it. Change them to what you see.",
  "wiz.sur.tree": "Tree",
  "wiz.sur.block": "Building you added",
  "wiz.sur.osm": "Building",

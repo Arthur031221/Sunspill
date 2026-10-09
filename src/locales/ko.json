@@ -344,7 +344,7 @@
  "wiz.sur.treeHeight": "나무 높이",
  "wiz.sur.crown": "수관 너비(m)",
  "wiz.sur.est": "추정",
- "wiz.sur.estNote": "'추정'으로 표시된 높이는 OpenStreetMap에 높이가 없어서 층수(층당 3.2m)나 그 종류 건물의 일반적인 값으로 정한 것입니다. 실제로 보이는 값으로 고치세요.",
+ "wiz.sur.estNote": "'추정'으로 표시된 높이는 OpenStreetMap에 높이가 없어서 층수(층당 3.2m), 주변 건물, 또는 그 종류 건물의 일반적인 값으로 정한 것입니다. 실제로 보이는 값으로 고치세요.",
  "wiz.sur.tree": "나무",
  "wiz.sur.block": "추가한 건물",
  "wiz.sur.osm": "건물",

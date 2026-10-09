@@ -344,7 +344,7 @@
  "wiz.sur.treeHeight": "树高",
  "wiz.sur.crown": "树冠宽度（米）",
  "wiz.sur.est": "推测",
- "wiz.sur.estNote": "标示为「推测」的高度，来自楼层数（每层 3.2 米）或该类建筑的典型值，因为 OpenStreetMap 没有它的高度。请改成你实际看到的。",
+ "wiz.sur.estNote": "标示为「推测」的高度，来自楼层数（每层 3.2 米）、周围的建筑或该类建筑的典型值，因为 OpenStreetMap 没有它的高度。请改成你实际看到的。",
  "wiz.sur.tree": "树",
  "wiz.sur.block": "你添加的建筑",
  "wiz.sur.osm": "建筑",

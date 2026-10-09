@@ -344,7 +344,7 @@
  "wiz.sur.treeHeight": "Hauteur de l'arbre",
  "wiz.sur.crown": "Largeur de la couronne (m)",
  "wiz.sur.est": "estimée",
- "wiz.sur.estNote": "Les hauteurs marquées estimées viennent du nombre d'étages (3,2 m chacun) ou d'une valeur typique pour ce type de bâtiment, car OpenStreetMap n'en donne pas. Remplacez-les par ce que vous voyez.",
+ "wiz.sur.estNote": "Les hauteurs marquées estimées viennent du nombre d'étages (3,2 m chacun), des bâtiments voisins ou d'une valeur typique pour ce type de bâtiment, car OpenStreetMap n'en donne pas. Remplacez-les par ce que vous voyez.",
  "wiz.sur.tree": "Arbre",
  "wiz.sur.block": "Bâtiment ajouté par vous",
  "wiz.sur.osm": "Bâtiment",

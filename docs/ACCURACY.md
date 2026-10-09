@@ -47,7 +47,7 @@ With a block 18 metres away and 15 metres high, in front of a fourth floor west 
 | floor number one too low | -46 min |
 | block left out altogether | +61 min |
 
-So the height of a building across the street matters more than where exactly the pin is, and one floor of difference in the floor number matters as much as one floor of difference in the block. OpenStreetMap often has no height for a building. Sunspill then uses 3.2 metres a floor, or a typical value for that kind of building, and marks the height as estimated in the list so that you can correct it. A pin that is 10 metres off still moves the result by about 20 minutes a day.
+So the height of a building across the street matters more than where exactly the pin is, and one floor of difference in the floor number matters as much as one floor of difference in the block. OpenStreetMap often has no height for a building. Sunspill then uses 3.2 metres a floor when the floors are counted. For a plain building with neither, it takes the middle height of the five nearest buildings that have one, because neighbours tend to be about as tall, and falls back to a typical value for that kind of building (nine metres when it has no kind). It marks the height as estimated in the list so that you can correct it. Leaving each building with a height out in turn and guessing it from the others, on five real stretches of Taipei, the neighbours' guess is off by a middle factor of 1.2 to 1.3 and a fixed nine metres by 1.7 to 5.7. That test uses buildings whose height is known, and buildings with no height tag may differ from them. A pin that is 10 metres off still moves the result by about 20 minutes a day.
 
 ## What the app does about it
 
