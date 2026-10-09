@@ -168,7 +168,7 @@ No dependencies, no DOM, runs in Node 20 or newer and in the browser. See [docs/
 
 The sun position follows the NOAA equations. A window opening is trimmed by the wall thickness and the shadows of the eave, the balcony rail, and every building and tree outside, which leaves a few convex pieces. Each piece is carried along the sun rays onto the floor and walls and clipped there. A building outline of any shape is cut into convex prisms first, and the shadow of a prism on the window is the hull of its corners carried along the rays. The room is convex, so a ray that gets in meets the boundary once and nothing inside can block it. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the details.
 
-What it leaves out is listed on the page and on every picture it exports: clear sky and direct sun only, no reflections, no furniture shadows, one box shaped room, buildings as flat topped prisms and trees as solid shade. Beams almost parallel to a wall are ignored. If you can photograph a room under a sun you can date, [please open an issue](CONTRIBUTING.md#real-rooms).
+What it leaves out is listed on the page and on every picture it exports: clear sky and direct sun only, no reflections, no furniture shadows, one box shaped room, buildings as flat topped prisms and trees as solid shade. Beams almost parallel to a wall are ignored. If you can photograph a room under a sun you can date, [please send a real room report](https://github.com/Arthur031221/Sunspill/issues/new?template=real-room.yml).
 
 ## Docs
 

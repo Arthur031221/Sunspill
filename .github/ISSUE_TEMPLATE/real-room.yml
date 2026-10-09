@@ -1,0 +1,45 @@
+name: Real room report
+description: Where the sun really was in a room, and what Sunspill showed
+labels: [real room]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Sunspill has not been compared with a photograph of a real room yet, so a report like this is worth more than a new feature. The more of it you can fill in, the more it can be checked. Round the place to a street or a district if you prefer.
+  - type: input
+    id: link
+    attributes:
+      label: Link to the room
+      description: Share tab, then "Copy link". It holds the room, the windows, the buildings and the patch you marked in the check step.
+    validations:
+      required: true
+  - type: input
+    id: when
+    attributes:
+      label: Date, local time and place
+      description: For example "15 July, 16:30, Da-an District, Taipei".
+    validations:
+      required: true
+  - type: dropdown
+    id: facing
+    attributes:
+      label: How the direction of the window was found
+      options:
+        - Turned over the outline of the building on the map
+        - Phone compass held against the window
+        - A compass or a map I trust
+        - A guess
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What you saw
+      description: Where the sun patch was on the floor or the wall, and how sure you are of the time. Attach a photograph with a tape measure or a known object in the frame if you can.
+    validations:
+      required: true
+  - type: textarea
+    id: model
+    attributes:
+      label: What Sunspill showed
+      description: The overlap and the offset from the check step, and anything that looked different from the real room (a tree, a building, the height of the window).

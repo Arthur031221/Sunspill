@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: How accurate is it, and what is left out
+    url: https://github.com/Arthur031221/Sunspill/blob/main/docs/ACCURACY.md
+    about: Read this before reporting a patch that is a few centimetres off.

@@ -52,6 +52,9 @@ body {
   color: var(--ink);
   font: 14px/1.45 var(--ui);
   -webkit-text-size-adjust: 100%;
+  /* a phone on its side with a notch: keep the page out from under it */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
   transition: background 0.4s var(--ease), color 0.4s var(--ease);
 }
 button, input, select { font: inherit; color: inherit; }

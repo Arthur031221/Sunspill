@@ -1,0 +1,23 @@
+name: Bug report
+description: Something in Sunspill does not work or looks wrong
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what you saw instead. A screenshot helps.
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      description: For example "iPhone 14, Safari 18" or "Pixel 8, Chrome 130" or "Windows, Firefox".
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Link to the room
+      description: In the Share tab, switch on "Hide my exact location", then copy the link. Leave this empty if the problem has nothing to do with a room.

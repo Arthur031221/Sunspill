@@ -52,4 +52,4 @@ Plain code, no framework, comments only where the reason is not obvious. English
 
 ## Real rooms
 
-The model has not been compared with a photograph of a real room yet. If you can measure one, open an issue with the room file (or the link), the date, the place, the time, the observation you marked in the check step and a photograph with a tape measure in the frame. A case like that is worth more than a new feature.
+The model has not been compared with a photograph of a real room yet. If you can measure one, [open a real room report](https://github.com/Arthur031221/Sunspill/issues/new?template=real-room.yml) with the room file (or the link), the date, the place, the time, the observation you marked in the check step and a photograph with a tape measure in the frame. A case like that is worth more than a new feature.
