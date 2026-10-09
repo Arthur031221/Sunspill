@@ -414,6 +414,28 @@ test('surroundings: a building drawn as a multipolygon of several ways loads, an
   await context.close()
 })
 
+test('surroundings: a tower drawn as stacked parts carries one height label, and no two labels sit on each other', { skip: engine !== chromium }, async () => {
+  const { page, context } = await open()
+  await openWizard(page, 4)
+  await page.evaluate(() => window.__sunspill.store.update((d) => {
+    const square = (x, y, s) => [[x, y], [x + s, y], [x + s, y + s], [x, y + s]]
+    // five parts of one tower on the same spot, and two separate blocks beside it
+    d.obstacles = [64, 42, 35, 32, 26].map((h) => ({ type: 'building', src: 'osm', name: '', ring: square(-60, 20, 70), h, base: 0, est: h % 2 === 0, own: false, on: true }))
+    d.obstacles.push({ type: 'building', src: 'osm', name: '', ring: square(40, 20, 50), h: 18, base: 0, est: false, own: false, on: true })
+    d.obstacles.push({ type: 'building', src: 'osm', name: '', ring: square(40, -80, 50), h: 22, base: 0, est: true, own: false, on: true })
+  }, { history: false }))
+  await page.waitForFunction(() => window.__sunspill.map.labelBoxes?.length > 0)
+  await page.waitForTimeout(300)
+  const boxes = await page.evaluate(() => window.__sunspill.map.labelBoxes)
+  assert.ok(boxes.length >= 1 && boxes.length <= 3, `${boxes.length} labels for seven buildings of which five are one tower`)
+  for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+    const a = boxes[i]
+    const b = boxes[j]
+    assert.ok(!(a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1]), 'two labels overlap')
+  }
+  await context.close()
+})
+
 test('facing: the button lines the window wall up with a wall of the building that holds the room, and is hidden with no building', { skip: engine !== chromium }, async () => {
   const { page, context } = await open()
   await openWizard(page, 3)
