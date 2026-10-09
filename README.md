@@ -34,7 +34,7 @@
 
 <p align="center">
   <a href="https://arthur031221.github.io/Sunspill/"><b>Open the live demo</b></a> &nbsp;|&nbsp; free, no login, opens offline after the first visit<br>
-  <sub>Made for a phone. Seven steps and a few minutes get you from an address to your own room. Your room stays in your browser, and the last one you edited is kept on your device. Address search, the map and building outlines ask public OpenStreetMap servers, and only after you say yes to each one.</sub>
+  <sub>Made for a phone. Seven steps and a few minutes get you from an address to your own room. Your room stays in your browser, and the last one you edited, with any you name and save, is kept on your device. Address search, the map and building outlines ask public OpenStreetMap servers, and only after you say yes to each one.</sub>
 </p>
 
 It isn't a rendering or an AR app. The patch on your floor is an exact polygon, and you can check it against a ray tracer.
@@ -47,7 +47,7 @@ Press **Set up my room**. It's seven steps with a Back and a Next button, and on
 2. **The room.** Start from a studio suite, bedroom, living room or home office (the sizes follow typical Taiwanese flats, so correct them), or trace your own floor plan or listing photo with a two point scale. Set the floor number.
 3. **Windows and doors.** Real dimensions along the walls, snapping to the wall ends, the middle and each other, balconies with a railing, eaves and doors.
 4. **Which way it faces.** Turn the room over the outline of your building on the map, or hold the phone against the window and read its compass with the magnetic declination added. North is always on screen.
-5. **What stands around it.** Neighbouring buildings and their heights load from OpenStreetMap. A guessed height is marked and you can edit it. Add buildings and trees by hand. A clock on the map shows where the sun is and outlines the buildings that shade a window at that time.
+5. **What stands around it.** Neighbouring buildings and their heights load from OpenStreetMap. A height that OpenStreetMap lacks is guessed from the nearest buildings that have one, marked, and you can edit it. Add buildings and trees by hand. A clock on the map shows where the sun is and outlines the buildings that shade a window at that time.
 6. **Furniture.** Place, drag and turn beds, desks, sofas, shelves and plants, and see the sun land on them.
 7. **Check against the real sun.** Mark where the sun really was on the floor at a time you saw it, or lay a photo of the floor under the plan. Sunspill shows how far the model is off and can fit the facing and the window to your marks.
 
@@ -79,6 +79,8 @@ A compass app gives you an angle. A map shadow tool draws the buildings in the s
   </tr>
 </table>
 
+*New in 0.2.2: buildings that OpenStreetMap draws in several parts now load, a missing height is guessed from the buildings next to it, rooms can be saved by name, the drawing tells a screen reader what the keys do, and the room step shows the floor area, in ping on the Traditional Chinese page.*
+
 *New in 0.2: a guided setup for a phone, address search and a map pin, the phone compass with declination, neighbouring buildings and trees from OpenStreetMap, balconies, doors, floors and turned furniture, tracing a floor plan, and a check against the sun you saw.*
 
 ## What you can do
@@ -90,6 +92,7 @@ A compass app gives you an angle. A map shadow tool draws the buildings in the s
 - **Check the afternoon.** A printed rule: the minutes after a time you choose when direct sun reaches the floor or a wall, averaged over the months you choose.
 - **Find a spot for a plant.** Full sun, partial sun or low light, for a 30 cm footprint, ranked, at least 60 cm apart.
 - **Compare with reality.** Mark the patch you saw, see the overlap and the offset in centimetres, and fit the direction.
+- **Keep several rooms.** Name a room and keep up to twelve in this browser, to flip between flats.
 - **Share it.** A link that holds the whole room, a PNG card, a GIF, or the room as a JSON file. One switch rounds the place to whole degrees and drops the names from all of them.
 - **Use it anywhere.** Nine languages, light and dark themes, keyboard and touch, undo and redo, offline after the first visit.
 
@@ -99,11 +102,11 @@ Sun elevation is within 0.007 degrees of the NREL reference. Against pvlib and s
 
 Every piece of the geometry is checked against an independent reference, from the sun (pvlib, NREL SPA) and the shadows (a ray tracer and shapely) to the magnetic declination (pygeomag), the map offsets (pyproj) and the photo flattening (OpenCV). `node scripts/validate.mjs` reproduces it, and [docs/VALIDATION.md](docs/VALIDATION.md) lists the choices that aren't checked.
 
-The checks can't tell you how close your inputs are to the real room. Sunspill hasn't been compared with a photograph of a real room yet, so it has a check mode that compares the model with the sun you saw. [docs/ACCURACY.md](docs/ACCURACY.md) says how far each wrong input moves the patch. The direction of the window and the height of the building across the street matter most.
+The checks can't tell you how close your inputs are to the real room. Sunspill hasn't been compared with a photograph of a real room yet, so it has a check mode that compares the model with the sun you saw. [docs/ACCURACY.md](docs/ACCURACY.md) says how far each wrong input moves the patch. The direction of the window and the height of the building across the street matter most. A height that OpenStreetMap lacks is guessed from the nearest buildings that have one. Left out one at a time on five stretches of Taipei, that guess was off by a middle factor of 1.2 to 1.3, against 1.7 to 5.7 for a fixed nine metres.
 
 ## Privacy
 
-Your room, the pictures you trace and the marks you make never leave your browser. There's no account, no analytics and no cookie. Three optional services talk to public OpenStreetMap servers (the building outlines may come from one of three Overpass servers run by others). Each is off until you allow it, and the page says what it sends first:
+Your room, the pictures you trace and the marks you make never leave your browser, and neither do the rooms you save by name. There's no account, no analytics and no cookie. Three optional services talk to public OpenStreetMap servers (the building outlines may come from one of three Overpass servers run by others). Each is off until you allow it, and the page says what it sends first:
 
 | Service | Sends |
 | --- | --- |

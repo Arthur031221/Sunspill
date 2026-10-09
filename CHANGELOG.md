@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.2 (2026-10-10)
+
+Buildings from OpenStreetMap that were silently missing now load, and rooms can be kept by name.
+
+- **Buildings drawn as relations load.** The Overpass query asked for `out geom tags`, which leaves the members out of a relation, so every building that OpenStreetMap draws as a multipolygon (a station, a department store, Taipei 101) never came in. The query now asks relations for their members, their outer ways are joined into rings in whatever order and direction they come, and two outlines that touch at a corner stay two. Checked against shapely on real answers. A courtyard counts as solid.
+- **Heights.** A plain building with no height or floor count takes the middle height of the five nearest buildings that have one, and is marked estimated. Leaving each building with a height out in turn on five stretches of Taipei, that guess is off by a middle factor of 1.2 to 1.3, against 1.7 to 5.7 for the fixed nine metres it replaces.
+- **Which buildings are kept.** When more than 60 stand within 200 metres, the ones that rise highest above your window are kept (the floor number counts), and a note says how many were left out and how low they are. Before, they were ranked from the ground.
+- **Saved rooms.** In the Share tab, name a room and keep up to twelve in this browser. Opening one saves the room on the page first, as "Earlier: place", unless it is saved already, and does nothing when that cannot be done. Each is the whole room, with every building and mark, and delete asks twice.
+- **Keyboard and screen reader.** The drawing says what the keys do, an arrow key on a piece or a window is read out with its place, a keyboard picks a piece by moving into its card, and the sun patch edge is darker so it stands out from the floor by 3 to 1.
+- **Map.** A height label that would sit on another is left off, so a tower drawn as five parts carries one. When the first Overpass server is busy the page says it is trying the next, and starts with the server that answered last the next time.
+- **Floor area.** The room step shows it, with ping, the Taiwanese unit, added on the Traditional Chinese page.
+- **Validation.** Overlap, difference, union, centroids, crossing edges and the convex split of concave outlines are compared with shapely (2e-14 m2 worst), and the undo trail, which kept growing on replace and redo, is capped at 80 with tests. `docs/CONFIG.md` now says 80 buildings and trees, as the code does.
+
 ## 0.2.1 (2026-10-10)
 
 Smaller things that a first walk through the setup on a phone turned up.

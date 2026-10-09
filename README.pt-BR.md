@@ -44,7 +44,7 @@ Toque em **Configurar meu cômodo**. No celular leva alguns minutos, em sete pas
 2. **O cômodo.** Comece por um studio, quarto, sala ou escritório (as medidas seguem apartamentos típicos de Taiwan, então corrija-as), ou trace a sua própria planta ou a foto de um anúncio com uma escala de dois pontos. Informe o andar.
 3. **Janelas e portas.** Medidas reais ao longo das paredes, com encaixe nas pontas da parede, no meio e entre si, varandas com guarda-corpo, beirais e portas.
 4. **Para onde aponta.** Gire o cômodo no mapa sobre o contorno do seu prédio, ou encoste o celular na janela e leia a bússola com a declinação magnética somada. O norte está sempre à vista.
-5. **O que há ao redor.** Os prédios vizinhos e suas alturas vêm do OpenStreetMap. Uma altura estimada fica marcada e pode ser editada. Adicione prédios e árvores à mão. Um relógio no mapa mostra onde está o sol e contorna os prédios que fazem sombra numa janela nesse horário.
+5. **O que há ao redor.** Os prédios vizinhos e suas alturas vêm do OpenStreetMap. Uma altura estimada fica marcada e pode ser editada.Um prédio sem altura é estimado a partir dos mais próximos que têm. Adicione prédios e árvores à mão. Um relógio no mapa mostra onde está o sol e contorna os prédios que fazem sombra numa janela nesse horário.
 6. **Móveis.** Coloque, arraste e gire camas, escrivaninhas, sofás, estantes e plantas, e veja o sol cair sobre elas.
 7. **Conferir com o sol de verdade.** Marque onde o sol estava no chão num horário que você viu, ou ponha uma foto do chão sob a planta. O Sunspill mostra quanto o modelo erra e ajusta a direção e a janela às suas marcas.
 
@@ -68,6 +68,7 @@ O mesmo quarto em Taipé às 16:30 de 15 de julho. Gire a janela de oeste para l
 - **Conferir a tarde.** Uma regra impressa, não uma nota: os minutos depois de um horário escolhido em que o sol direto chega ao chão ou a uma parede.
 - **Achar lugar para uma planta.** Sol pleno, sol parcial ou pouca luz, em ordem.
 - **Comparar com a realidade.** Marque a mancha que você viu, veja a sobreposição e o desvio em centímetros e ajuste a direção.
+- **Guardar vários quartos.** Dê um nome a um quarto e guarde até doze neste navegador, para alternar entre apartamentos.
 - **Compartilhar.** Um link com o cômodo inteiro, um cartão PNG, um GIF ou o cômodo como arquivo JSON. Um botão arredonda o local para graus inteiros e tira o nome.
 - **Usar em qualquer lugar.** Nove idiomas, temas claro e escuro, teclado e toque, desfazer e refazer, offline depois da primeira visita.
 
@@ -79,9 +80,11 @@ Elevação do sol a menos de <b>0,007 grau</b> da referência NREL. <b>0 diverg�
 
 Cada peça de geometria é comparada com uma referência independente: o sol (pvlib, NREL SPA), as sombras (um traçador de raios e o shapely), a declinação magnética (pygeomag), os deslocamentos no mapa (pyproj) e a planificação de fotos (OpenCV). <code>node scripts/validate.mjs</code> reproduz isso e <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lista o que não é verificado. Ainda não foi comparado com a foto de um cômodo real, por isso há um modo de conferência que compara o modelo com o sol que você viu. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> diz quanto cada dado errado desloca a mancha.
 
+Uma altura que falta no OpenStreetMap é estimada pelos prédios mais próximos que a têm. Deixando de fora um a um os de cinco trechos de Taipei, o erro mediano foi de um fator de 1,2 a 1,3, contra 1,7 a 5,7 com nove metros fixos.
+
 ## Privacidade
 
-O seu cômodo, as imagens que você traça e as marcas que faz não saem do navegador. Não há conta, análise nem cookie. Três serviços opcionais falam com servidores do OpenStreetMap, cada um desligado até você permitir, e a página diz antes o que ele envia:
+O seu cômodo, as imagens que você traça e as marcas que faz não saem do navegador. Os quartos que você guarda com nome também ficam só neste navegador. Não há conta, análise nem cookie. Três serviços opcionais falam com servidores do OpenStreetMap, cada um desligado até você permitir, e a página diz antes o que ele envia:
 
 | Serviço | O que envia |
 | --- | --- |

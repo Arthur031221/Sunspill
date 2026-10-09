@@ -44,7 +44,7 @@ Appuyez sur **Configurer ma pièce**. Sur un téléphone, il faut quelques minut
 2. **La pièce.** Partez d'un studio, d'une chambre, d'un salon ou d'un bureau (les dimensions suivent les logements typiques de Taïwan, corrigez-les), ou décalquez votre plan ou la photo d'une annonce avec une échelle à deux points. Indiquez l'étage.
 3. **Fenêtres et portes.** Dimensions réelles le long des murs, avec aimantation aux bouts du mur, au milieu et entre elles, balcons avec garde-corps, auvents et portes.
 4. **Vers où ça donne.** Tournez la pièce sur le contour de votre immeuble dans la carte, ou posez le téléphone contre la fenêtre et lisez sa boussole avec la déclinaison magnétique ajoutée. Le nord reste toujours visible.
-5. **Ce qui l'entoure.** Les bâtiments voisins et leur hauteur viennent d'OpenStreetMap. Une hauteur estimée est marquée et modifiable. Ajoutez des bâtiments et des arbres à la main. Une horloge sur la carte montre où est le soleil et cerne les bâtiments qui font de l'ombre à une fenêtre à cette heure.
+5. **Ce qui l'entoure.** Les bâtiments voisins et leur hauteur viennent d'OpenStreetMap. Une hauteur estimée est marquée et modifiable.Un bâtiment sans hauteur est estimé d'après les plus proches qui en ont une. Ajoutez des bâtiments et des arbres à la main. Une horloge sur la carte montre où est le soleil et cerne les bâtiments qui font de l'ombre à une fenêtre à cette heure.
 6. **Meubles.** Placez, déplacez et tournez lits, bureaux, canapés, étagères et plantes, et regardez le soleil les atteindre.
 7. **Comparer au vrai soleil.** Marquez où se trouvait le soleil au sol à une heure que vous avez vue, ou posez une photo du sol sous le plan. Sunspill montre de combien le modèle s'écarte et ajuste l'orientation et la fenêtre à vos marques.
 
@@ -68,6 +68,7 @@ La même chambre à Taipei à 16:30 le 15 juillet. Tournez la fenêtre de l'oues
 - **Vérifier l'après-midi.** Une règle imprimée, pas une note : les minutes après une heure choisie où le soleil direct atteint le sol ou un mur.
 - **Trouver une place pour une plante.** Plein soleil, soleil partiel ou peu de lumière, classées.
 - **Comparer à la réalité.** Marquez la tache que vous avez vue, voyez le recouvrement et l'écart en centimètres, et ajustez l'orientation.
+- **Garder plusieurs pièces.** Donnez un nom à une pièce et gardez-en jusqu'à douze dans ce navigateur, pour passer d'un logement à l'autre.
 - **Partager.** Un lien qui contient toute la pièce, une carte PNG, un GIF, ou la pièce en fichier JSON. Un interrupteur arrondit le lieu à des degrés entiers et retire son nom.
 - **L'utiliser partout.** Neuf langues, thèmes clair et sombre, clavier et tactile, annuler et rétablir, hors ligne après la première visite.
 
@@ -79,9 +80,11 @@ Hauteur du soleil à moins de <b>0,007 degré</b> de la référence NREL. <b>0 d
 
 Chaque morceau de géométrie est comparé à une référence indépendante : le soleil (pvlib, NREL SPA), les ombres (un traceur de rayons et shapely), la déclinaison magnétique (pygeomag), les décalages sur la carte (pyproj) et la mise à plat des photos (OpenCV). <code>node scripts/validate.mjs</code> le reproduit et <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> liste ce qui n'est pas vérifié. Il n'a pas encore été comparé à la photo d'une vraie pièce, d'où un mode de contrôle qui compare le modèle à ce que vous avez vu. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> dit de combien chaque erreur déplace la tache.
 
+Une hauteur absente d'OpenStreetMap est estimée d'après les bâtiments les plus proches qui en ont une. En écartant les bâtiments un par un sur cinq secteurs de Taipei, l'erreur médiane était d'un facteur 1,2 à 1,3, contre 1,7 à 5,7 pour neuf mètres fixes.
+
 ## Vie privée
 
-Votre pièce, les images que vous décalquez et les marques que vous faites ne quittent pas votre navigateur. Pas de compte, pas de mesure d'audience, pas de cookie. Trois services facultatifs parlent à des serveurs d'OpenStreetMap, chacun désactivé tant que vous ne l'autorisez pas, et la page dit d'abord ce qu'il envoie :
+Votre pièce, les images que vous décalquez et les marques que vous faites ne quittent pas votre navigateur. Les pièces que vous enregistrez sous un nom restent aussi dans ce navigateur. Pas de compte, pas de mesure d'audience, pas de cookie. Trois services facultatifs parlent à des serveurs d'OpenStreetMap, chacun désactivé tant que vous ne l'autorisez pas, et la page dit d'abord ce qu'il envoie :
 
 | Service | Ce qu'il envoie |
 | --- | --- |

@@ -44,7 +44,7 @@ Pulsa **Configurar mi habitación**. En un móvil lleva unos minutos, en siete p
 2. **La habitación.** Empieza por un estudio, dormitorio, salón o despacho (las medidas siguen los pisos típicos de Taiwán, así que corrígelas), o calca tu propio plano o la foto de un anuncio con una escala de dos puntos. Indica la planta.
 3. **Ventanas y puertas.** Medidas reales a lo largo de los muros, con ajuste a los extremos, al centro y entre sí, balcones con barandilla, aleros y puertas.
 4. **Hacia dónde mira.** Gira la habitación sobre el contorno de tu edificio en el mapa, o apoya el móvil en la ventana y lee su brújula con la declinación magnética sumada. El norte siempre está a la vista.
-5. **Qué hay alrededor.** Los edificios vecinos y sus alturas se cargan de OpenStreetMap. Una altura supuesta queda marcada y se puede cambiar. Añade edificios y árboles a mano. Un reloj en el mapa muestra dónde está el sol y marca los edificios que dan sombra a una ventana a esa hora.
+5. **Qué hay alrededor.** Los edificios vecinos y sus alturas se cargan de OpenStreetMap. Una altura supuesta queda marcada y se puede cambiar.Un edificio sin altura se estima a partir de los más cercanos que sí la tienen. Añade edificios y árboles a mano. Un reloj en el mapa muestra dónde está el sol y marca los edificios que dan sombra a una ventana a esa hora.
 6. **Muebles.** Coloca, arrastra y gira camas, escritorios, sofás, estanterías y plantas, y mira cómo les da el sol.
 7. **Comprobar con el sol real.** Marca dónde estuvo el sol en el suelo a una hora que viste, o coloca una foto del suelo bajo el plano. Sunspill muestra cuánto se aparta el modelo y ajusta la orientación y la ventana a tus marcas.
 
@@ -68,6 +68,7 @@ El mismo dormitorio en Taipéi a las 16:30 del 15 de julio. Gira la ventana de o
 - **Comprobar la tarde.** Una regla impresa, no una nota: los minutos después de una hora que eliges en los que el sol directo llega al suelo o a un muro.
 - **Buscar sitio para una planta.** Sol pleno, sol parcial o poca luz, ordenados.
 - **Comparar con la realidad.** Marca la mancha que viste, mira el solape y el desvío en centímetros y ajusta la orientación.
+- **Guardar varias habitaciones.** Ponle nombre a una habitación y guarda hasta doce en este navegador, para pasar de un piso a otro.
 - **Compartir.** Un enlace con toda la habitación, una tarjeta PNG, un GIF o la habitación como archivo JSON. Un interruptor redondea el lugar a grados enteros y quita su nombre.
 - **Usarlo donde sea.** Nueve idiomas, temas claro y oscuro, teclado y táctil, deshacer y rehacer, sin conexión tras la primera visita.
 
@@ -79,9 +80,11 @@ Elevación solar a menos de <b>0,007 grados</b> de la referencia NREL. <b>0 desa
 
 Cada pieza de geometría se compara con una referencia independiente: el sol (pvlib, NREL SPA), las sombras (un trazador de rayos y shapely), la declinación magnética (pygeomag), los desplazamientos del mapa (pyproj) y el aplanado de fotos (OpenCV). <code>node scripts/validate.mjs</code> lo reproduce y <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lista lo que no se comprueba. Aún no se ha comparado con la foto de una habitación real, así que hay un modo de comprobación que compara el modelo con lo que viste. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> dice cuánto mueve la mancha cada dato erróneo.
 
+Una altura que falta en OpenStreetMap se estima con los edificios más cercanos que la tienen. Dejando fuera uno a uno los de cinco zonas de Taipéi, el error mediano fue de un factor de 1,2 a 1,3, frente a 1,7 a 5,7 con nueve metros fijos.
+
 ## Privacidad
 
-Tu habitación, las imágenes que calcas y las marcas que haces no salen de tu navegador. No hay cuenta, ni analítica, ni cookies. Tres servicios opcionales hablan con servidores de OpenStreetMap, cada uno apagado hasta que lo permitas, y la página dice antes qué envía:
+Tu habitación, las imágenes que calcas y las marcas que haces no salen de tu navegador. Las habitaciones que guardas con nombre también se quedan solo en este navegador. No hay cuenta, ni analítica, ni cookies. Tres servicios opcionales hablan con servidores de OpenStreetMap, cada uno apagado hasta que lo permitas, y la página dice antes qué envía:
 
 | Servicio | Qué envía |
 | --- | --- |

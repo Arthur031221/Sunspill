@@ -44,7 +44,7 @@ Tippe auf **Mein Zimmer einrichten**. Auf dem Handy dauert es ein paar Minuten, 
 2. **Das Zimmer.** Starte mit einem Apartment, Schlafzimmer, Wohnzimmer oder Arbeitszimmer (die Maße folgen typischen taiwanischen Wohnungen, korrigiere sie), oder zeichne deinen eigenen Grundriss oder das Foto aus einer Anzeige mit einem Zwei-Punkte-Maßstab nach. Gib die Etage an.
 3. **Fenster und Türen.** Echte Maße entlang der Wände, mit Einrasten an Wandenden, Mitte und aneinander, Balkone mit Brüstung, Vordächer und Türen.
 4. **Wohin es zeigt.** Drehe das Zimmer auf der Karte über den Umriss deines Hauses, oder halte das Handy ans Fenster und lies den Kompass mit addierter magnetischer Deklination ab. Norden bleibt immer sichtbar.
-5. **Was drumherum steht.** Nachbargebäude und ihre Höhen kommen von OpenStreetMap. Eine geschätzte Höhe ist markiert und lässt sich ändern. Gebäude und Bäume kannst du selbst hinzufügen. Eine Uhr auf der Karte zeigt, wo die Sonne steht, und umrandet die Gebäude, die zu dieser Zeit ein Fenster beschatten.
+5. **Was drumherum steht.** Nachbargebäude und ihre Höhen kommen von OpenStreetMap. Eine geschätzte Höhe ist markiert und lässt sich ändern.Ein Gebäude ohne Höhe wird nach den nächsten Gebäuden geschätzt, die eine haben. Gebäude und Bäume kannst du selbst hinzufügen. Eine Uhr auf der Karte zeigt, wo die Sonne steht, und umrandet die Gebäude, die zu dieser Zeit ein Fenster beschatten.
 6. **Möbel.** Stelle Betten, Schreibtische, Sofas, Regale und Pflanzen auf, verschiebe und drehe sie, und sieh, wie die Sonne darauf fällt.
 7. **Mit der echten Sonne vergleichen.** Markiere, wo die Sonne zu einer Zeit, die du gesehen hast, auf dem Boden war, oder lege ein Foto des Bodens unter den Plan. Sunspill zeigt, wie weit das Modell daneben liegt, und passt Ausrichtung und Fenster an deine Markierungen an.
 
@@ -68,6 +68,7 @@ Dasselbe Schlafzimmer in Taipeh um 16:30 am 15. Juli. Drehe das Fenster von West
 - **Den Nachmittag prüfen.** Eine gedruckte Regel, keine Note: die Minuten nach einer gewählten Uhrzeit, in denen direkte Sonne Boden oder Wand erreicht.
 - **Einen Platz für eine Pflanze finden.** Volle Sonne, Halbschatten oder wenig Licht, nach Rang geordnet.
 - **Mit der Wirklichkeit vergleichen.** Markiere den gesehenen Fleck, sieh Überdeckung und Versatz in Zentimetern und passe die Ausrichtung an.
+- **Mehrere Zimmer behalten.** Gib einem Zimmer einen Namen und behalte bis zu zwölf in diesem Browser, um zwischen Wohnungen zu wechseln.
 - **Teilen.** Ein Link mit dem ganzen Zimmer, eine PNG-Karte, ein GIF oder das Zimmer als JSON-Datei. Ein Schalter rundet den Ort auf ganze Grad und entfernt seinen Namen.
 - **Überall nutzen.** Neun Sprachen, helles und dunkles Thema, Tastatur und Touch, Rückgängig und Wiederholen, nach dem ersten Besuch offline.
 
@@ -79,9 +80,11 @@ Sonnenhöhe innerhalb von <b>0,007 Grad</b> der NREL-Referenz. <b>0 Abweichungen
 
 Jedes geometrische Teil wird mit einer unabhängigen Referenz verglichen: die Sonne (pvlib, NREL SPA), die Schatten (ein Strahlenverfolger und shapely), die magnetische Deklination (pygeomag), die Verschiebungen auf der Karte (pyproj) und das Entzerren von Fotos (OpenCV). <code>node scripts/validate.mjs</code> reproduziert das, und <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> nennt, was nicht geprüft ist. Mit dem Foto eines echten Zimmers wurde es noch nicht verglichen, deshalb gibt es einen Prüfmodus, der das Modell mit der Sonne vergleicht, die du gesehen hast. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> sagt, wie weit jede falsche Eingabe den Fleck verschiebt.
 
+Eine Höhe, die OpenStreetMap fehlt, wird aus den nächsten Gebäuden geschätzt, die eine haben. Ließ man in fünf Abschnitten von Taipeh jedes Gebäude einzeln weg, lag die Schätzung im mittleren Fall um den Faktor 1,2 bis 1,3 daneben, bei festen neun Metern um 1,7 bis 5,7.
+
 ## Datenschutz
 
-Dein Zimmer, die Bilder, die du nachzeichnest, und deine Markierungen verlassen deinen Browser nicht. Es gibt kein Konto, keine Analyse und keine Cookies. Drei optionale Dienste sprechen mit OpenStreetMap-Servern, jeder ist aus, bis du ihn erlaubst, und die Seite sagt vorher, was er sendet:
+Dein Zimmer, die Bilder, die du nachzeichnest, und deine Markierungen verlassen deinen Browser nicht. Zimmer, die du unter einem Namen speicherst, bleiben ebenfalls nur in diesem Browser. Es gibt kein Konto, keine Analyse und keine Cookies. Drei optionale Dienste sprechen mit OpenStreetMap-Servern, jeder ist aus, bis du ihn erlaubst, und die Seite sagt vorher, was er sendet:
 
 | Dienst | Was er sendet |
 | --- | --- |
