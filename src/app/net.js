@@ -36,6 +36,8 @@ export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), w
   // a busy Overpass server takes about ten seconds to say so, which is long enough to wait before the next one is tried
   let lastSearch = 0
   let queue = Promise.resolve()
+  // the Overpass server that answered last goes first next time, so a busy one is not waited for again
+  let preferred = 0
 
   async function request(url, init, signal, service) {
     // the switch is read again right before the request, so a service turned off while a call waits sends nothing
@@ -76,16 +78,26 @@ export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), w
       return mine
     },
 
-    /** Building outlines around a point, trying each Overpass server in turn. */
+    /**
+     * Building outlines around a point, trying each Overpass server in turn. `options` goes to parseBuildings,
+     * except `onNext(host)`, which is called before each server after the first so the page can say it is still trying.
+     */
     async buildings(center, radius = 200, signal, options) {
       if (!allowed('buildings')) throw new Refused('buildings')
+      const { onNext, ...parse } = options ?? {}
       const body = new URLSearchParams({ data: buildingQuery(center.lat, center.lon, radius) })
       const failures = []
-      for (const host of SERVICES.buildings.hosts) {
+      const hosts = SERVICES.buildings.hosts
+      for (let n = 0; n < hosts.length; n++) {
+        const at = (preferred + n) % hosts.length
+        const host = hosts[at]
+        if (n > 0) onNext?.(new URL(host).host)
         try {
           const json = await request(host + OVERPASS_PATH, { method: 'POST', body }, signal, 'buildings')
           if (!Array.isArray(json?.elements)) throw new Error('no elements in the answer')
-          return parseBuildings(json, center, options)
+          const parsed = parseBuildings(json, center, parse)
+          preferred = at
+          return parsed
         } catch (err) {
           if (signal?.aborted || err instanceof Refused) throw err
           failures.push(`${new URL(host).host}: ${err.message}`)

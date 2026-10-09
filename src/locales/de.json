@@ -329,6 +329,7 @@
  "wiz.face.outlinesOff": "Lade die Umrisse, um das Zimmer an deinem Gebäude auszurichten. Dazu fragt Sunspill einen OpenStreetMap-Server nach Gebäuden im Umkreis von 200 Metern.",
  "wiz.face.northNote": "Ziehe das Zimmer zum Verschieben. Ein Handykompass wird durch Metall und Elektronik um einige Grad verfälscht. Vergleiche ihn mit der Karte.",
  "wiz.map.loading": "Gebäude werden bei OpenStreetMap abgefragt.",
+ "wiz.map.another": "Dieser Server hat nicht geantwortet. Versuche {host}.",
  "wiz.map.loaded": "{n} Gebäude geladen.",
  "wiz.map.partial": "{n} von {total} Gebäuden wurden behalten: die, die am höchsten über deinem Fenster aufragen. Die übrigen ragen weniger als {deg} Grad darüber auf und beschatten nur eine tiefere Sonne. Lade nach einer Änderung der Etage erneut.",
  "wiz.map.empty": "OpenStreetMap kennt hier keine Gebäude. Füge sie von Hand hinzu, falls es welche gibt.",

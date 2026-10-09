@@ -329,6 +329,7 @@
  "wiz.face.outlinesOff": "Carga los contornos para alinear la habitación con tu edificio. Pide a un servidor de OpenStreetMap los edificios a menos de 200 metros.",
  "wiz.face.northNote": "Arrastra la habitación para moverla. La brújula del móvil se desvía unos grados por el metal y la electrónica. Compárala con el mapa.",
  "wiz.map.loading": "Pidiendo los edificios a OpenStreetMap.",
+ "wiz.map.another": "Ese servidor no respondió. Probando con {host}.",
  "wiz.map.loaded": "{n} edificios cargados.",
  "wiz.map.partial": "Se conservaron {n} de {total} edificios: los que más se elevan sobre tu ventana. El resto sube menos de {deg} grados sobre ella, así que solo da sombra a un sol más bajo. Vuelve a cargar tras cambiar el número de planta.",
  "wiz.map.empty": "OpenStreetMap no tiene edificios aquí. Añádelos a mano si los hay.",

@@ -70,6 +70,23 @@ test('buildings come from the first Overpass server that answers, and the positi
   assert.equal(h.calls[0].init.method, 'POST')
 })
 
+test('the page hears when the next server is tried, and the server that answered last goes first next time', async () => {
+  const h = harness({ responses: [json({}, 504), json(overpass), json(overpass), json(overpass)] })
+  const told = []
+  await h.net.buildings({ lat: 25.0288, lon: 121.5442 }, 200, undefined, { onNext: (host) => told.push(host) })
+  assert.deepEqual(told, ['overpass.openstreetmap.fr'], 'told once, before the second server')
+  assert.deepEqual(h.calls.map((c) => new URL(c.url).host), ['overpass-api.de', 'overpass.openstreetmap.fr'])
+  // the second server answered, so it is asked first now, and nobody is told anything
+  const again = []
+  await h.net.buildings({ lat: 25.0288, lon: 121.5442 }, 200, undefined, { onNext: (host) => again.push(host) })
+  assert.deepEqual(again, [])
+  assert.equal(new URL(h.calls[2].url).host, 'overpass.openstreetmap.fr')
+  // options still reach the parser
+  const { buildings, cutoff } = await h.net.buildings({ lat: 25.0288, lon: 121.5442 }, 200, undefined, { limit: 10, eye: 12 })
+  assert.equal(buildings.length, 10)
+  assert.ok(cutoff >= 0)
+})
+
 test('when every server fails the error says which and why', async () => {
   const h = harness({ responses: [json({}, 504), new Error('network down'), json({}, 500)] })
   await assert.rejects(h.net.buildings({ lat: 1, lon: 1 }), /overpass-api\.de.*504.*openstreetmap\.fr.*network down.*private\.coffee.*500/)

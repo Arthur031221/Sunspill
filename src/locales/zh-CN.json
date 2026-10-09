@@ -329,6 +329,7 @@
  "wiz.face.outlinesOff": "加载轮廓，让房间对齐你的建筑。这会向 OpenStreetMap 服务器请求 200 米内的建筑。",
  "wiz.face.northNote": "拖动房间可移动。手机罗盘会被金属与电子设备干扰几度，请与地图对照。",
  "wiz.map.loading": "正在向 OpenStreetMap 获取建筑数据。",
+ "wiz.map.another": "那台服务器没有响应，改试 {host}。",
  "wiz.map.loaded": "已加载 {n} 栋建筑。",
  "wiz.map.partial": "共 {total} 栋建筑，保留了 {n} 栋：从你的窗户看上去仰角最高的那些。其余的仰角低于 {deg} 度，只会挡住比这更低的太阳。改了楼层后请再加载一次。",
  "wiz.map.empty": "OpenStreetMap 在此没有建筑数据。如有建筑，请手动添加。",

@@ -27,7 +27,7 @@ export async function loadBuildings(ctx) {
     // a building lower than the lowest window sill cannot shade the window, so those are the last to be kept
     const sills = store.scene.windows.map((w) => w.sill)
     const eye = floorLift(store.scene) + (sills.length ? Math.min(...sills) : 0.9)
-    const { buildings, total, cutoff } = await net.buildings(asked, 200, mine.signal, { eye })
+    const { buildings, total, cutoff } = await net.buildings(asked, 200, mine.signal, { eye, onNext: (host) => toast(t('wiz.map.another', { host })) })
     // the answer is for the spot that was asked about, so it is dropped when the room has been put somewhere else since
     const now = store.scene.place
     if (mine.signal.aborted || haversine(asked, now) > 25) return false

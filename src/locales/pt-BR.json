@@ -329,6 +329,7 @@
  "wiz.face.outlinesOff": "Carregue os contornos para alinhar o cômodo com o seu prédio. Isso pede a um servidor do OpenStreetMap os prédios em até 200 metros.",
  "wiz.face.northNote": "Arraste o cômodo para movê-lo. A bússola do celular desvia alguns graus por causa de metal e eletrônicos. Compare com o mapa.",
  "wiz.map.loading": "Pedindo os prédios ao OpenStreetMap.",
+ "wiz.map.another": "Esse servidor não respondeu. Tentando {host}.",
  "wiz.map.loaded": "{n} prédios carregados.",
  "wiz.map.partial": "Foram mantidos {n} de {total} edifícios: os que mais se elevam acima da sua janela. Os demais sobem menos de {deg} graus acima dela, então só fazem sombra com um sol mais baixo. Carregue de novo depois de mudar o andar.",
  "wiz.map.empty": "O OpenStreetMap não tem prédios aqui. Adicione-os à mão, se houver.",
