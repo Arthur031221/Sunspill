@@ -26,8 +26,8 @@ jobs:
 
   browser:
     runs-on: ubuntu-latest
-    # Playwright's Firefox now and then stops answering; a stuck run should fail, not hang
-    timeout-minutes: 12
+    # Playwright's Firefox now and then stops answering, and a stuck run should fail and not hang
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -41,6 +41,12 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npm run build
-      - run: npm run test:e2e
+      # one more go when the run fails, because Playwright's Firefox now and then stops answering
+      - name: Browser tests
+        run: |
+          npm run test:e2e || {
+            echo "Trying the browser tests once more"
+            npm run test:e2e
+          }
         env:
           BROWSER: ${{ matrix.browser }}

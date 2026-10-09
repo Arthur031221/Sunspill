@@ -13,7 +13,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test test/*.test.js",
-    "test:e2e": "node --test --test-concurrency=1 test/e2e/*.e2e.js",
+    "test:e2e": "node --test --test-concurrency=1 --test-timeout=120000 test/e2e/*.e2e.js",
     "reference": "python3 scripts/make-reference.py",
     "assets": "node scripts/make-assets.mjs",
     "icons": "node scripts/make-icons.mjs",
