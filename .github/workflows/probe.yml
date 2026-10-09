@@ -1,0 +1,56 @@
+name: Probe
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - run: npm run build
+      - name: probe
+        run: |
+          cat > /tmp/probe.mjs <<'JS'
+          import { webkit } from 'playwright'
+          import { serve } from '/home/runner/work/Sunspill/Sunspill/test/serve.js'
+          const site = await serve()
+          const browser = await webkit.launch()
+          const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 }, reducedMotion: 'no-preference' })
+          const page = await ctx.newPage()
+          await page.goto(site.url)
+          await page.waitForSelector('html[data-ready]')
+          const info = await page.evaluate(() => new Promise((resolve) => {
+            let frames = 0
+            const t0 = performance.now()
+            const loop = () => { frames++; if (performance.now() - t0 < 1500) requestAnimationFrame(loop) }
+            requestAnimationFrame(loop)
+            let ticks = 0
+            const iv = setInterval(() => ticks++, 100)
+            setTimeout(() => { clearInterval(iv); resolve({ vis: document.visibilityState, hidden: document.hidden, focus: document.hasFocus(), frames, ticks, minutes: window.__sunspill.store.scene.minutes, playing: window.__sunspill.store.ui.playing }) }, 1600)
+          }))
+          console.log('PROBE1', JSON.stringify(info))
+          await page.bringToFront()
+          const info2 = await page.evaluate(() => new Promise((resolve) => {
+            let frames = 0
+            const t0 = performance.now()
+            const loop = () => { frames++; if (performance.now() - t0 < 1500) requestAnimationFrame(loop) }
+            requestAnimationFrame(loop)
+            setTimeout(() => resolve({ vis: document.visibilityState, frames, minutes: window.__sunspill.store.scene.minutes }), 1600)
+          }))
+          console.log('PROBE2 (after bringToFront)', JSON.stringify(info2))
+          const hashes = await page.evaluate(() => new Promise((resolve) => {
+            window.__sunspill.store.update((d) => { d.room.w = 5 })
+            setTimeout(() => resolve(location.hash.slice(0, 10)), 800)
+          }))
+          console.log('PROBE3 hash after 800ms', hashes)
+          let err = null
+          await page.evaluate(() => { try { history.replaceState(null, '', '#x') } catch (e) { return e.message } }).then((m) => { err = m })
+          console.log('PROBE4 replaceState error', err)
+          await browser.close(); await site.close()
+          JS
+          node /tmp/probe.mjs
