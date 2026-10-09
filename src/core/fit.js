@@ -8,8 +8,8 @@
 
 import { scenePatches } from './light.js'
 import { sunAt } from './hours.js'
-import { clipConvex, area, centroid, unionArea } from './poly.js'
-import { hullOf } from './obstacles.js'
+import { clipConvex, area, centroid, unionArea, dedupe, selfCrossing } from './poly.js'
+import { hullOf, convexParts } from './obstacles.js'
 import { wallFrame } from './room.js'
 
 /** The floor patches the model predicts for an observation. */
@@ -19,37 +19,54 @@ export function predictedPatch(scene, check) {
   return scenePatches(scene, { azimuth: sun.azimuth, elevation: sun.elevation }, { walls: false }).floor
 }
 
-/** The marked points as a convex outline: a sunlit patch from one window is convex. */
-export const observedOutline = (check) => hullOf(check.poly)
+/**
+ * The outline of a marked patch: the corners in the order they were tapped when
+ * that is a simple shape, so a notch in the patch stays a notch. Corners that
+ * cross over each other make no shape, and then the hull is used.
+ */
+export function markOutline(points) {
+  const ring = dedupe(points)
+  if (ring.length < 3) return ring
+  return selfCrossing(ring) || area(ring) < 1e-9 ? hullOf(ring) : ring
+}
+
+/** The marked patch as disjoint convex pieces. */
+export function observedPieces(check) {
+  const outline = markOutline(check.poly)
+  return outline.length >= 3 && area(outline) > 1e-9 ? convexParts(outline) : []
+}
 
 /**
  * How the model patch and the marked patch compare.
  * @returns {{iou:number, observed:number, predicted:number, shared:number, shift:number[]|null, covered:number}}
- *   areas in square metres; shift is the model centre to the marked centre in room metres;
+ *   areas in square metres, shift is the model centre to the marked centre in room metres,
  *   covered is the share of the marked area the model lights.
  */
 export function compareCheck(scene, check) {
-  const outline = observedOutline(check)
+  const pieces = observedPieces(check)
   const model = predictedPatch(scene, check)
-  const observed = outline.length >= 3 ? area(outline) : 0
+  const observed = pieces.reduce((s, p) => s + area(p), 0)
   const predicted = unionArea(model)
-  const shared = unionArea(model.map((p) => clipConvex(p, outline)).filter((p) => p.length))
+  const shared = unionArea(model.flatMap((m) => pieces.map((p) => clipConvex(m, p))).filter((p) => p.length))
   const union = observed + predicted - shared
   let shift = null
   if (model.length && observed > 0) {
-    // area weighted centre of the model pieces
-    let cx = 0
-    let cy = 0
-    let total = 0
-    for (const p of model) {
-      const a = area(p)
-      const c = centroid(p)
-      cx += c[0] * a
-      cy += c[1] * a
-      total += a
+    // area weighted centre of the model pieces and of the marked pieces
+    const weighted = (list) => {
+      let cx = 0
+      let cy = 0
+      let total = 0
+      for (const p of list) {
+        const a = area(p)
+        const c = centroid(p)
+        cx += c[0] * a
+        cy += c[1] * a
+        total += a
+      }
+      return [cx / total, cy / total]
     }
-    const mc = [cx / total, cy / total]
-    const oc = centroid(outline)
+    const mc = weighted(model)
+    const oc = weighted(pieces)
     shift = [oc[0] - mc[0], oc[1] - mc[1]]
   }
   return { iou: union > 1e-9 ? shared / union : 0, observed, predicted, shared, shift, covered: observed > 1e-9 ? shared / observed : 0 }
@@ -123,8 +140,9 @@ export function fitScene(scene, checks, { window: windowIndex = null, maxTurn = 
     const c = score(withFacing(scene, base + d))
     if (c < best.c - 1e-12) best = { d, c }
   }
+  const coarse = best.d
   for (let k = -10; k <= 10; k++) {
-    const d = Math.max(-maxTurn, Math.min(maxTurn, best.d + k / 10))
+    const d = Math.max(-maxTurn, Math.min(maxTurn, coarse + k / 10))
     const c = score(withFacing(scene, base + d))
     if (c < best.c - 1e-12) best = { d, c }
   }

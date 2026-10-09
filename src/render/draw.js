@@ -3,7 +3,7 @@
 // maps to the screen with one affine transform and the patches stay exact.
 
 import { WALLS, wallFrame, sunInRoom, itemFootprint } from '../core/room.js'
-import { hullOf } from '../core/obstacles.js'
+import { markOutline } from '../core/fit.js'
 import { hull, pathOf, mix } from './geometry.js'
 
 const DOOR_HEIGHT = 2.05
@@ -152,7 +152,7 @@ function drawMarks(ctx, cam, marks, pal) {
     ctx.fillStyle = pal.name === 'dark' ? 'rgba(94, 234, 212, 0.2)' : 'rgba(15, 118, 110, 0.18)'
     ctx.lineWidth = 2.4
     ctx.setLineDash([])
-    pathOf(ctx, outline(hullOf(pts)))
+    pathOf(ctx, outline(markOutline(pts)))
     ctx.fill()
     ctx.stroke()
   }

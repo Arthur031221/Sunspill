@@ -7,7 +7,7 @@ import { numberField } from './fields.js'
 import { searchCities, cityPlace } from '../core/cities.js'
 import { zoneAt } from '../core/zone.js'
 import { zoneOffset, isZone } from '../core/solar.js'
-import { haversine } from '../core/geo.js'
+import { haversine, setPlacePoint } from '../core/geo.js'
 import { Refused } from './net.js'
 
 const offsetText = (zone) => {
@@ -25,16 +25,16 @@ export function placeStep(ctx) {
   const status = h('p', { class: 'note', role: 'status' })
   const where = h('p', { class: 'where', 'aria-live': 'polite' })
   let abort = null
+  let generation = 0
 
   /** Move the room to a place: the name, the point and the time zone together. */
   function choose(place) {
     const old = store.scene.place
     const zone = (isZone(place.zone) && place.zone) || zoneAt(place.lat, place.lon) || old.zone
-    const moved = haversine(old, place)
     store.update((d) => {
-      d.place = { name: place.name || d.place.name, lat: place.lat, lon: place.lon, zone }
-      // outlines loaded for the old spot would sit in the wrong place
-      if (moved > 25) d.obstacles = d.obstacles.filter((o) => o.src !== 'osm')
+      setPlacePoint(d, place.lat, place.lon)
+      d.place.name = place.name || d.place.name
+      d.place.zone = zone
     })
     ctx.actions.afterPlace()
     results.replaceChildren()
@@ -54,21 +54,27 @@ export function placeStep(ctx) {
     const q = input.value.trim()
     if (q.length < 2) return
     abort?.abort()
+    const mine = ++generation
+    const stale = () => mine !== generation
     const cities = searchCities(q, 3).map((c) => ({ ...cityPlace(c), label: `${c.country}` }))
     show(cities.map((c) => row(c, t('wiz.place.builtin'))))
     status.textContent = ''
-    if (!(await consent.ask('search'))) {
+    const yes = await consent.ask('search')
+    if (stale()) return
+    if (!yes) {
       status.textContent = cities.length ? t('wiz.place.offlineOnly') : t('wiz.place.noneOffline')
       return
     }
-    abort = new AbortController()
+    const controller = new AbortController()
+    abort = controller
     status.textContent = t('wiz.place.searching')
     try {
-      const found = await net.search(q, locale(), abort.signal)
+      const found = await net.search(q, locale(), controller.signal)
+      if (stale()) return
       status.textContent = found.length ? '' : t('wiz.place.none')
       show([...found.map((p) => row(p)), ...cities.map((c) => row(c, t('wiz.place.builtin')))])
     } catch (err) {
-      if (abort.signal.aborted) return
+      if (controller.signal.aborted || stale()) return
       status.textContent = err instanceof Refused ? t('wiz.place.offlineOnly') : t('wiz.place.failed', { why: String(err.message || err).slice(0, 80) })
     }
   }
@@ -93,8 +99,8 @@ export function placeStep(ctx) {
   const details = h('details', { class: 'more' }, h('summary', {}, t('wiz.place.edit')),
     h('div', { class: 'field compact' }, h('label', {}, t('place.name')), nameInput),
     h('div', { class: 'grid2' },
-      add({ label: t('place.lat'), min: -80, max: 80, step: 0.00001, get: (s) => s.place.lat, set: (d, v) => { d.place.lat = v }, key: 'lat' }),
-      add({ label: t('place.lon'), min: -180, max: 180, step: 0.00001, get: (s) => s.place.lon, set: (d, v) => { d.place.lon = v }, key: 'lon' })),
+      add({ label: t('place.lat'), min: -80, max: 80, step: 0.00001, get: (s) => s.place.lat, set: (d, v) => { setPlacePoint(d, v, d.place.lon) }, key: 'lat' }),
+      add({ label: t('place.lon'), min: -180, max: 180, step: 0.00001, get: (s) => s.place.lon, set: (d, v) => { setPlacePoint(d, d.place.lat, v) }, key: 'lon' })),
     h('div', { class: 'field compact' }, h('label', {}, t('place.zone')), zoneInput))
 
   const el = h('section', { class: 'wiz-step' },
@@ -120,6 +126,7 @@ export function placeStep(ctx) {
       map.invalidate()
     },
     leave() {
+      generation++
       abort?.abort()
       map.on.pin = null
     },

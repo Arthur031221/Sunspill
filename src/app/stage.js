@@ -307,10 +307,13 @@ export class Stage {
       this.guides = []
       this.invalidate()
     }
-    if (d?.type === 'tool' && d.moved < 8 && this.camera) {
-      const at = this.camera.planeAt(d.x, d.y, 0)
-      const { room } = this.store.scene
-      if (at && at[0] >= 0 && at[1] >= 0 && at[0] <= room.w && at[1] <= room.d) this.tool.onPoint(at[0], at[1])
+    if (d?.type === 'tool') {
+      // a tap, and only while the tool is still set: the step may have been left with a finger down
+      if (this.tool && d.moved < 8 && this.camera) {
+        const at = this.camera.planeAt(d.x, d.y, 0)
+        const { room } = this.store.scene
+        if (at && at[0] >= 0 && at[1] >= 0 && at[0] <= room.w && at[1] <= room.d) this.tool.onPoint(at[0], at[1])
+      }
       return
     }
     this.setHover(this.pick(this.pointer(e)))

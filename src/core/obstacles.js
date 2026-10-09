@@ -9,7 +9,7 @@
 // light.js subtracts that hull from the lit opening, the same way it does for
 // an eave.
 
-import { clipHalf, signedArea, dedupe, area } from './poly.js'
+import { clipHalf, signedArea, dedupe, area, selfCrossing } from './poly.js'
 import { wallFrame, localToRoom, floorLift } from './room.js'
 
 const FRONT = 1e-6
@@ -81,6 +81,11 @@ function triangulate(ring) {
 export function convexParts(ring) {
   let poly = dedupe(ring)
   if (poly.length < 3) return []
+  // an outline that crosses itself has no inside to cut up, and its signed area can cancel to nothing
+  if (selfCrossing(poly)) {
+    const hull = hullOf(poly)
+    return hull.length >= 3 && area(hull) > 1e-9 ? [hull] : []
+  }
   if (signedArea(poly) < 0) poly = poly.slice().reverse()
   if (area(poly) < 1e-9) return []
   if (isConvex(poly)) return [poly]

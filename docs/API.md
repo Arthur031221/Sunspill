@@ -30,7 +30,7 @@ import * as sunspill from 'sunspill'
 
 **`litOpening(room, win, s, minHeight = 0)`** returns `{ pieces }`: the convex pieces of the window opening, in coordinates along the wall and height, that the sun reaches after the wall thickness, the eave and the building across the street are taken out. `s` is the unit vector toward the sun in room axes.
 
-**`windowPatches(room, win, s, { planeZ = 0, walls = true })`** returns `{ floor, walls, opening }`. `floor` is a list of convex `[x, y]` polygons on the horizontal plane at height `planeZ`. `walls` is a list of `{ wall, poly }` with `[x, y, z]` vertices. The polygons are exact, not rasterised.
+**`windowPatches(room, win, s, { planeZ = 0, walls = true, obstacles = [] })`** returns `{ floor, walls, opening }`. `floor` is a list of convex `[x, y]` polygons on the horizontal plane at height `planeZ`. `walls` is a list of `{ wall, poly }` with `[x, y, z]` vertices. The polygons are exact, not rasterised.
 
 **`scenePatches(scene, { azimuth, elevation })`** runs every window and returns `{ floor, walls, windows }` with the per window results in `windows`.
 
@@ -52,9 +52,31 @@ import * as sunspill from 'sunspill'
 
 **`sunPath(place, month, day, stepMinutes = 15)`** returns the day's path for drawing.
 
+## Buildings, trees and rails
+
+A scene's `obstacles` are buildings and trees in metres east and north of the room centre, see [CONFIG.md](CONFIG.md).
+
+**`sceneObstacles(scene)`** returns the convex prisms `{ footprint, z0, z1 }` of every switched on building and tree, in room metres with heights counted from the room's floor. It is remembered for the scene object.
+
+**`prismShadow(room, win, frame, s, prism)`** returns the shadow one prism throws on the outer face of a window, as a convex polygon in (along the wall, height), or `null`. **`convexParts(ring)`** cuts a building outline of any simple shape into convex parts. **`windowPatches`** and **`scenePatches`** take the obstacles into account, and `litOpening(room, win, s, minHeight, prisms)` takes a list of prisms.
+
+## Places and phones
+
+**`toLocal(center, lat, lon)`** and **`fromLocal(center, east, north)`** convert between latitude and longitude and metres east and north of a centre. **`moveRoom(scene, east, north)`** moves the room on the ground and keeps every building and tree where it was. **`haversine(a, b)`** is the distance in metres.
+
+**`parseBuildings(overpassJson, center)`** turns an Overpass answer into buildings with heights, flagging the ones whose height is a guess and the one that holds the room. **`buildingHeight(tags)`**, **`parseLength(text)`** and **`buildingQuery(lat, lon, radius)`** are the pieces. The library makes no request itself.
+
+**`declination(lat, lon, year, heightKm)`** is the magnetic declination in degrees, east positive, from the World Magnetic Model 2025. **`headingFromAngles(alpha, beta, gamma)`** gives the compass bearing a phone faces from its DeviceOrientation angles, and **`trueHeading(magnetic, declination)`** adds the two.
+
+## Checking against what you saw
+
+**`compareCheck(scene, check)`** compares a marked patch `{ month, day, minutes, poly }` with the model: `{ iou, observed, predicted, shared, shift, covered }`. **`fitScene(scene, checks)`** searches for the facing, and with enough observations the window position, that agree best with the marks and returns the fitted scene and the overlap before and after. **`predictedPatch(scene, check)`** is the model patch.
+
+**`scaleFromPoints`**, **`rectFromCorners`** and **`openingFromTaps`** read a room off taps on a plan. **`homography`** and **`applyHomography`** are the four point perspective map used to flatten a photo of the floor. **`TEMPLATES`** and **`applyTemplate(scene, id)`** give typical rooms.
+
 ## Links and cities
 
-**`encodeScene(scene)`** and **`decodeScene(hash)`** (null for anything that is not a valid link). **`CITIES`** is the built-in list and **`searchCities(query, limit)`** searches names and spellings in several scripts.
+**`encodeScene(scene)`** and **`decodeScene(hash)`** (null for anything that is not a valid link, and both link formats open). **`blurScene(scene)`** rounds the place and drops the names of places and buildings. **`CITIES`** is the built-in list and **`searchCities(query, limit)`** searches names and spellings in several scripts.
 
 ## Example
 

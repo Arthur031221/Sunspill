@@ -7,6 +7,7 @@ import { numberField, compassDial } from './fields.js'
 import { bearingText, clock, dateText, duration, areaText, lengthText, monthName, toUnit, fromUnit, trim } from './format.js'
 import { WALLS, ITEM_KINDS, ITEM_SIZES, MAX_WINDOWS, MAX_ITEMS, wallBearing, wallLength } from '../core/room.js'
 import { searchCities, cityPlace } from '../core/cities.js'
+import { setPlacePoint } from '../core/geo.js'
 import { isZone } from '../core/solar.js'
 import { periodDays } from './analysis.js'
 import { encodeScene, blurScene } from '../core/codec.js'
@@ -171,7 +172,12 @@ function placeTab({ store, actions }) {
   const summary = h('p', { class: 'note' })
 
   const choose = (city) => {
-    store.update((d) => { d.place = cityPlace(city) })
+    store.update((d) => {
+      const p = cityPlace(city)
+      setPlacePoint(d, p.lat, p.lon)
+      d.place.name = p.name
+      d.place.zone = p.zone
+    })
     search.value = ''
     list.hidden = true
     search.setAttribute('aria-expanded', 'false')
@@ -226,8 +232,8 @@ function placeTab({ store, actions }) {
     search, list, h('div', { style: 'height:8px' }), locate,
     h('h3', {}, t('place.details')),
     h('div', { class: 'field', style: 'grid-template-columns:1fr' }, h('label', {}, t('place.name')), nameInput),
-    add({ label: t('place.lat'), min: -80, max: 80, step: 0.001, get: (s) => s.place.lat, set: (d, v) => { d.place.lat = v }, key: 'lat' }),
-    add({ label: t('place.lon'), min: -180, max: 180, step: 0.001, get: (s) => s.place.lon, set: (d, v) => { d.place.lon = v }, key: 'lon' }),
+    add({ label: t('place.lat'), min: -80, max: 80, step: 0.001, get: (s) => s.place.lat, set: (d, v) => { setPlacePoint(d, v, d.place.lon) }, key: 'lat' }),
+    add({ label: t('place.lon'), min: -180, max: 180, step: 0.001, get: (s) => s.place.lon, set: (d, v) => { setPlacePoint(d, d.place.lat, v) }, key: 'lon' }),
     h('div', { class: 'field', style: 'grid-template-columns:1fr' }, h('label', {}, t('place.zone')), zoneInput),
     summary,
     h('p', { class: 'note' }, t('place.note')),

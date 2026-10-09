@@ -90,6 +90,7 @@ export function openCompass({ card, place, done, now = () => performance.now() }
         return
       }
     }
+    if (closed) return
     window.addEventListener('deviceorientationabsolute', onEvent, true)
     window.addEventListener('deviceorientation', onEvent, true)
     timer = setTimeout(() => {

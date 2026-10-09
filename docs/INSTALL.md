@@ -20,7 +20,7 @@ npx --yes serve dist
 
 ## Host it yourself
 
-Copy `dist/index.html` and `dist/sw.js` to any static host, side by side. The page sets a Content Security Policy that allows no network requests at all, so a host that adds its own `connect-src` rules cannot break it. Serve it over HTTPS if you want the offline worker, which browsers only allow on secure origins and on localhost.
+Copy `dist/index.html` and `dist/sw.js` to any static host, side by side. The page sets a Content Security Policy that allows no network requests except the three optional OpenStreetMap services (address search, map pictures and building outlines), which stay off until a person allows them, see [PRIVACY.md](PRIVACY.md). A host that adds its own `connect-src` rules can stop those three and nothing else. Serve it over HTTPS if you want the offline worker, which browsers only allow on secure origins and on localhost.
 
 ## Use the library
 
@@ -43,5 +43,5 @@ See [API.md](API.md) for every export.
 
 ## Requirements
 
-- Any browser from the last two years (Chrome, Edge, Firefox, Safari). The page needs canvas, `Intl.DateTimeFormat` with time zones and ES2022.
-- To build or test: Node 20 or newer. The browser tests use Playwright, installed by `npm ci`, and download Chromium and Firefox with `npx playwright install chromium firefox`.
+- Any browser from the last two years (Chrome, Edge, Firefox, Safari). The page needs canvas, `Intl.DateTimeFormat` with time zones and ES2022. The phone compass needs a browser that shares `DeviceOrientation`, and iOS asks permission first.
+- To build or test: Node 20 or newer. The browser tests use Playwright, installed by `npm ci`, and download Chromium, Firefox and WebKit with `npx playwright install chromium firefox webkit`.

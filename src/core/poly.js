@@ -125,3 +125,21 @@ export function insideConvex(poly, x, y) {
   }
   return true
 }
+
+const side = (a, b, c) => Math.sign((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
+
+/** True when two edges of a ring that do not share a corner cross each other. */
+export function selfCrossing(ring) {
+  const n = ring.length
+  for (let i = 0; i < n; i++) {
+    const a = ring[i]
+    const b = ring[(i + 1) % n]
+    for (let j = i + 1; j < n; j++) {
+      if (j === i + 1 || (i === 0 && j === n - 1)) continue
+      const c = ring[j]
+      const d = ring[(j + 1) % n]
+      if (side(a, b, c) * side(a, b, d) < 0 && side(c, d, a) * side(c, d, b) < 0) return true
+    }
+  }
+  return false
+}

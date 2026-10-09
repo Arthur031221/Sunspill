@@ -99,3 +99,28 @@ test('the fit stays inside its limits and is reproducible', () => {
   assert.equal(a.scene.facing, b.scene.facing)
   assert.ok(Math.abs(a.dFacing) <= 10.0001)
 })
+
+test('a patch with a notch in it is compared as it is marked, not as its hull', () => {
+  const scene = normalizeScene({ room: { w: 4, d: 4, h: 3, wall: 0 }, facing: 180, windows: [{ wall: 'top', pos: 1, w: 2, h: 2, sill: 0 }], place: { name: 'Taipei', lat: 25.033, lon: 121.565, zone: 'Asia/Taipei' }, items: [], date: { month: 12, day: 21 } })
+  const check = { month: 12, day: 21, minutes: 720, poly: [] }
+  const patch = predictedPatch(scene, check)
+  const xs = patch.flat().map((p) => p[0])
+  const ys = patch.flat().map((p) => p[1])
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
+  // the same outline with a bite taken out of the top edge, marked corner after corner
+  const mid = (x0 + x1) / 2
+  const notched = [[x0, y0], [x1, y0], [x1, y1], [mid + 0.2, y1], [mid + 0.2, y1 - 0.5], [mid - 0.2, y1 - 0.5], [mid - 0.2, y1], [x0, y1]]
+  const r = compareCheck(scene, { ...check, poly: notched })
+  const bite = 0.4 * 0.5
+  const full = (x1 - x0) * (y1 - y0)
+  assert.ok(Math.abs(r.observed - (full - bite)) < 1e-6, `observed ${r.observed}, outline ${full - bite}`)
+  assert.ok(r.iou < 1 - bite / full * 0.9, `the notch is missing from the model patch, so the overlap is below 1: ${r.iou}`)
+  assert.ok(r.iou > 0.8)
+})
+
+test('the fine search around the best sweep angle does not drift', () => {
+  const real = truth()
+  const exact = observe({ ...real, facing: 180.4 }, 720)
+  const fit = fitScene({ ...real, facing: 180 }, [exact])
+  assert.ok(Math.abs(fit.scene.facing - 180.4) < 0.06, `facing ${fit.scene.facing}`)
+})

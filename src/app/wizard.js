@@ -31,8 +31,8 @@ export function createWizard(ctx) {
   const nav = h('footer', { class: 'wiz-nav' })
   root.append(head, body, nav)
 
-  function leave() {
-    current?.leave?.()
+  function leave(rebuilding = false) {
+    current?.leave?.({ rebuilding })
     current = null
   }
 
@@ -57,8 +57,8 @@ export function createWizard(ctx) {
     )
   }
 
-  function go(i, { focus = true } = {}) {
-    leave()
+  function go(i, { focus = true, rebuilding = false } = {}) {
+    leave(rebuilding)
     index = Math.max(0, Math.min(STEPS.length - 1, i))
     const step = STEPS[index]
     ctx.setView(step.view)
@@ -104,7 +104,7 @@ export function createWizard(ctx) {
     },
     /** The language or the units changed: build the step again. */
     rebuild() {
-      if (active) go(index, { focus: false })
+      if (active) go(index, { focus: false, rebuilding: true })
     },
   }
 }

@@ -245,3 +245,11 @@ test('a polygon with a repeated vertex does not break the union, and thin sliver
   const union = totalArea(slivers)
   assert.ok(union <= slivers.reduce((s, q) => s + area(q), 0) + 1e-9 && union > 0.4, `${union}`)
 })
+
+test('sun running exactly along a wall lights nothing on that wall, whatever rounding does to the direction', () => {
+  // the top wall faces 5 degrees and so does the sun: the beam is parallel to the left and right walls
+  const scene = normalizeScene({ room: { w: 4, d: 4, h: 3, wall: 0 }, facing: 5, windows: [{ wall: 'top', pos: 0, w: 4, h: 2, sill: 0 }], items: [] })
+  const p = scenePatches(scene, { azimuth: 5, elevation: 45 })
+  assert.ok(p.floor.length > 0)
+  assert.deepEqual(p.walls.filter((q) => q.wall === 'left' || q.wall === 'right'), [], 'no light reaches the side walls')
+})

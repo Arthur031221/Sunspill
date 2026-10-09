@@ -34,8 +34,12 @@ export class Refused extends Error {
  */
 export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), wait = (ms) => new Promise((r) => setTimeout(r, ms)), now = () => Date.now(), timeout = 15000 } = {}) {
   let lastSearch = 0
+  let queue = Promise.resolve()
 
-  async function request(url, init, signal) {
+  async function request(url, init, signal, service) {
+    // the switch is read again right before the request, so a service turned off while a call waits sends nothing
+    if (!allowed(service)) throw new Refused(service)
+    if (signal?.aborted) throw Object.assign(new Error('cancelled'), { name: 'AbortError' })
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeout)
     const abort = () => controller.abort()
@@ -56,12 +60,19 @@ export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), w
       if (!allowed('search')) throw new Refused('search')
       const q = String(query).trim().slice(0, 200)
       if (q.length < 2) return []
-      const gap = lastSearch + NOMINATIM_GAP - now()
-      if (gap > 0) await wait(gap)
-      lastSearch = now()
-      const url = `${SERVICES.search.hosts[0]}/search?format=jsonv2&addressdetails=1&limit=6&accept-language=${encodeURIComponent(lang)}&q=${encodeURIComponent(q)}`
-      const places = parsePlaces(await request(url, {}, signal))
-      return places.map((p) => ({ ...p, zone: zoneAt(p.lat, p.lon) }))
+      // one at a time, a second apart, and a search that was cancelled while it waited is never sent
+      const run = async () => {
+        if (signal?.aborted) throw Object.assign(new Error('cancelled'), { name: 'AbortError' })
+        const gap = lastSearch + NOMINATIM_GAP - now()
+        if (gap > 0) await wait(gap)
+        lastSearch = now()
+        const url = `${SERVICES.search.hosts[0]}/search?format=jsonv2&addressdetails=1&limit=6&accept-language=${encodeURIComponent(lang)}&q=${encodeURIComponent(q)}`
+        const places = parsePlaces(await request(url, {}, signal, 'search'))
+        return places.map((p) => ({ ...p, zone: zoneAt(p.lat, p.lon) }))
+      }
+      const mine = queue.then(run, run)
+      queue = mine.catch(() => {})
+      return mine
     },
 
     /** Building outlines around a point, trying each Overpass server in turn. */
@@ -71,11 +82,11 @@ export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), w
       const failures = []
       for (const host of SERVICES.buildings.hosts) {
         try {
-          const json = await request(host + OVERPASS_PATH, { method: 'POST', body }, signal)
+          const json = await request(host + OVERPASS_PATH, { method: 'POST', body }, signal, 'buildings')
           if (!Array.isArray(json?.elements)) throw new Error('no elements in the answer')
           return parseBuildings(json, center)
         } catch (err) {
-          if (signal?.aborted) throw err
+          if (signal?.aborted || err instanceof Refused) throw err
           failures.push(`${new URL(host).host}: ${err.message}`)
         }
       }

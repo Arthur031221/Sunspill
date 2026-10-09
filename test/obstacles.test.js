@@ -170,3 +170,10 @@ test('agrees with a reference made in Python with pvlib and shapely: sun, rays a
   assert.ok(r.cases >= 250 && r.lit > 1500 && r.darkened > 400, 'the reference must have plenty of lit and shaded probes')
   assert.deepEqual(r.misses.slice(0, 5), [])
 })
+
+test('a self crossing outline with no net area still becomes its hull', () => {
+  const bow = [[0, 0], [2, 2], [0, 2], [2, 0]] // two triangles that cancel: the signed area is zero
+  const parts = convexParts(bow)
+  assert.equal(parts.length, 1)
+  assert.ok(Math.abs(area(parts[0]) - 4) < 1e-9, `area ${parts[0] && area(parts[0])}`)
+})

@@ -59,8 +59,6 @@ for (const [season, month, day, minutes] of [['15 July, 16:30', 7, 15, 990], ['2
 
 // buildings: the same street, with a wrong height or a wrong position of the pin
 {
-  const month = 7
-  const day = 15
   console.log('\nA block across the street (15 July, west window on the fourth floor, 18 m away, 15 m high)')
   console.log('| One input wrong | Direct sun inside, change per day |')
   console.log('| --- | ---: |')
@@ -75,14 +73,11 @@ for (const [season, month, day, minutes] of [['15 July, 16:30', 7, 15, 990], ['2
   console.log(`| reference: ${Math.floor(ref)} h ${Math.round((ref % 1) * 60)} min of sun inside | 0 |`)
   tweak('block 3 m too low', (s) => { s.obstacles[0].h -= 3 })
   tweak('block 3 m too high', (s) => { s.obstacles[0].h += 3 })
-  tweak('block 1 floor (3 m) too low in the data, estimated', (s) => { s.obstacles[0].h -= 3.2 })
-  tweak('room placed 5 m too far from the block', (s) => { Object.assign(s, moveRoom(s, 5, 0)) })
-  tweak('room placed 10 m too far from the block', (s) => { Object.assign(s, moveRoom(s, 10, 0)) })
+  tweak('room 5 m farther from the block than it is', (s) => { Object.assign(s, moveRoom(s, 5, 0)) })
+  tweak('room 10 m farther from the block than it is', (s) => { Object.assign(s, moveRoom(s, 10, 0)) })
   tweak('floor number one too high (3 m)', (s) => { s.floor.n += 1 })
   tweak('floor number one too low (3 m)', (s) => { s.floor.n -= 1 })
   tweak('block left out altogether', (s) => { s.obstacles = [] })
-  void month
-  void day
 }
 
 console.log('\nMagnetic declination, World Magnetic Model 2025 on 1 October 2026 (a phone compass reads magnetic north)')
@@ -92,4 +87,3 @@ for (const [name, lat, lon] of [['Taipei', 25.033, 121.565], ['Tokyo', 35.68, 13
   const d = declination(lat, lon, 2026.75)
   console.log(`| ${name} | ${d >= 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}° |`)
 }
-void rows

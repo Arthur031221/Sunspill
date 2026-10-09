@@ -26,17 +26,22 @@ export function createModal(root) {
     close(false)
     return new Promise((resolve) => {
       const opener = document.activeElement
-      const dialog = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'modal-title' }, h('h2', { id: 'modal-title' }, title), ...body, buttons.length ? h('div', { class: 'modal-actions' }, ...buttons) : null)
+      const dialog = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'modal-title', tabIndex: -1 }, h('h2', { id: 'modal-title' }, title), ...body, buttons.length ? h('div', { class: 'modal-actions' }, ...buttons) : null)
       const onKey = (e) => {
         if (e.key === 'Escape') {
           e.preventDefault()
           close(false)
         } else if (e.key === 'Tab') {
           const items = [...dialog.querySelectorAll('button, input, select, a[href]')].filter((el) => !el.disabled && !el.hidden)
-          if (!items.length) return
+          if (!items.length) {
+            e.preventDefault()
+            dialog.focus()
+            return
+          }
           const first = items[0]
           const last = items[items.length - 1]
-          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+          if (!dialog.contains(document.activeElement) || document.activeElement === dialog) { e.preventDefault(); (e.shiftKey ? last : first).focus() }
+          else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
           else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
         }
       }
@@ -44,9 +49,15 @@ export function createModal(root) {
       document.addEventListener('keydown', onKey, true)
       root.replaceChildren(h('div', { class: 'modal-backdrop', onclick: () => close(false) }), dialog)
       root.hidden = false
-      dialog.querySelector('button, input')?.focus()
+      ;(dialog.querySelector('button, input') ?? dialog).focus()
     })
   }
 
-  return { show, close, get isOpen() { return Boolean(open) } }
+  /** Put the focus on the first control again, for a sheet whose content arrived after it was shown. */
+  function refocus() {
+    const dialog = root.querySelector('.modal')
+    ;(dialog?.querySelector('button, input') ?? dialog)?.focus()
+  }
+
+  return { show, close, refocus, get isOpen() { return Boolean(open) } }
 }

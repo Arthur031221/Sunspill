@@ -74,6 +74,18 @@ export function moveRoom(scene, dEast, dNorth) {
   return { ...scene, place, obstacles }
 }
 
+/**
+ * Put the room at a new point that is not the result of dragging it. Outlines
+ * loaded from OpenStreetMap for the old spot would sit in the wrong place, so
+ * they go when the point is more than 25 metres away. Buildings drawn by hand stay.
+ */
+export function setPlacePoint(scene, lat, lon) {
+  if (haversine(scene.place, { lat, lon }) > 25) scene.obstacles = scene.obstacles.filter((o) => o.src !== 'osm')
+  scene.place.lat = lat
+  scene.place.lon = lon
+  return scene
+}
+
 /** True when the point is inside the outline (any simple polygon). */
 export function insideRing(ring, [x, y]) {
   let inside = false

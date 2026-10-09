@@ -95,10 +95,14 @@ function shiftText(scene, shift, windowIndex, units) {
 
 export function checkStep(ctx) {
   const { store, stage, toast, overlay } = ctx
-  let points = []
-  let marking = false
+  // marks that are not saved yet survive a rebuild of the step (a new language, new units)
+  const draft = (ctx.draft ??= { points: [], marking: false })
+  let points = draft.points
+  let marking = draft.marking
   let fit = null
-  let photo = null
+  let photo = Boolean(overlay.underlay)
+  let session = null
+  let gone = false
 
   const month = h('select', { class: 'select', 'aria-label': t('date.month') }, ...Array.from({ length: 12 }, (_, i) => h('option', { value: i + 1 }, monthName(i + 1))))
   const day = h('input', { type: 'number', min: 1, max: 31, 'aria-label': t('date.day'), class: 'num-in' })
@@ -110,7 +114,7 @@ export function checkStep(ctx) {
       d.date.day = Math.min(daysInMonth(d.date.month), Math.max(1, Number(day.value) || 1))
       d.minutes = hh * 60 + (mm || 0)
     }, { history: false })
-    points = []
+    points = draft.points = []
     fit = null
     refreshOverlay()
     sync()
@@ -122,7 +126,7 @@ export function checkStep(ctx) {
   const markBtn = h('button', { class: 'btn primary block', type: 'button', id: 'mark-toggle', 'aria-pressed': 'false', onclick: () => setMarking(!marking) }, t('wiz.check.mark'))
   const pointsLine = h('p', { class: 'note', role: 'status' })
   const undoPoint = h('button', { class: 'btn', type: 'button', onclick: () => { points.pop(); refreshOverlay(); sync() } }, t('wiz.check.undoPoint'))
-  const clearPoints = h('button', { class: 'btn', type: 'button', onclick: () => { points = []; refreshOverlay(); sync() } }, t('trace.clear'))
+  const clearPoints = h('button', { class: 'btn', type: 'button', onclick: () => { points = draft.points = []; refreshOverlay(); sync() } }, t('trace.clear'))
   const savePatch = h('button', { class: 'btn primary', type: 'button', id: 'save-patch', onclick: save }, t('wiz.check.save'))
   const photoCard = h('div', { hidden: true })
   const photoBtn = h('button', { class: 'btn block', type: 'button', id: 'photo-open', onclick: startPhoto }, t('wiz.check.photo'))
@@ -133,7 +137,7 @@ export function checkStep(ctx) {
   const fitOut = h('div', {})
 
   function setMarking(on) {
-    marking = on
+    marking = draft.marking = on
     markBtn.setAttribute('aria-pressed', String(on))
     stage.setTool(on ? { onPoint: (x, y) => { points.push([Math.round(x * 100) / 100, Math.round(y * 100) / 100]); refreshOverlay(); sync() } } : null)
     sync()
@@ -149,7 +153,7 @@ export function checkStep(ctx) {
     if (store.scene.checks.length >= MAX_CHECKS) return toast(t('wiz.check.max'))
     const s = store.scene
     store.update((d) => { d.checks.push({ month: s.date.month, day: s.date.day, minutes: s.minutes, poly: points.map(([x, y]) => [x, y]) }) })
-    points = []
+    points = draft.points = []
     fit = null
     setMarking(false)
     refreshOverlay()
@@ -168,6 +172,7 @@ export function checkStep(ctx) {
       } catch {
         return toast(t('trace.badPicture'))
       }
+      if (gone) return
       beginCorners(canvas)
     })
     document.body.append(input)
@@ -185,6 +190,7 @@ export function checkStep(ctx) {
     const render = () => {
       instruction.textContent = taps.length < 4 ? t('wiz.photo.tap', { n: taps.length + 1, corner: t(`wiz.photo.corner.${taps.length + 1}`) }) : t('wiz.photo.flattening')
     }
+    session = { end: () => finish(null) }
     const pic = new PictureCanvas({
       root: ctx.tracepane,
       draw: (c2, view) => {
@@ -212,6 +218,7 @@ export function checkStep(ctx) {
     render()
     photoCard.replaceChildren(h('h2', {}, t('wiz.check.photo')), instruction, h('p', { class: 'note' }, t('wiz.photo.order')), skip)
     function finish(corners) {
+      session = null
       pic.observer.disconnect()
       ctx.tracepane.hidden = true
       ctx.tracepane.replaceChildren()
@@ -326,11 +333,16 @@ export function checkStep(ctx) {
     enter() {
       refreshOverlay()
       store.setUi({ playing: false })
+      if (marking) setMarking(true)
     },
-    leave() {
+    leave({ rebuilding } = {}) {
+      gone = true
+      session?.end()
       stage.setTool(null)
+      if (rebuilding) return // the new step takes up the same marks and photo
       overlay.marks = null
       overlay.underlay = null
+      ctx.draft = null
       stage.invalidate()
     },
   }

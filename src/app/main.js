@@ -20,6 +20,8 @@ import { MapView } from './mapview.js'
 import { createWizard } from './wizard.js'
 import { openCompass } from './compass-ui.js'
 import { declination, decimalYear } from '../core/declination.js'
+import { setPlacePoint } from '../core/geo.js'
+import { zoneAt } from '../core/zone.js'
 
 const PREFS_KEY = 'sunspill.prefs'
 const loadPrefs = () => {
@@ -127,8 +129,12 @@ const actions = {
     toast(t('place.locating'))
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-        store.update((d) => { d.place = { name: t('place.here'), lat: pos.coords.latitude, lon: pos.coords.longitude, zone } })
+        const zone = zoneAt(pos.coords.latitude, pos.coords.longitude) || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+        store.update((d) => {
+          setPlacePoint(d, pos.coords.latitude, pos.coords.longitude)
+          d.place.name = t('place.here')
+          d.place.zone = zone
+        })
         actions.afterPlace()
       },
       () => toast(t('place.denied')),
@@ -217,6 +223,7 @@ const actions = {
         toast(t('room.compassSet', { dir: bearingText(bearing) }))
       },
     })
+    modal.refocus()
   },
   resultsOpened() {
     analysis.ensureWest()

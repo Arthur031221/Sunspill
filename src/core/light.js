@@ -121,6 +121,8 @@ export function windowPatches(room, win, s, { planeZ = 0, walls = true, obstacle
     for (const wall of WALLS) {
       if (wall === win.wall) continue
       const { axis, side } = SIDE_PLANES[wall]
+      // a beam that runs along this wall never reaches it, and dividing by its rounding noise would invent light
+      if (Math.abs(s[axis]) < 1e-9) continue
       const c = side === 'max' ? (axis === 0 ? room.w : room.d) : 0
       const taus = points.map((p) => (p[axis] - c) / s[axis])
       // a window that meets this wall at a corner has vertices on its plane, at distance zero

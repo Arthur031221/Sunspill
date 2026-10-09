@@ -235,16 +235,16 @@ function localToRoom(scene, east, north) {
 }
 var floorLift = (scene) => (scene.floor.n - 1) * scene.floor.storey;
 function normalizeWindow(raw, room) {
-  const win = raw && typeof raw === "object" ? raw : {};
-  const wall = WALLS.includes(win.wall) ? win.wall : "top";
+  const win2 = raw && typeof raw === "object" ? raw : {};
+  const wall = WALLS.includes(win2.wall) ? win2.wall : "top";
   const length = wallLength(room, wall);
-  const w = num(win.w, [LIMITS.window.w[0], Math.min(LIMITS.window.w[1], length)], Math.min(1.5, length));
-  const h = num(win.h, [LIMITS.window.h[0], Math.min(LIMITS.window.h[1], room.h)], Math.min(1.4, room.h));
-  const sill = num(win.sill, [0, Math.max(0, room.h - h)], Math.min(0.9, Math.max(0, room.h - h)));
-  const pos = num(win.pos, [0, Math.max(0, length - w)], Math.max(0, (length - w) / 2));
-  const e = win.eave && typeof win.eave === "object" ? win.eave : {};
-  const across = win.across && typeof win.across === "object" ? { height: num(win.across.height, LIMITS.across.height, 30), distance: num(win.across.distance, LIMITS.across.distance, 15) } : null;
-  const b = win.balcony && typeof win.balcony === "object" ? win.balcony : null;
+  const w = num(win2.w, [LIMITS.window.w[0], Math.min(LIMITS.window.w[1], length)], Math.min(1.5, length));
+  const h = num(win2.h, [LIMITS.window.h[0], Math.min(LIMITS.window.h[1], room.h)], Math.min(1.4, room.h));
+  const sill = num(win2.sill, [0, Math.max(0, room.h - h)], Math.min(0.9, Math.max(0, room.h - h)));
+  const pos = num(win2.pos, [0, Math.max(0, length - w)], Math.max(0, (length - w) / 2));
+  const e = win2.eave && typeof win2.eave === "object" ? win2.eave : {};
+  const across = win2.across && typeof win2.across === "object" ? { height: num(win2.across.height, LIMITS.across.height, 30), distance: num(win2.across.distance, LIMITS.across.distance, 15) } : null;
+  const b = win2.balcony && typeof win2.balcony === "object" ? win2.balcony : null;
   return {
     wall,
     pos: round(pos),
@@ -386,6 +386,21 @@ function signedArea(p) {
 var area = (p) => Math.abs(signedArea(p));
 var ccw = (p) => signedArea(p) < 0 ? p.slice().reverse() : p;
 var hasLength = (p, q) => Math.abs(q[0] - p[0]) > 1e-12 || Math.abs(q[1] - p[1]) > 1e-12;
+function centroid(p) {
+  let a = 0;
+  let cx = 0;
+  let cy = 0;
+  for (let i = 0; i < p.length; i++) {
+    const [x0, y0] = p[i];
+    const [x1, y1] = p[(i + 1) % p.length];
+    const f = x0 * y1 - x1 * y0;
+    a += f;
+    cx += (x0 + x1) * f;
+    cy += (y0 + y1) * f;
+  }
+  if (Math.abs(a) < EPS) return p.length ? [p.reduce((s, q) => s + q[0], 0) / p.length, p.reduce((s, q) => s + q[1], 0) / p.length] : [0, 0];
+  return [cx / (3 * a), cy / (3 * a)];
+}
 function dedupe(poly) {
   const out = [];
   for (const p of poly) {
@@ -460,6 +475,21 @@ function insideConvex(poly, x, y) {
   }
   return true;
 }
+var side = (a, b, c) => Math.sign((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
+function selfCrossing(ring) {
+  const n = ring.length;
+  for (let i = 0; i < n; i++) {
+    const a = ring[i];
+    const b = ring[(i + 1) % n];
+    for (let j = i + 1; j < n; j++) {
+      if (j === i + 1 || i === 0 && j === n - 1) continue;
+      const c = ring[j];
+      const d = ring[(j + 1) % n];
+      if (side(a, b, c) * side(a, b, d) < 0 && side(c, d, a) * side(c, d, b) < 0) return true;
+    }
+  }
+  return false;
+}
 
 // src/core/obstacles.js
 var FRONT = 1e-6;
@@ -515,6 +545,10 @@ function triangulate(ring) {
 function convexParts(ring) {
   let poly = dedupe(ring);
   if (poly.length < 3) return [];
+  if (selfCrossing(poly)) {
+    const hull = hullOf(poly);
+    return hull.length >= 3 && area(hull) > 1e-9 ? [hull] : [];
+  }
   if (signedArea(poly) < 0) poly = poly.slice().reverse();
   if (area(poly) < 1e-9) return [];
   if (isConvex(poly)) return [poly];
@@ -575,18 +609,18 @@ function sceneObstacles(scene) {
   memo.set(scene, hit);
   return hit;
 }
-function balconyPrism(room, win) {
-  const b = win.balcony;
+function balconyPrism(room, win2) {
+  const b = win2.balcony;
   if (!b || b.rail < 0.05) return null;
-  const f = wallFrame(room, win.wall);
+  const f = wallFrame(room, win2.wall);
   const at = (u, v) => [f.o[0] + f.t[0] * u + f.n[0] * v, f.o[1] + f.t[1] * u + f.n[1] * v];
-  const u0 = win.pos - b.ext;
-  const u1 = win.pos + win.w + b.ext;
+  const u0 = win2.pos - b.ext;
+  const u1 = win2.pos + win2.w + b.ext;
   const v0 = room.wall + b.depth;
   const v1 = v0 + 0.1;
   return { footprint: [at(u0, v0), at(u1, v0), at(u1, v1), at(u0, v1)], z0: -0.3, z1: b.rail };
 }
-function prismShadow(room, win, frame, s, prism) {
+function prismShadow(room, win2, frame, s, prism) {
   const off = frame.n[0] * frame.o[0] + frame.n[1] * frame.o[1] + room.wall;
   const front = clipHalf(prism.footprint, frame.n[0], frame.n[1], -(off + FRONT));
   if (front.length < 3) return null;
@@ -596,7 +630,7 @@ function prismShadow(room, win, frame, s, prism) {
   for (const q of front) {
     const dist = frame.n[0] * q[0] + frame.n[1] * q[1] - off;
     const tau = dist / sn;
-    const a = frame.t[0] * (q[0] - frame.o[0]) + frame.t[1] * (q[1] - frame.o[1]) - tau * st - win.pos;
+    const a = frame.t[0] * (q[0] - frame.o[0]) + frame.t[1] * (q[1] - frame.o[1]) - tau * st - win2.pos;
     pts.push([a, prism.z0 - tau * s[2]], [a, prism.z1 - tau * s[2]]);
   }
   const poly = hullOf(pts);
@@ -626,58 +660,58 @@ var overlaps = (poly, [a0, b0, a1, b1]) => {
   }
   return hi0 > a0 && lo0 < a1 && hi1 > b0 && lo1 < b1;
 };
-function litOpening(room, win, s, minHeight = 0, prisms = []) {
-  const frame = wallFrame(room, win.wall);
+function litOpening(room, win2, s, minHeight = 0, prisms = []) {
+  const frame = wallFrame(room, win2.wall);
   const sn = s[0] * frame.n[0] + s[1] * frame.n[1];
   const st = s[0] * frame.t[0] + s[1] * frame.t[1];
   const sz = s[2];
   if (sn < MIN_NORMAL || sz < MIN_UP) return { pieces: [], frame, sn, st, sz };
-  const top = win.sill + win.h;
+  const top = win2.sill + win2.h;
   const shiftA = room.wall * st / sn;
   const shiftB = room.wall * sz / sn;
   const a0 = Math.max(0, shiftA);
-  const a1 = Math.min(win.w, win.w + shiftA);
-  const b0 = Math.max(win.sill, win.sill + shiftB, minHeight);
+  const a1 = Math.min(win2.w, win2.w + shiftA);
+  const b0 = Math.max(win2.sill, win2.sill + shiftB, minHeight);
   const b1 = Math.min(top, top + shiftB);
   if (a1 - a0 < 1e-6 || b1 - b0 < 1e-6) return { pieces: [], frame, sn, st, sz };
   let pieces = [rect(a0, b0, a1, b1)];
   const shadows = [];
-  const { eave, across } = win;
+  const { eave, across } = win2;
   if (eave.depth > 0) {
     const zE = top + eave.gap;
     const reach2 = zE - eave.depth * sz / sn;
     const k = st / sz;
     const lo = (b) => -eave.ext - (zE - b) * k;
-    const hi = (b) => win.w + eave.ext - (zE - b) * k;
+    const hi = (b) => win2.w + eave.ext - (zE - b) * k;
     shadows.push([[lo(reach2), reach2], [hi(reach2), reach2], [hi(zE), zE], [lo(zE), zE]]);
   }
   if (across) {
     const limit = across.height - across.distance * sz / sn;
     shadows.push(rect(-BIG, -BIG, BIG, limit));
   }
-  const rail = balconyPrism(room, win);
+  const rail = balconyPrism(room, win2);
   const casters = rail ? [rail, ...prisms] : prisms;
   const box = [a0, b0, a1, b1];
   for (const prism of casters) {
-    const shadow = prismShadow(room, win, frame, s, prism);
+    const shadow = prismShadow(room, win2, frame, s, prism);
     if (shadow && overlaps(shadow, box)) shadows.push(shadow);
   }
   for (const shadow of shadows) pieces = pieces.flatMap((p) => subtractConvex(p, shadow));
   return { pieces, frame, sn, st, sz };
 }
-function outerPoint(room, win, frame, a, b) {
-  const along2 = win.pos + a;
+function outerPoint(room, win2, frame, a, b) {
+  const along2 = win2.pos + a;
   return [frame.o[0] + frame.t[0] * along2 + frame.n[0] * room.wall, frame.o[1] + frame.t[1] * along2 + frame.n[1] * room.wall, b];
 }
 var along = (p, s, tau) => [p[0] - tau * s[0], p[1] - tau * s[1], p[2] - tau * s[2]];
-function windowPatches(room, win, s, { planeZ = 0, walls = true, obstacles = [] } = {}) {
-  const whole = litOpening(room, win, s, 0, obstacles);
+function windowPatches(room, win2, s, { planeZ = 0, walls = true, obstacles = [] } = {}) {
+  const whole = litOpening(room, win2, s, 0, obstacles);
   const { frame, sz } = whole;
   const out = { floor: [], walls: [], opening: whole.pieces };
   if (!whole.pieces.length) return out;
   const clipRoom = rect(0, 0, room.w, room.d);
-  const above = planeZ > 0 ? litOpening(room, win, s, planeZ, obstacles).pieces : whole.pieces;
-  const outer = (piece) => piece.map(([a, b]) => outerPoint(room, win, frame, a, b));
+  const above = planeZ > 0 ? litOpening(room, win2, s, planeZ, obstacles).pieces : whole.pieces;
+  const outer = (piece) => piece.map(([a, b]) => outerPoint(room, win2, frame, a, b));
   for (const piece of above) {
     const onPlane = outer(piece).map((p) => along(p, s, (p[2] - planeZ) / sz));
     const poly = clipConvex(onPlane.map((p) => [p[0], p[1]]), clipRoom);
@@ -687,9 +721,10 @@ function windowPatches(room, win, s, { planeZ = 0, walls = true, obstacles = [] 
   for (const piece of whole.pieces) {
     const points = outer(piece);
     for (const wall of WALLS) {
-      if (wall === win.wall) continue;
-      const { axis, side } = SIDE_PLANES[wall];
-      const c = side === "max" ? axis === 0 ? room.w : room.d : 0;
+      if (wall === win2.wall) continue;
+      const { axis, side: side2 } = SIDE_PLANES[wall];
+      if (Math.abs(s[axis]) < 1e-9) continue;
+      const c = side2 === "max" ? axis === 0 ? room.w : room.d : 0;
       const taus = points.map((p) => (p[axis] - c) / s[axis]);
       if (!taus.every((t) => t >= -1e-9)) continue;
       const hit = points.map((p, i) => along(p, s, taus[i]));
@@ -706,7 +741,7 @@ function scenePatches(scene, sun, options) {
   if (!(sun.elevation > 0)) return { floor: [], walls: [], windows: scene.windows.map(() => ({ floor: [], walls: [], opening: [] })) };
   const s = sunInRoom(scene, sun.azimuth, sun.elevation);
   const opts = { ...options, obstacles: sceneObstacles(scene) };
-  const windows = scene.windows.map((win) => windowPatches(scene.room, win, s, opts));
+  const windows = scene.windows.map((win2) => windowPatches(scene.room, win2, s, opts));
   return {
     floor: windows.flatMap((w) => w.floor),
     walls: windows.flatMap((w) => w.walls),
@@ -899,6 +934,13 @@ function fromBase64Url(text) {
   const bin = atob(text.replace(/-/g, "+").replace(/_/g, "/"));
   return Uint8Array.from(bin, (c) => c.charCodeAt(0));
 }
+function blurPlace(place) {
+  return { name: "", lat: Math.round(place.lat), lon: Math.round(place.lon), zone: place.zone };
+}
+function blurScene(scene) {
+  const s = normalizeScene(scene);
+  return normalizeScene({ ...s, place: blurPlace(s.place), obstacles: s.obstacles.map(({ name, id, ...rest }) => ({ ...rest, name: "" })) });
+}
 function unpackScene(a) {
   const [w, d, h, wall, facing, place, month, day, minutes, windows, items] = a;
   return normalizeScene({
@@ -999,6 +1041,616 @@ function decodeScene(hash) {
   } catch {
     return null;
   }
+}
+
+// src/core/geo.js
+var RAD2 = Math.PI / 180;
+function metresPerDegree(lat) {
+  const p = lat * RAD2;
+  return {
+    lat: 111132.92 - 559.82 * Math.cos(2 * p) + 1.175 * Math.cos(4 * p) - 23e-4 * Math.cos(6 * p),
+    lon: 111412.84 * Math.cos(p) - 93.5 * Math.cos(3 * p) + 0.118 * Math.cos(5 * p)
+  };
+}
+function toLocal(center, lat, lon) {
+  const m = metresPerDegree(center.lat);
+  let dLon = lon - center.lon;
+  if (dLon > 180) dLon -= 360;
+  if (dLon < -180) dLon += 360;
+  return [dLon * m.lon, (lat - center.lat) * m.lat];
+}
+function fromLocal(center, east, north) {
+  const m = metresPerDegree(center.lat);
+  return { lat: center.lat + north / m.lat, lon: center.lon + east / m.lon };
+}
+function haversine(a, b) {
+  const dLat = (b.lat - a.lat) * RAD2;
+  const dLon = (b.lon - a.lon) * RAD2;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * RAD2) * Math.cos(b.lat * RAD2) * Math.sin(dLon / 2) ** 2;
+  return 2 * 63710088e-1 * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+function moveRoom(scene, dEast, dNorth) {
+  const place = { ...scene.place, ...fromLocal(scene.place, dEast, dNorth) };
+  const shift = (e, n) => [e - dEast, n - dNorth];
+  const obstacles = scene.obstacles.map((o) => {
+    if (o.type === "tree") {
+      const [x, y] = shift(o.x, o.y);
+      return { ...o, x, y };
+    }
+    return { ...o, ring: o.ring.map(([e, n]) => shift(e, n)) };
+  });
+  return { ...scene, place, obstacles };
+}
+function insideRing(ring, [x, y]) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if (yi > y !== yj > y && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+// src/core/osm.js
+var LEVEL = 3.2;
+var TYPICAL = {
+  house: 7,
+  detached: 7,
+  semidetached_house: 7,
+  terrace: 7,
+  bungalow: 4,
+  cabin: 3,
+  hut: 3,
+  shed: 3,
+  garage: 3,
+  garages: 3,
+  carport: 3,
+  roof: 4,
+  farm_auxiliary: 5,
+  barn: 6,
+  apartments: 15,
+  residential: 12,
+  dormitory: 12,
+  hotel: 18,
+  commercial: 14,
+  office: 18,
+  retail: 8,
+  supermarket: 8,
+  industrial: 9,
+  warehouse: 8,
+  school: 12,
+  university: 14,
+  hospital: 16,
+  church: 12,
+  temple: 10,
+  shrine: 8,
+  public: 10,
+  civic: 10,
+  government: 12,
+  train_station: 10,
+  parking: 9
+};
+var DEFAULT_HEIGHT = 9;
+function parseLength(text) {
+  if (typeof text !== "string" && typeof text !== "number") return null;
+  const s = String(text).trim().toLowerCase().replace(",", ".");
+  const feet = s.match(/^(\d+(?:\.\d+)?)\s*'\s*(?:(\d+(?:\.\d+)?)\s*"?)?$/);
+  if (feet) return (Number(feet[1]) + (feet[2] ? Number(feet[2]) / 12 : 0)) * 0.3048;
+  const m = s.match(/^(\d+(?:\.\d+)?)\s*(m|ft|feet|meters|metres)?$/);
+  if (!m) return null;
+  const v = Number(m[1]);
+  return m[2] === "ft" || m[2] === "feet" ? v * 0.3048 : v;
+}
+function buildingHeight(tags = {}) {
+  const top = parseLength(tags.height);
+  const base = parseLength(tags.min_height);
+  if (top != null && top > 0) return { h: top, base: base ?? 0, est: false };
+  const levels = Number(tags["building:levels"]);
+  const minLevel = Number(tags["building:min_level"]);
+  if (Number.isFinite(levels) && levels > 0) {
+    const roof = tags["roof:shape"] && tags["roof:shape"] !== "flat" ? 1.5 : 0;
+    return { h: levels * LEVEL + roof, base: Number.isFinite(minLevel) && minLevel > 0 ? minLevel * LEVEL : base ?? 0, est: true };
+  }
+  return { h: TYPICAL[tags.building] ?? DEFAULT_HEIGHT, base: base ?? 0, est: true };
+}
+var area2 = (r) => r.reduce((s, p, i) => s + p[0] * r[(i + 1) % r.length][1] - r[(i + 1) % r.length][0] * p[1], 0) / 2;
+var centroid2 = (r) => [r.reduce((s, p) => s + p[0], 0) / r.length, r.reduce((s, p) => s + p[1], 0) / r.length];
+function simplifyRing(ring, tolerance) {
+  if (ring.length <= 4) return ring;
+  let a = 0;
+  let b = 0;
+  let best = -1;
+  for (let i = 0; i < ring.length; i++) for (let j = i + 1; j < ring.length; j++) {
+    const d = (ring[i][0] - ring[j][0]) ** 2 + (ring[i][1] - ring[j][1]) ** 2;
+    if (d > best) {
+      best = d;
+      a = i;
+      b = j;
+    }
+  }
+  const half = (from, to) => {
+    const pts = [];
+    for (let i = from; i !== to; i = (i + 1) % ring.length) pts.push(ring[i]);
+    pts.push(ring[to]);
+    return dp(pts, tolerance);
+  };
+  const one = half(a, b);
+  const two = half(b, a);
+  return one.slice(0, -1).concat(two.slice(0, -1));
+}
+function dp(pts, tol) {
+  if (pts.length < 3) return pts;
+  const [ax, ay] = pts[0];
+  const [bx, by] = pts[pts.length - 1];
+  const len2 = Math.hypot(bx - ax, by - ay) || 1e-12;
+  let worst = -1;
+  let at = 0;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const d = Math.abs((bx - ax) * (ay - pts[i][1]) - (ax - pts[i][0]) * (by - ay)) / len2;
+    if (d > worst) {
+      worst = d;
+      at = i;
+    }
+  }
+  if (worst <= tol) return [pts[0], pts[pts.length - 1]];
+  return dp(pts.slice(0, at + 1), tol).slice(0, -1).concat(dp(pts.slice(at), tol));
+}
+function fitRing(ring) {
+  let tol = 0.3;
+  let out = simplifyRing(ring, tol);
+  while (out.length > MAX_RING && tol < 3) {
+    tol *= 1.6;
+    out = simplifyRing(ring, tol);
+  }
+  return out.length > MAX_RING ? out.filter((_, i) => i % Math.ceil(out.length / MAX_RING) === 0) : out;
+}
+function buildingQuery(lat, lon, radius = 200) {
+  const around = `around:${Math.round(radius)},${lat.toFixed(6)},${lon.toFixed(6)}`;
+  return `[out:json][timeout:20];(way["building"](${around});way["building:part"](${around});relation["building"](${around}););out geom tags;`;
+}
+var ringOf = (geometry, center) => {
+  if (!Array.isArray(geometry) || geometry.length < 4) return null;
+  const pts = geometry.filter((g) => g && Number.isFinite(g.lat) && Number.isFinite(g.lon)).map((g) => toLocal(center, g.lat, g.lon));
+  if (pts.length < 4) return null;
+  const first = pts[0];
+  const last = pts[pts.length - 1];
+  if (Math.hypot(first[0] - last[0], first[1] - last[1]) > 0.5) return null;
+  pts.pop();
+  return pts;
+};
+function parseBuildings(json, center, { limit = MAX_OBSTACLES } = {}) {
+  const found = [];
+  for (const el of Array.isArray(json?.elements) ? json.elements : []) {
+    const tags = el.tags || {};
+    if (!tags.building && !tags["building:part"]) continue;
+    const rings = [];
+    if (el.type === "way") rings.push(ringOf(el.geometry, center));
+    else if (el.type === "relation" && Array.isArray(el.members)) {
+      for (const m of el.members) if (m.type === "way" && m.role === "outer") rings.push(ringOf(m.geometry, center));
+    }
+    for (const ring of rings) {
+      if (!ring || Math.abs(area2(ring)) < 2) continue;
+      found.push({ id: el.id, part: Boolean(tags["building:part"]) && !tags.building, tags, ring });
+    }
+  }
+  const parts = found.filter((b) => b.part);
+  const kept = found.filter((b) => b.part || !parts.some((p) => insideRing(b.ring, centroid2(p.ring))));
+  const mapped = kept.map((b) => {
+    const { h, base, est } = buildingHeight(b.tags);
+    const own = insideRing(b.ring, [0, 0]);
+    const name = typeof b.tags.name === "string" ? b.tags.name.slice(0, 40) : "";
+    return { type: "building", src: "osm", id: b.id, name, ring: fitRing(b.ring), h: Math.min(h, LIMITS.building.h[1]), base: Math.min(base, Math.max(0, h - 1)), est, own, on: !own };
+  });
+  const rank = (o) => {
+    const dist = Math.min(...o.ring.map(([x, y]) => Math.hypot(x, y)));
+    return Math.atan2(o.h, Math.max(dist, 1));
+  };
+  mapped.sort((a, b) => (b.own ? 1 : 0) - (a.own ? 1 : 0) || rank(b) - rank(a));
+  return { buildings: mapped.slice(0, limit), total: mapped.length };
+}
+
+// src/core/wmm2025.js
+var EPOCH = 2025;
+var COEFFICIENTS = `1 0 -29351.8 0.0 12.0 0.0;1 1 -1410.8 4545.4 9.7 -21.5;2 0 -2556.6 0.0 -11.6 0.0;2 1 2951.1 -3133.6 -5.2 -27.7;2 2 1649.3 -815.1 -8.0 -12.1;3 0 1361.0 0.0 -1.3 0.0;3 1 -2404.1 -56.6 -4.2 4.0;3 2 1243.8 237.5 0.4 -0.3;3 3 453.6 -549.5 -15.6 -4.1;4 0 895.0 0.0 -1.6 0.0;4 1 799.5 278.6 -2.4 -1.1;4 2 55.7 -133.9 -6.0 4.1;4 3 -281.1 212.0 5.6 1.6;4 4 12.1 -375.6 -7.0 -4.4;5 0 -233.2 0.0 0.6 0.0;5 1 368.9 45.4 1.4 -0.5;5 2 187.2 220.2 0.0 2.2;5 3 -138.7 -122.9 0.6 0.4;5 4 -142.0 43.0 2.2 1.7;5 5 20.9 106.1 0.9 1.9;6 0 64.4 0.0 -0.2 0.0;6 1 63.8 -18.4 -0.4 0.3;6 2 76.9 16.8 0.9 -1.6;6 3 -115.7 48.8 1.2 -0.4;6 4 -40.9 -59.8 -0.9 0.9;6 5 14.9 10.9 0.3 0.7;6 6 -60.7 72.7 0.9 0.9;7 0 79.5 0.0 -0.0 0.0;7 1 -77.0 -48.9 -0.1 0.6;7 2 -8.8 -14.4 -0.1 0.5;7 3 59.3 -1.0 0.5 -0.8;7 4 15.8 23.4 -0.1 0.0;7 5 2.5 -7.4 -0.8 -1.0;7 6 -11.1 -25.1 -0.8 0.6;7 7 14.2 -2.3 0.8 -0.2;8 0 23.2 0.0 -0.1 0.0;8 1 10.8 7.1 0.2 -0.2;8 2 -17.5 -12.6 0.0 0.5;8 3 2.0 11.4 0.5 -0.4;8 4 -21.7 -9.7 -0.1 0.4;8 5 16.9 12.7 0.3 -0.5;8 6 15.0 0.7 0.2 -0.6;8 7 -16.8 -5.2 -0.0 0.3;8 8 0.9 3.9 0.2 0.2;9 0 4.6 0.0 -0.0 0.0;9 1 7.8 -24.8 -0.1 -0.3;9 2 3.0 12.2 0.1 0.3;9 3 -0.2 8.3 0.3 -0.3;9 4 -2.5 -3.3 -0.3 0.3;9 5 -13.1 -5.2 0.0 0.2;9 6 2.4 7.2 0.3 -0.1;9 7 8.6 -0.6 -0.1 -0.2;9 8 -8.7 0.8 0.1 0.4;9 9 -12.9 10.0 -0.1 0.1;10 0 -1.3 0.0 0.1 0.0;10 1 -6.4 3.3 0.0 0.0;10 2 0.2 0.0 0.1 -0.0;10 3 2.0 2.4 0.1 -0.2;10 4 -1.0 5.3 -0.0 0.1;10 5 -0.6 -9.1 -0.3 -0.1;10 6 -0.9 0.4 0.0 0.1;10 7 1.5 -4.2 -0.1 0.0;10 8 0.9 -3.8 -0.1 -0.1;10 9 -2.7 0.9 -0.0 0.2;10 10 -3.9 -9.1 -0.0 -0.0;11 0 2.9 0.0 0.0 0.0;11 1 -1.5 0.0 -0.0 -0.0;11 2 -2.5 2.9 0.0 0.1;11 3 2.4 -0.6 0.0 -0.0;11 4 -0.6 0.2 0.0 0.1;11 5 -0.1 0.5 -0.1 -0.0;11 6 -0.6 -0.3 0.0 -0.0;11 7 -0.1 -1.2 -0.0 0.1;11 8 1.1 -1.7 -0.1 -0.0;11 9 -1.0 -2.9 -0.1 0.0;11 10 -0.2 -1.8 -0.1 0.0;11 11 2.6 -2.3 -0.1 0.0;12 0 -2.0 0.0 0.0 0.0;12 1 -0.2 -1.3 0.0 -0.0;12 2 0.3 0.7 -0.0 0.0;12 3 1.2 1.0 -0.0 -0.1;12 4 -1.3 -1.4 -0.0 0.1;12 5 0.6 -0.0 -0.0 -0.0;12 6 0.6 0.6 0.1 -0.0;12 7 0.5 -0.1 -0.0 -0.0;12 8 -0.1 0.8 0.0 0.0;12 9 -0.4 0.1 0.0 -0.0;12 10 -0.2 -1.0 -0.1 -0.0;12 11 -1.3 0.1 -0.0 0.0;12 12 -0.7 0.2 -0.1 -0.1`.split(";").map((row) => row.split(" ").map(Number));
+
+// src/core/declination.js
+var RAD3 = Math.PI / 180;
+var A = 6378.137;
+var F = 1 / 298.257223563;
+var E2 = F * (2 - F);
+var RE = 6371.2;
+var N = 12;
+function decimalYear(when) {
+  const d = new Date(when);
+  const y = d.getUTCFullYear();
+  const start = Date.UTC(y, 0, 1);
+  const end = Date.UTC(y + 1, 0, 1);
+  return y + (d.getTime() - start) / (end - start);
+}
+function declination(lat, lon, year = decimalYear(Date.now()), heightKm = 0) {
+  const phi = lat * RAD3;
+  const lam = lon * RAD3;
+  const sp = Math.sin(phi);
+  const cp = Math.cos(phi);
+  const rc = A / Math.sqrt(1 - E2 * sp * sp);
+  const p = (rc + heightKm) * cp;
+  const z = (rc * (1 - E2) + heightKm) * sp;
+  const r = Math.hypot(p, z);
+  const phiG = Math.asin(z / r);
+  const sg = Math.sin(phiG);
+  const cg = Math.cos(phiG);
+  const dt = year - EPOCH;
+  const P = Array.from({ length: N + 1 }, () => new Float64Array(N + 1));
+  const dP = Array.from({ length: N + 1 }, () => new Float64Array(N + 1));
+  P[0][0] = 1;
+  for (let n = 1; n <= N; n++) {
+    for (let m = 0; m <= n; m++) {
+      if (n === m) {
+        const k = n === 1 ? 1 : Math.sqrt((2 * n - 1) / (2 * n));
+        P[n][n] = k * cg * P[n - 1][n - 1];
+        dP[n][n] = k * (cg * dP[n - 1][n - 1] + sg * P[n - 1][n - 1]);
+      } else {
+        const a = 2 * n - 1;
+        const b = Math.sqrt(n * n - m * m);
+        const c = n - 1 >= m ? Math.sqrt((n - 1) * (n - 1) - m * m) : 0;
+        const p2 = n - 2 >= m ? P[n - 2][m] : 0;
+        const d2 = n - 2 >= m ? dP[n - 2][m] : 0;
+        P[n][m] = (a * sg * P[n - 1][m] - c * p2) / b;
+        dP[n][m] = (a * (sg * dP[n - 1][m] - cg * P[n - 1][m]) - c * d2) / b;
+      }
+    }
+  }
+  let x = 0;
+  let y = 0;
+  let zz = 0;
+  for (const [n, m, g0, h0, gd, hd] of COEFFICIENTS) {
+    const g = g0 + dt * gd;
+    const h = h0 + dt * hd;
+    const k = (RE / r) ** (n + 2);
+    const cm2 = Math.cos(m * lam);
+    const sm = Math.sin(m * lam);
+    const term = g * cm2 + h * sm;
+    x += k * term * dP[n][m];
+    y += k * m * (g * sm - h * cm2) * P[n][m] / cg;
+    zz -= k * (n + 1) * term * P[n][m];
+  }
+  const dphi = phiG - phi;
+  const north = x * Math.cos(dphi) - zz * Math.sin(dphi);
+  return Math.atan2(y, north) / RAD3;
+}
+
+// src/core/compass.js
+var RAD4 = Math.PI / 180;
+var mod2 = (a, n) => (a % n + n) % n;
+function rotationMatrix(alpha, beta, gamma) {
+  const [ca, sa] = [Math.cos(alpha * RAD4), Math.sin(alpha * RAD4)];
+  const [cb, sb] = [Math.cos(beta * RAD4), Math.sin(beta * RAD4)];
+  const [cg, sg] = [Math.cos(gamma * RAD4), Math.sin(gamma * RAD4)];
+  return [
+    [ca * cg - sa * sb * sg, -sa * cb, ca * sg + sa * sb * cg],
+    [sa * cg + ca * sb * sg, ca * cb, sa * sg - ca * sb * cg],
+    [-cb * sg, sb, cb * cg]
+  ];
+}
+var bearing = (east, north) => mod2(Math.atan2(east, north) / RAD4, 360);
+function headingFromAngles(alpha, beta, gamma) {
+  const R = rotationMatrix(alpha, beta, gamma);
+  const back = [-R[0][2], -R[1][2]];
+  const upright = Math.hypot(back[0], back[1]);
+  if (upright >= 0.5) return { bearing: bearing(back[0], back[1]), from: "back", upright };
+  return { bearing: bearing(R[0][1], R[1][1]), from: "top", upright };
+}
+function circularMean(angles) {
+  let s = 0;
+  let c = 0;
+  for (const a of angles) {
+    s += Math.sin(a * RAD4);
+    c += Math.cos(a * RAD4);
+  }
+  return mod2(Math.atan2(s, c) / RAD4, 360);
+}
+var trueHeading = (magnetic, declination2) => mod2(magnetic + declination2, 360);
+
+// src/core/fit.js
+function predictedPatch(scene, check) {
+  const sun = sunAt(scene.place, check.month, check.day, check.minutes);
+  if (!(sun.elevation > 0)) return [];
+  return scenePatches(scene, { azimuth: sun.azimuth, elevation: sun.elevation }, { walls: false }).floor;
+}
+function markOutline(points) {
+  const ring = dedupe(points);
+  if (ring.length < 3) return ring;
+  return selfCrossing(ring) || area(ring) < 1e-9 ? hullOf(ring) : ring;
+}
+function observedPieces(check) {
+  const outline = markOutline(check.poly);
+  return outline.length >= 3 && area(outline) > 1e-9 ? convexParts(outline) : [];
+}
+function compareCheck(scene, check) {
+  const pieces = observedPieces(check);
+  const model = predictedPatch(scene, check);
+  const observed = pieces.reduce((s, p) => s + area(p), 0);
+  const predicted = unionArea(model);
+  const shared = unionArea(model.flatMap((m) => pieces.map((p) => clipConvex(m, p))).filter((p) => p.length));
+  const union = observed + predicted - shared;
+  let shift = null;
+  if (model.length && observed > 0) {
+    const weighted = (list) => {
+      let cx = 0;
+      let cy = 0;
+      let total = 0;
+      for (const p of list) {
+        const a = area(p);
+        const c = centroid(p);
+        cx += c[0] * a;
+        cy += c[1] * a;
+        total += a;
+      }
+      return [cx / total, cy / total];
+    };
+    const mc = weighted(model);
+    const oc = weighted(pieces);
+    shift = [oc[0] - mc[0], oc[1] - mc[1]];
+  }
+  return { iou: union > 1e-9 ? shared / union : 0, observed, predicted, shared, shift, covered: observed > 1e-9 ? shared / observed : 0 };
+}
+var average = (xs) => xs.reduce((s, x) => s + x, 0) / Math.max(1, xs.length);
+function cost(scene, checks) {
+  return average(checks.map((c) => {
+    const r = compareCheck(scene, c);
+    if (!r.shift) return 2;
+    return 1 - r.iou + 0.05 * Math.min(1, Math.hypot(r.shift[0], r.shift[1]) / 3);
+  }));
+}
+var withFacing = (scene, facing) => ({ ...scene, facing: (facing % 360 + 360) % 360 });
+function withWindow(scene, index2, dPos, dSill) {
+  const windows = scene.windows.map((w, i) => {
+    if (i !== index2) return w;
+    const length = wallFrame(scene.room, w.wall).length;
+    return {
+      ...w,
+      pos: Math.min(Math.max(0, length - w.w), Math.max(0, w.pos + dPos)),
+      sill: Math.min(Math.max(0, scene.room.h - w.h), Math.max(0, w.sill + dSill))
+    };
+  });
+  return { ...scene, windows };
+}
+function azimuthSpread(scene, checks) {
+  const az = checks.map((c) => sunAt(scene.place, c.month, c.day, c.minutes)).filter((s) => s.elevation > 0).map((s) => s.azimuth);
+  if (az.length < 2) return 0;
+  let best = 0;
+  for (const a of az) for (const b of az) best = Math.max(best, Math.abs((a - b + 540) % 360 - 180));
+  return best;
+}
+function fitScene(scene, checks, { window: windowIndex = null, maxTurn = 30 } = {}) {
+  const usable = checks.filter((c) => c.poly.length >= 3);
+  if (!usable.length || !scene.windows.length) return null;
+  let evaluations = 0;
+  const score = (sc) => {
+    evaluations++;
+    return cost(sc, usable);
+  };
+  const base = scene.facing;
+  let best = { d: 0, c: score(scene) };
+  for (let d = -maxTurn; d <= maxTurn; d += 1) {
+    const c = score(withFacing(scene, base + d));
+    if (c < best.c - 1e-12) best = { d, c };
+  }
+  const coarse = best.d;
+  for (let k = -10; k <= 10; k++) {
+    const d = Math.max(-maxTurn, Math.min(maxTurn, coarse + k / 10));
+    const c = score(withFacing(scene, base + d));
+    if (c < best.c - 1e-12) best = { d, c };
+  }
+  const facingOnly = withFacing(scene, base + best.d);
+  let wi = windowIndex;
+  if (wi == null) {
+    let top = -1;
+    scene.windows.forEach((_, i) => {
+      const only = { ...facingOnly, windows: [facingOnly.windows[i]] };
+      const v = average(usable.map((c) => compareCheck(only, c).shared));
+      if (v > top) {
+        top = v;
+        wi = i;
+      }
+    });
+  }
+  let chosen = { scene: facingOnly, mode: "facing", dFacing: best.d, dPos: 0, dSill: 0, c: best.c };
+  if (azimuthSpread(scene, usable) >= 15) {
+    let cur = { d: best.d, p: 0, s: 0, c: best.c };
+    const trial = (d, p, s) => score(withWindow(withFacing(scene, base + d), wi, p, s));
+    for (const [dStep, pStep, sStep] of [[1, 0.1, 0.1], [0.4, 0.04, 0.04], [0.1, 0.01, 0.01]]) {
+      for (let round2 = 0; round2 < 6; round2++) {
+        let moved = false;
+        for (const [dd, dp2, ds] of [[dStep, 0, 0], [-dStep, 0, 0], [0, pStep, 0], [0, -pStep, 0], [0, 0, sStep], [0, 0, -sStep]]) {
+          const d = Math.max(-maxTurn, Math.min(maxTurn, cur.d + dd));
+          const p = Math.max(-0.8, Math.min(0.8, cur.p + dp2));
+          const s = Math.max(-0.5, Math.min(0.5, cur.s + ds));
+          const c = trial(d, p, s) + 4e-3 * (Math.abs(p) / 0.8 + Math.abs(s) / 0.5);
+          if (c < cur.c - 1e-9) {
+            cur = { d, p, s, c };
+            moved = true;
+          }
+        }
+        if (!moved) break;
+      }
+    }
+    const fitted = withWindow(withFacing(scene, base + cur.d), wi, cur.p, cur.s);
+    if (cost(fitted, usable) <= best.c - 0.03) chosen = { scene: fitted, mode: "facing+window", dFacing: cur.d, dPos: cur.p, dSill: cur.s, c: cost(fitted, usable) };
+  }
+  const iou = (sc) => usable.map((c) => compareCheck(sc, c).iou);
+  const before = iou(scene);
+  const after = iou(chosen.scene);
+  return {
+    scene: chosen.scene,
+    mode: chosen.mode,
+    window: wi,
+    dFacing: Math.round(chosen.dFacing * 10) / 10,
+    dPos: Math.round(chosen.dPos * 1e3) / 1e3,
+    dSill: Math.round(chosen.dSill * 1e3) / 1e3,
+    before,
+    after,
+    meanBefore: average(before),
+    meanAfter: average(after),
+    evaluations
+  };
+}
+
+// src/core/trace.js
+var sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+var dot = (a, b) => a[0] * b[0] + a[1] * b[1];
+var len = (a) => Math.hypot(a[0], a[1]);
+function scaleFromPoints(p1, p2, metres) {
+  const px = len(sub(p2, p1));
+  if (!(px > 1e-6) || !(metres > 0)) return null;
+  return px / metres;
+}
+function rectFromCorners(a, b, c, pxPerMetre) {
+  if (!(pxPerMetre > 0)) return null;
+  const A2 = [a[0], -a[1]];
+  const B = [b[0], -b[1]];
+  const C = [c[0], -c[1]];
+  const ab = sub(B, A2);
+  const width = len(ab);
+  if (width < 1e-6) return null;
+  let u = [ab[0] / width, ab[1] / width];
+  let origin = A2;
+  let v = [-u[1], u[0]];
+  const side2 = dot(sub(C, A2), v);
+  if (Math.abs(side2) < 1e-6) return null;
+  if (side2 < 0) {
+    origin = B;
+    u = [-u[0], -u[1]];
+    v = [-u[1], u[0]];
+  }
+  const depth = Math.abs(side2);
+  const toRoom = (p) => {
+    const q = sub([p[0], -p[1]], origin);
+    return [dot(q, u) / pxPerMetre, dot(q, v) / pxPerMetre];
+  };
+  const toPicture = (q) => {
+    const x = origin[0] + (u[0] * q[0] + v[0] * q[1]) * pxPerMetre;
+    const y = origin[1] + (u[1] * q[0] + v[1] * q[1]) * pxPerMetre;
+    return [x, -y];
+  };
+  const w = width / pxPerMetre;
+  const d = depth / pxPerMetre;
+  return { w, d, toRoom, toPicture, corners: [[0, 0], [w, 0], [w, d], [0, d]].map(toPicture), turn: Math.atan2(u[1], u[0]) * 180 / Math.PI };
+}
+function openingFromTaps(room, p, q, tolerance = 0.6) {
+  let best = null;
+  for (const wall of WALLS) {
+    const f = wallFrame(room, wall);
+    const dist = (pt) => Math.abs((pt[0] - f.o[0]) * f.n[0] + (pt[1] - f.o[1]) * f.n[1]);
+    const along2 = (pt) => (pt[0] - f.o[0]) * f.t[0] + (pt[1] - f.o[1]) * f.t[1];
+    const cost2 = dist(p) + dist(q);
+    if (dist(p) > tolerance || dist(q) > tolerance) continue;
+    if (!best || cost2 < best.cost) best = { wall, cost: cost2, a: along2(p), b: along2(q), length: f.length };
+  }
+  if (!best) return null;
+  const lo = Math.max(0, Math.min(best.a, best.b));
+  const hi = Math.min(best.length, Math.max(best.a, best.b));
+  if (hi - lo < LIMITS.window.w[0]) return null;
+  return { wall: best.wall, pos: lo, w: hi - lo };
+}
+function solve(m, rhs) {
+  const n = rhs.length;
+  const a = m.map((row, i) => [...row, rhs[i]]);
+  for (let c = 0; c < n; c++) {
+    let p = c;
+    for (let r = c + 1; r < n; r++) if (Math.abs(a[r][c]) > Math.abs(a[p][c])) p = r;
+    if (Math.abs(a[p][c]) < 1e-12) return null;
+    [a[c], a[p]] = [a[p], a[c]];
+    for (let r = c + 1; r < n; r++) {
+      const k = a[r][c] / a[c][c];
+      for (let j = c; j <= n; j++) a[r][j] -= k * a[c][j];
+    }
+  }
+  const x = new Array(n).fill(0);
+  for (let r = n - 1; r >= 0; r--) {
+    let s = a[r][n];
+    for (let j = r + 1; j < n; j++) s -= a[r][j] * x[j];
+    x[r] = s / a[r][r];
+  }
+  return x;
+}
+function homography(src, dst) {
+  const rows = [];
+  const rhs = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = src[i];
+    const [u, v] = dst[i];
+    rows.push([x, y, 1, 0, 0, 0, -u * x, -u * y]);
+    rhs.push(u);
+    rows.push([0, 0, 0, x, y, 1, -v * x, -v * y]);
+    rhs.push(v);
+  }
+  const h = solve(rows, rhs);
+  return h ? [[h[0], h[1], h[2]], [h[3], h[4], h[5]], [h[6], h[7], 1]] : null;
+}
+function applyHomography(H, [x, y]) {
+  const w = H[2][0] * x + H[2][1] * y + H[2][2];
+  return [(H[0][0] * x + H[0][1] * y + H[0][2]) / w, (H[1][0] * x + H[1][1] * y + H[1][2]) / w];
+}
+
+// src/core/templates.js
+var win = (wall, pos, w, h, sill, extra = {}) => ({ wall, pos, w, h, sill, eave: { depth: 0, gap: 0.15, ext: 0.3 }, across: null, balcony: null, ...extra });
+var balcony = (depth, rail = 1) => ({ depth, rail, ext: 0.3 });
+var TEMPLATES = [
+  {
+    id: "studio",
+    room: { w: 3.3, d: 5.2, h: 2.6, wall: 0.15 },
+    windows: [win("top", 0.45, 2.4, 2.1, 0, { balcony: balcony(1.2) })],
+    doors: [{ wall: "bottom", pos: 0.3, w: 0.9 }],
+    items: [{ kind: "bed", x: 0.2, y: 2.6, w: 1.5, d: 1.9, h: 0.5 }, { kind: "desk", x: 2, y: 1.4, w: 1.2, d: 0.6, h: 0.75 }, { kind: "sofa", x: 0.2, y: 0.4, w: 1.8, d: 0.9, h: 0.8 }]
+  },
+  {
+    id: "bedroom",
+    room: { w: 3.3, d: 3.9, h: 2.6, wall: 0.15 },
+    windows: [win("top", 0.75, 1.8, 1.3, 0.9)],
+    doors: [{ wall: "bottom", pos: 0.2, w: 0.9 }],
+    items: [{ kind: "bed", x: 0.9, y: 1.1, w: 1.5, d: 1.9, h: 0.5 }, { kind: "shelf", x: 0.1, y: 0.2, w: 0.8, d: 0.45, h: 2 }]
+  },
+  {
+    id: "master",
+    room: { w: 3.6, d: 4.5, h: 2.6, wall: 0.15 },
+    windows: [win("top", 0.7, 2.2, 2.1, 0, { balcony: balcony(1.3) })],
+    doors: [{ wall: "bottom", pos: 0.25, w: 0.9 }],
+    items: [{ kind: "bed", x: 0.9, y: 1.4, w: 1.8, d: 2, h: 0.5 }, { kind: "desk", x: 2.3, y: 0.3, w: 1.2, d: 0.6, h: 0.75 }, { kind: "shelf", x: 0.1, y: 0.2, w: 0.9, d: 0.5, h: 2.1 }]
+  },
+  {
+    id: "small",
+    room: { w: 2.7, d: 3.2, h: 2.6, wall: 0.15 },
+    windows: [win("top", 0.75, 1.2, 1.2, 1)],
+    doors: [{ wall: "bottom", pos: 0.2, w: 0.8 }],
+    items: [{ kind: "bed", x: 0.1, y: 1.1, w: 1, d: 2, h: 0.5 }, { kind: "desk", x: 1.4, y: 0.2, w: 1.1, d: 0.55, h: 0.75 }]
+  },
+  {
+    id: "living",
+    room: { w: 4, d: 5.6, h: 2.7, wall: 0.15 },
+    windows: [win("top", 0.6, 2.8, 2.1, 0, { balcony: balcony(1.5) })],
+    doors: [{ wall: "bottom", pos: 0.4, w: 1 }],
+    items: [{ kind: "sofa", x: 0.9, y: 1.6, w: 2.2, d: 0.95, h: 0.8 }, { kind: "table", x: 1.3, y: 2.9, w: 1.2, d: 0.7, h: 0.45 }, { kind: "shelf", x: 0.1, y: 4.6, w: 1.6, d: 0.4, h: 1.8 }]
+  },
+  {
+    id: "open",
+    room: { w: 4.2, d: 7.2, h: 2.7, wall: 0.15 },
+    windows: [win("top", 0.7, 2.8, 2.1, 0, { balcony: balcony(1.5) }), win("left", 5.6, 1.2, 1.2, 1)],
+    doors: [{ wall: "bottom", pos: 0.5, w: 1 }],
+    items: [{ kind: "sofa", x: 1, y: 5, w: 2.2, d: 0.95, h: 0.8 }, { kind: "table", x: 1.4, y: 3, w: 1.6, d: 0.9, h: 0.75 }, { kind: "plant", x: 3.6, y: 6.5, w: 0.35, d: 0.35, h: 1.1 }]
+  },
+  {
+    id: "office",
+    room: { w: 2.8, d: 3.3, h: 2.6, wall: 0.15 },
+    windows: [win("top", 0.65, 1.5, 1.2, 0.95)],
+    doors: [{ wall: "bottom", pos: 0.2, w: 0.8 }],
+    items: [{ kind: "desk", x: 0.9, y: 2.2, w: 1.4, d: 0.65, h: 0.75 }, { kind: "shelf", x: 0.1, y: 0.2, w: 0.8, d: 0.35, h: 1.9 }]
+  }
+];
+function applyTemplate(scene, id) {
+  const t = TEMPLATES.find((x) => x.id === id);
+  if (!t) return scene;
+  return { ...scene, room: { ...t.room }, windows: structuredClone(t.windows), doors: structuredClone(t.doors), items: structuredClone(t.items), checks: [] };
 }
 
 // src/core/cities.js
@@ -1155,22 +1807,47 @@ function searchCities(query, limit = 8) {
 export {
   CITIES,
   LIGHT_NEEDS,
+  TEMPLATES,
   WALLS,
   afternoonSun,
+  applyHomography,
+  applyTemplate,
+  blurScene,
+  buildingHeight,
+  buildingQuery,
+  circularMean,
+  compareCheck,
+  convexParts,
   daySteps,
   dayTrack,
   daylightIntervals,
+  decimalYear,
+  declination,
   decodeScene,
   defaultScene,
   encodeScene,
+  fitScene,
+  fromLocal,
+  haversine,
+  headingFromAngles,
+  homography,
   hoursAt,
   hoursOver,
   isZone,
   litOpening,
   localToUtc,
   monthDays,
+  moveRoom,
   normalizeScene,
+  openingFromTaps,
+  parseBuildings,
+  parseLength,
   plantSpots,
+  predictedPatch,
+  prismShadow,
+  rectFromCorners,
+  scaleFromPoints,
+  sceneObstacles,
   scenePatches,
   searchCities,
   seasonDays,
@@ -1181,7 +1858,9 @@ export {
   sunPath,
   sunTimes,
   sunVector,
+  toLocal,
   totalArea,
+  trueHeading,
   utcToLocal,
   wallBearing,
   wallFrame,

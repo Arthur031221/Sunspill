@@ -6,17 +6,24 @@ import { t } from './i18n.js'
 import { numberField, compassDial } from './fields.js'
 import { bearingText, duration, dateText } from './format.js'
 import { WALLS, wallBearing, MAX_OBSTACLES } from '../core/room.js'
-import { moveRoom, refreshOwn, blockRing } from '../core/geo.js'
+import { moveRoom, refreshOwn, blockRing, haversine } from '../core/geo.js'
 import { openCompass, compassSupported } from './compass-ui.js'
 import { sunHoursInside } from './frame.js'
 
 /** Fetch the building outlines around the room, after asking, and keep them next to the ones drawn by hand. */
 export async function loadBuildings(ctx) {
   const { store, net, consent, toast } = ctx
+  if (ctx.loading) return false
   if (!(await consent.ask('buildings'))) return false
+  const asked = { ...store.scene.place }
+  ctx.loading = new AbortController()
+  const mine = ctx.loading
   toast(t('wiz.map.loading'))
   try {
-    const { buildings, total } = await net.buildings(store.scene.place, 200)
+    const { buildings, total } = await net.buildings(asked, 200, mine.signal)
+    // the answer is for the spot that was asked about, so it is dropped when the room has been put somewhere else since
+    const now = store.scene.place
+    if (mine.signal.aborted || haversine(asked, now) > 25) return false
     store.update((d) => {
       const manual = d.obstacles.filter((o) => o.src !== 'osm')
       d.obstacles = [...buildings, ...manual].slice(0, MAX_OBSTACLES)
@@ -27,8 +34,10 @@ export async function loadBuildings(ctx) {
     ctx.map.invalidate()
     return true
   } catch (err) {
-    toast(t('wiz.map.failed', { why: String(err.message || err).slice(0, 90) }))
+    if (!mine.signal.aborted) toast(t('wiz.map.failed', { why: String(err.message || err).slice(0, 90) }))
     return false
+  } finally {
+    if (ctx.loading === mine) ctx.loading = null
   }
 }
 
@@ -40,18 +49,19 @@ export function facingStep(ctx) {
   const setBearing = (b) => store.update((d) => { d.facing = (((b - WALLS.indexOf(wallOf()) * 90) % 360) + 360) % 360 }, { key: 'facing' })
 
   const chips = h('div', { class: 'chips', role: 'group', 'aria-label': t('wiz.face.which') })
+  const faceLine = h('p', { class: 'where', id: 'face-line' })
   const dial = compassDial({ label: t('room.dial'), get: () => wallBearing(store.scene, wallOf()), onChange: setBearing })
   const bearing = numberField({ store, compact: true, label: t('room.facingDeg'), kind: 'deg', min: 0, max: 359, step: 1, get: (s) => wallBearing(s, wallOf()), set: (d, v) => { d.facing = (((v - WALLS.indexOf(wallOf()) * 90) % 360) + 360) % 360 }, key: 'facing' })
   fields.push(bearing)
   const turn = h('div', { class: 'row turn' }, ...[-15, -1, 1, 15].map((n) => h('button', { class: 'btn', type: 'button', 'aria-label': t('wiz.face.turn', { n: `${n > 0 ? '+' : '−'}${Math.abs(n)}` }), onclick: () => store.update((d) => { d.facing = (((d.facing + n) % 360) + 360) % 360 }, { key: 'facing' }) }, `${n > 0 ? '+' : '−'}${Math.abs(n)}°`)))
   const compassCard = h('div', { hidden: true })
   const compassBtn = compassSupported() ? h('button', { class: 'btn block', type: 'button', id: 'compass-open', onclick: startCompass }, t('room.useCompass')) : null
-  const outlines = h('button', { class: 'btn block', type: 'button', id: 'load-buildings', onclick: async () => { await loadBuildings(ctx); sync() } }, t('wiz.face.outlines'))
+  const outlines = h('button', { class: 'btn block', type: 'button', id: 'load-buildings', onclick: async () => { outlines.disabled = true; await loadBuildings(ctx); outlines.disabled = false; sync() } }, t('wiz.face.outlines'))
   const outlinesNote = h('p', { class: 'note' })
   const main = h('div', {},
     h('p', {}, t('wiz.face.intro')),
     chips,
-    h('p', { class: 'where', id: 'face-line' }),
+    faceLine,
     dial.el, bearing.el, turn,
     compassBtn,
     h('h3', {}, t('wiz.face.outlinesTitle')),
@@ -93,7 +103,7 @@ export function facingStep(ctx) {
     const s = store.scene
     const list = s.windows.length ? s.windows : [{ wall: 'top' }]
     chips.replaceChildren(...list.map((w, i) => h('button', { class: 'chip', type: 'button', 'aria-pressed': String(i === target()), onclick: () => { store.setUi({ selectedWindow: i, selected: s.windows.length ? { type: 'window', index: i } : null }); map.target = i; map.invalidate(); sync() } }, `${t('win.name', { n: i + 1 })} · ${bearingText(wallBearing(s, w.wall))}`)))
-    ctx.root.querySelector('#face-line').textContent = t('room.faces', { n: target() + 1, dir: bearingText(wallBearing(s, wallOf())) })
+    faceLine.textContent = t('room.faces', { n: target() + 1, dir: bearingText(wallBearing(s, wallOf())) })
     const osm = s.obstacles.filter((o) => o.src === 'osm').length
     outlinesNote.textContent = osm ? t('wiz.face.outlinesOn', { n: osm }) : t('wiz.face.outlinesOff')
     map.target = target()
@@ -108,6 +118,7 @@ export function facingStep(ctx) {
     },
     leave() {
       reader?.close()
+      ctx.loading?.abort()
       for (const k of ['turnBy', 'turnTo', 'moveRoom']) map.on[k] = null
     },
   }
@@ -184,7 +195,7 @@ export function surroundStep(ctx) {
     select(store.scene.obstacles.length - 1)
   } }, t('wiz.sur.addTree'))
 
-  const load = h('button', { class: 'btn primary block', type: 'button', id: 'load-buildings', onclick: async () => { await loadBuildings(ctx); shape = ''; sync() } }, t('wiz.face.outlines'))
+  const load = h('button', { class: 'btn primary block', type: 'button', id: 'load-buildings', onclick: async () => { load.disabled = true; await loadBuildings(ctx); load.disabled = false; shape = ''; sync() } }, t('wiz.face.outlines'))
   const el = h('section', { class: 'wiz-step' },
     h('p', {}, t('wiz.sur.intro')),
     load, status, effect, list,
@@ -219,6 +230,7 @@ export function surroundStep(ctx) {
       map.selected = sel()
     },
     leave() {
+      ctx.loading?.abort()
       for (const k of ['select', 'moveObstacle']) map.on[k] = null
     },
   }

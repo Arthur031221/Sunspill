@@ -75,12 +75,62 @@ test('when every server fails the error says which and why', async () => {
   await assert.rejects(h.net.buildings({ lat: 1, lon: 1 }), /overpass-api\.de.*504.*openstreetmap\.fr.*network down.*private\.coffee.*500/)
 })
 
-test('a cancelled request stops without trying the next server', async () => {
-  const h = harness({ responses: [Object.assign(new Error('aborted'), { name: 'AbortError' })] })
+test('a request cancelled before it starts, or while it runs, never goes on to the next server', async () => {
+  const h = harness()
   const c = new AbortController()
   c.abort()
   await assert.rejects(h.net.buildings({ lat: 1, lon: 1 }, 200, c.signal))
-  assert.equal(h.calls.length, 1)
+  await assert.rejects(h.net.search('abc', 'en', c.signal))
+  assert.equal(h.calls.length, 0, 'nothing is sent for a call that was cancelled')
+  const g = harness({ responses: [Object.assign(new Error('aborted'), { name: 'AbortError' })] })
+  const live = new AbortController()
+  const pending = g.net.buildings({ lat: 1, lon: 1 }, 200, live.signal)
+  live.abort()
+  await assert.rejects(pending)
+  assert.equal(g.calls.length, 1)
+})
+
+test('switching a service off while a call waits sends nothing', async () => {
+  let on = ['search', 'buildings']
+  const calls = []
+  const waits = []
+  let t = 10_000
+  const net = createNet({
+    allowed: (s) => on.includes(s),
+    fetch: async (url) => { calls.push(url); return json([]) },
+    wait: async (ms) => { waits.push(ms); t += ms; on = [] },
+    now: () => t,
+  })
+  await net.search('abc')
+  assert.equal(calls.length, 1)
+  // the second search waits out the second, and the switch goes off during the wait
+  await assert.rejects(net.search('abcd'), Refused)
+  assert.equal(calls.length, 1, 'the request was not sent after the switch went off')
+  // between two Overpass servers
+  on = ['buildings']
+  const hosts = []
+  const net2 = createNet({
+    allowed: (s) => on.includes(s),
+    fetch: async (url) => { hosts.push(new URL(url).host); on = []; return json({}, 504) },
+  })
+  await assert.rejects(net2.buildings({ lat: 1, lon: 1 }), Refused)
+  assert.deepEqual(hosts, ['overpass-api.de'], 'the second server was never asked')
+})
+
+test('searches go out one at a time, in the order they were made', async () => {
+  const order = []
+  let t = 0
+  const net = createNet({
+    allowed: () => true,
+    fetch: async (url) => {
+      order.push(new URL(url).searchParams.get('q'))
+      return json([])
+    },
+    wait: async (ms) => { t += ms },
+    now: () => t,
+  })
+  await Promise.all([net.search('first'), net.search('second'), net.search('third')])
+  assert.deepEqual(order, ['first', 'second', 'third'])
 })
 
 test('tiles are plain https images from one host, and the list of origins is what the policy will allow', () => {
