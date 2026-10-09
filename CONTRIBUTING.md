@@ -42,6 +42,10 @@ Copy `src/locales/en.json` to the language code, translate the values and keep t
 
 Add one line to `src/core/cities.js`: name, country code, latitude, longitude, an IANA time zone and spellings in other scripts. The test checks that the zone exists and agrees with the longitude within about three hours.
 
+## Make a release
+
+Set `version` in `package.json`, write the section for it at the top of `CHANGELOG.md` (the heading is the version and the date, and its text becomes the release notes), run `npm run build` and `npm test`, commit, then push a tag with a `v` in front of the version, such as `v0.2.0`. `.github/workflows/release.yml` checks the tag against `package.json`, rebuilds, tests, and publishes the release with `sunspill.html` and `sunspill.js`.
+
 ## Style
 
 Plain code, no framework, comments only where the reason is not obvious. English in docs and commit messages is plain: short sentences, no dashes, no filler. Numbers in docs come from a command in this repository.

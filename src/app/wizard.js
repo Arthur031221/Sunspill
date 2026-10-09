@@ -80,8 +80,8 @@ export function createWizard(ctx) {
 
   /** Leave from a button. Corners that were marked but not saved, and a photo, would be lost, so ask first. */
   async function leaveWith(finished) {
-    const { points, underlay } = ctx.draft ?? {}
-    if (points?.length || underlay) {
+    const { points, underlay, picking } = ctx.draft ?? {}
+    if (points?.length || underlay || picking) {
       const stay = h('button', { class: 'btn primary', type: 'button', onclick: () => ctx.modal.close(false) }, t('wiz.leave.stay'))
       const go = h('button', { class: 'btn', type: 'button', id: 'leave-anyway', onclick: () => ctx.modal.close(true) }, t('wiz.leave.go'))
       if (!(await ctx.modal.show(t('wiz.leave.title'), [h('p', {}, t('wiz.leave.body'))], [stay, go]))) return

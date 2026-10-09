@@ -936,3 +936,96 @@ test('a box that belongs to a window which was just removed does nothing and doe
   assert.equal((await scene(page)).windows.length, 0)
   await context.close()
 })
+
+test('the room set aside survives quick moves: a save that is waiting, Start over, a pasted link and the Share tab button', async () => {
+  const { page, context } = await open()
+  const code = (w) => page.evaluate((width) => {
+    const s = structuredClone(window.__sunspill.store.scene)
+    s.room.w = width
+    return window.__sunspill.encode(s)
+  }, w)
+  const [mine, older, theirs] = [await code(4.4), await code(5.5), await code(7)]
+  const store = (keys) => page.evaluate((k) => Object.fromEntries(Object.entries(k).map(([a, b]) => [a, localStorage.getItem(b)])), keys)
+  const width = async () => (await scene(page)).room.w
+  const widthOf = (raw) => page.evaluate((r) => window.__sunspill.decode('#' + r).room.w, raw)
+  await page.evaluate(([a, e]) => { localStorage.setItem('sunspill.room', a); localStorage.setItem('sunspill.room.earlier', e) }, [mine, older])
+
+  // 1. the first edit of a link and the button pressed in the same moment: your own room is what comes back
+  await page.goto(site.url + '#' + theirs)
+  await page.reload()
+  await page.waitForSelector('html[data-ready]')
+  assert.equal(await width(), 7)
+  await page.click('#tab-share')
+  assert.equal(await page.locator('#bring-back').isVisible(), true)
+  await page.evaluate(() => {
+    window.__sunspill.store.update((d) => { d.room.w = 6 })
+    document.getElementById('bring-back').click()
+  })
+  assert.equal(await width(), 4.4, 'the room that was set aside is the one brought back, not an older one')
+  await page.waitForTimeout(500)
+  const kept = await store({ room: 'sunspill.room', earlier: 'sunspill.room.earlier' })
+  assert.equal(await widthOf(kept.room), 4.4)
+  assert.equal(await widthOf(kept.earlier), 6, 'the edited link room waits in the other slot')
+
+  // 2. Start over with a room set aside leaves nothing behind, even after the next edit
+  await page.goto(site.url + '#' + theirs)
+  await page.reload()
+  await page.waitForSelector('html[data-ready]')
+  await page.evaluate(([a]) => { localStorage.setItem('sunspill.room', a); localStorage.removeItem('sunspill.room.earlier') }, [mine])
+  await page.reload()
+  await page.waitForSelector('html[data-ready]')
+  await page.click('#tab-share')
+  await page.click('text=Start over')
+  await page.evaluate(() => window.__sunspill.store.update((d) => { d.room.w = 3 }))
+  await page.waitForTimeout(500)
+  assert.equal((await store({ earlier: 'sunspill.room.earlier' })).earlier, null)
+
+  // 3. a link pasted into the tab right after an edit: the edit is kept first, then set aside
+  await page.evaluate(([a]) => { localStorage.setItem('sunspill.room', a); localStorage.removeItem('sunspill.room.earlier') }, [mine])
+  await page.goto(site.url)
+  await page.waitForSelector('html[data-ready]')
+  await page.evaluate((link) => {
+    window.__sunspill.store.update((d) => { d.room.w = 4.8 })
+    location.hash = '#' + link
+  }, theirs)
+  await page.waitForFunction(() => window.__sunspill.store.scene.room.w === 7)
+  await page.waitForTimeout(500)
+  assert.equal(await widthOf((await store({ room: 'sunspill.room' })).room), 4.8, 'the edit made a moment before the paste was kept')
+
+  // 4. the button shows up as soon as the room is set aside, with the Share tab already open
+  await page.evaluate(([a]) => { localStorage.setItem('sunspill.room', a); localStorage.removeItem('sunspill.room.earlier') }, [mine])
+  await page.goto(site.url + '#' + theirs)
+  await page.reload()
+  await page.waitForSelector('html[data-ready]')
+  await page.click('#tab-share')
+  assert.equal(await page.locator('#bring-back').isVisible(), false)
+  await page.evaluate(() => window.__sunspill.store.update((d) => { d.room.w = 6.5 }))
+  await page.waitForTimeout(700)
+  assert.equal(await page.locator('#bring-back').isVisible(), true)
+  await context.close()
+})
+
+test('a photo of the floor that is half way through counts as unsaved when leaving the setup', { skip: engine !== chromium }, async () => {
+  const { page, context } = await open()
+  await openWizard(page, 6)
+  const png = await page.evaluate(async () => {
+    const c = document.createElement('canvas')
+    c.width = 400
+    c.height = 300
+    c.getContext('2d').fillRect(0, 0, 400, 300)
+    const buf = new Uint8Array(await (await new Promise((r) => c.toBlob(r, 'image/png'))).arrayBuffer())
+    let bin = ''
+    for (const b of buf) bin += String.fromCharCode(b)
+    return btoa(bin)
+  })
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.click('#photo-open')])
+  await chooser.setFiles({ name: 'floor.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') })
+  await page.waitForSelector('.pic-canvas')
+  const box = await page.locator('.pic-canvas').boundingBox()
+  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2)
+  await page.click('#wiz-exit')
+  assert.match(await page.locator('.modal').innerText(), /not saved yet/)
+  await page.click('.modal button.primary')
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.wizard), '1')
+  await context.close()
+})

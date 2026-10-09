@@ -200,6 +200,7 @@ export function checkStep(ctx) {
 
   function beginCorners(canvas) {
     const taps = []
+    draft.picking = true
     ctx.showTrace(true)
     ctx.tracepane.hidden = false
     photoCard.hidden = false
@@ -237,6 +238,7 @@ export function checkStep(ctx) {
     photoCard.replaceChildren(h('h2', {}, t('wiz.check.photo')), instruction, h('p', { class: 'note' }, t('wiz.photo.order')), skip)
     function finish(corners) {
       session = null
+      draft.picking = false
       pic.observer.disconnect()
       ctx.tracepane.hidden = true
       ctx.tracepane.replaceChildren()

@@ -206,7 +206,16 @@ const actions = {
   hasEarlier: () => Boolean(decodeScene(stored(EARLIER_KEY))),
   /** Swap with the room a link pushed aside, so that a second press goes back. */
   bringBack() {
-    const earlier = decodeScene(stored(EARLIER_KEY))
+    flushSave()
+    const before = { earlier: stored(EARLIER_KEY), mine: stored(ROOM_KEY) }
+    try {
+      // the room that is waiting to be set aside is the one to bring back
+      if (aside) localStorage.setItem(EARLIER_KEY, aside)
+    } catch {
+      // nothing can be kept in this browser
+    }
+    const earlier = decodeScene(aside || stored(EARLIER_KEY))
+    aside = ''
     if (!earlier) return false
     const now = encodeScene(store.scene)
     store.replace(earlier)
@@ -215,13 +224,21 @@ const actions = {
       localStorage.setItem(EARLIER_KEY, now)
       localStorage.setItem(ROOM_KEY, encodeScene(earlier))
     } catch {
-      // the room is back on the page either way
+      // one write may have gone through without the other: put both back as they were
+      try {
+        localStorage.setItem(EARLIER_KEY, before.earlier)
+        localStorage.setItem(ROOM_KEY, before.mine)
+      } catch {
+        // the room is back on the page either way
+      }
     }
     toast(t('share.earlierBack'))
+    afterScene()
     return true
   },
   reset() {
     edited = false
+    aside = ''
     try {
       localStorage.removeItem(ROOM_KEY)
       localStorage.removeItem(EARLIER_KEY)
@@ -453,28 +470,37 @@ function summary() {
 
 
 let lastHash = ''
-const writeHash = (() => {
-  let timer = 0
-  return () => {
-    clearTimeout(timer)
-    timer = setTimeout(() => {
-      lastHash = `#${encodeScene(store.scene)}`
-      history.replaceState(null, '', lastHash)
-      // only a room that was edited here is kept: opening somebody's link must not replace your own
-      if (edited) {
-        try {
-          if (aside) {
-            localStorage.setItem(EARLIER_KEY, aside)
-            aside = ''
-          }
-          localStorage.setItem(ROOM_KEY, lastHash.slice(1))
-        } catch {
-          // private mode: the link still holds the room
-        }
-      }
-    }, 300)
+let writeTimer = 0
+/** Keep the room in this browser, but only a room that was edited here: opening somebody's link must not replace your own. */
+function keepRoom(code) {
+  if (!edited) return
+  try {
+    if (aside) {
+      localStorage.setItem(EARLIER_KEY, aside)
+      aside = ''
+      afterScene() // the Share tab can offer the room that was set aside
+    }
+    localStorage.setItem(ROOM_KEY, code)
+  } catch {
+    // private mode: the link still holds the room
   }
-})()
+}
+const writeHash = () => {
+  clearTimeout(writeTimer)
+  writeTimer = setTimeout(() => {
+    writeTimer = 0
+    lastHash = `#${encodeScene(store.scene)}`
+    history.replaceState(null, '', lastHash)
+    keepRoom(lastHash.slice(1))
+  }, 300)
+}
+/** A save that is still waiting goes now, before something else takes the place of the room. */
+function flushSave() {
+  if (!writeTimer) return
+  clearTimeout(writeTimer)
+  writeTimer = 0
+  keepRoom(encodeScene(store.scene))
+}
 
 let announceTimer = 0
 function announce() {
@@ -567,6 +593,7 @@ addEventListener('hashchange', () => {
   const next = decodeScene(location.hash.slice(1))
   if (!next) return
   // somebody's room pasted into this tab: it is not yours until you edit it, and yours stays set aside
+  flushSave()
   const mine = stored(ROOM_KEY)
   aside = mine && mine !== location.hash.slice(1) ? mine : ''
   edited = false
