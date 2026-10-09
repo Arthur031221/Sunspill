@@ -329,6 +329,7 @@
  "wiz.face.northNote": "Faites glisser la pièce pour la déplacer. Une boussole de téléphone dévie de quelques degrés près du métal et de l'électronique. Comparez-la à la carte.",
  "wiz.map.loading": "Demande des bâtiments à OpenStreetMap.",
  "wiz.map.loaded": "{n} bâtiments chargés.",
+ "wiz.map.partial": "{n} bâtiments sur {total} ont été gardés : ceux qui s'élèvent le plus au-dessus de votre fenêtre. Les autres montent à moins de {deg} degrés au-dessus d'elle et ne font de l'ombre qu'à un soleil plus bas. Rechargez après avoir changé l'étage.",
  "wiz.map.empty": "OpenStreetMap n'a aucun bâtiment ici. Ajoutez-les à la main s'il y en a.",
  "wiz.map.failed": "Impossible de charger les bâtiments : {why}",
  "wiz.sur.intro": "Bâtiments et arbres qui se trouvent entre la fenêtre et le soleil. Chargez les bâtiments alentour, corrigez leur hauteur et ajoutez ce qui manque.",

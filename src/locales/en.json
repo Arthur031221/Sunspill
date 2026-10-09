@@ -329,6 +329,7 @@
  "wiz.face.northNote": "Drag the room to move it. A phone compass is bent by metal and electronics by a few degrees, so compare it with the map.",
  "wiz.map.loading": "Asking OpenStreetMap for buildings.",
  "wiz.map.loaded": "{n} buildings loaded.",
+ "wiz.map.partial": "{n} of {total} buildings were kept: the ones that rise highest above your window. The rest rise less than {deg} degrees above it, so they only shade a sun lower than that. Load again after you change the floor number.",
  "wiz.map.empty": "OpenStreetMap has no buildings here. Add them by hand if there are any.",
  "wiz.map.failed": "Could not load buildings: {why}",
  "wiz.sur.intro": "Buildings and trees that stand between the window and the sun. Load the buildings around you, then correct their heights, and add what is missing.",

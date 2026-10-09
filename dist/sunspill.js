@@ -1248,7 +1248,7 @@ function outerRings(members) {
   }
   return closed;
 }
-function parseBuildings(json, center, { limit = OSM_LIMIT } = {}) {
+function parseBuildings(json, center, { limit = OSM_LIMIT, eye = 0 } = {}) {
   const found = [];
   for (const el of Array.isArray(json?.elements) ? json.elements : []) {
     const tags = el.tags || {};
@@ -1271,10 +1271,12 @@ function parseBuildings(json, center, { limit = OSM_LIMIT } = {}) {
   });
   const rank = (o) => {
     const dist = Math.min(...o.ring.map(([x, y]) => Math.hypot(x, y)));
-    return Math.atan2(o.h, Math.max(dist, 1));
+    return Math.atan2(o.h - eye, Math.max(dist, 1));
   };
   mapped.sort((a, b) => (b.own ? 1 : 0) - (a.own ? 1 : 0) || rank(b) - rank(a));
-  return { buildings: mapped.slice(0, limit), total: mapped.length };
+  const left = mapped.slice(limit);
+  const cutoff = left.length ? Math.max(0, Math.max(...left.map(rank)) * (180 / Math.PI)) : 0;
+  return { buildings: mapped.slice(0, limit), total: mapped.length, cutoff };
 }
 
 // src/core/wmm2025.js

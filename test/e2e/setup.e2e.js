@@ -436,6 +436,38 @@ test('surroundings: a tower drawn as stacked parts carries one height label, and
   await context.close()
 })
 
+test('surroundings: with more buildings than fit, the ones above the window are kept, and the page says what was left out', { skip: engine !== chromium }, async () => {
+  const center = { lat: 25.0288, lon: 121.5442 }
+  const ring = (east, north, size) => [[east, north], [east + size, north], [east + size, north + size], [east, north + size], [east, north]]
+    .map(([e, n]) => ({ lat: center.lat + n / 111195, lon: center.lon + e / (111320 * Math.cos((center.lat * Math.PI) / 180)) }))
+  // 35 houses of 20 m at 40 m and 35 blocks of 60 m at 150 m: from the ground the houses stand higher in the sky
+  const around = (distance, i) => [distance * Math.sin((i / 35) * 2 * Math.PI), distance * Math.cos((i / 35) * 2 * Math.PI)]
+  const elements = []
+  for (let i = 0; i < 35; i++) {
+    const [he, hn] = around(40, i)
+    elements.push({ type: 'way', id: 100 + i, tags: { building: 'yes', height: '20' }, geometry: ring(he, hn, 6) })
+    const [te, tn] = around(150, i)
+    elements.push({ type: 'way', id: 200 + i, tags: { building: 'yes', height: '60' }, geometry: ring(te, tn, 20) })
+  }
+  const { page, context } = await open({ answers: { overpass: JSON.stringify({ elements }) } })
+  await page.evaluate((c) => window.__sunspill.store.update((d) => { d.place = { name: 'Da-an', lat: c.lat, lon: c.lon, zone: 'Asia/Taipei' } }), center)
+  await openWizard(page, 4)
+  const blocks = async () => (await scene(page)).obstacles.filter((o) => o.h === 60).length
+  await page.click('#load-buildings')
+  await page.click('.modal button.primary')
+  await page.waitForFunction(() => window.__sunspill.store.scene.obstacles.length > 0)
+  assert.equal((await scene(page)).obstacles.length, 60)
+  assert.equal(await blocks(), 25, 'on the ground floor the houses come first')
+  assert.match(await page.locator('#partial-load').innerText(), /^60 of 70 buildings were kept: the ones that rise highest above your window\. The rest rise less than 22 degrees above it/)
+  // on the 8th floor the houses are below the window and the blocks are what matters
+  await page.evaluate(() => window.__sunspill.store.update((d) => { d.floor.n = 8 }))
+  await page.click('#load-buildings')
+  await page.waitForFunction(() => window.__sunspill.store.scene.obstacles.filter((o) => o.h === 60).length === 35)
+  assert.equal(await blocks(), 35)
+  assert.match(await page.locator('#partial-load').innerText(), /^60 of 70 buildings were kept/)
+  await context.close()
+})
+
 test('facing: the button lines the window wall up with a wall of the building that holds the room, and is hidden with no building', { skip: engine !== chromium }, async () => {
   const { page, context } = await open()
   await openWizard(page, 3)

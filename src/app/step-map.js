@@ -9,7 +9,7 @@ import { sunTimes } from '../core/solar.js'
 import { sunAt } from '../core/hours.js'
 import { sunInRoom } from '../core/room.js'
 import { shadingObstacles } from '../core/obstacles.js'
-import { WALLS, wallBearing, MAX_OBSTACLES } from '../core/room.js'
+import { WALLS, wallBearing, floorLift, MAX_OBSTACLES } from '../core/room.js'
 import { moveRoom, refreshOwn, blockRing, haversine, snapToOutline } from '../core/geo.js'
 import { openCompass, compassSupported } from './compass-ui.js'
 import { sunHoursInside } from './frame.js'
@@ -24,7 +24,10 @@ export async function loadBuildings(ctx) {
   const mine = ctx.loading
   toast(t('wiz.map.loading'))
   try {
-    const { buildings, total } = await net.buildings(asked, 200, mine.signal)
+    // a building lower than the lowest window sill cannot shade the window, so those are the last to be kept
+    const sills = store.scene.windows.map((w) => w.sill)
+    const eye = floorLift(store.scene) + (sills.length ? Math.min(...sills) : 0.9)
+    const { buildings, total, cutoff } = await net.buildings(asked, 200, mine.signal, { eye })
     // the answer is for the spot that was asked about, so it is dropped when the room has been put somewhere else since
     const now = store.scene.place
     if (mine.signal.aborted || haversine(asked, now) > 25) return false
@@ -35,6 +38,7 @@ export async function loadBuildings(ctx) {
       refreshOwn(d)
     })
     store.setUi({ obstacle: null })
+    ctx.partial = total > buildings.length ? { n: buildings.length, total, deg: Math.max(1, Math.ceil(cutoff)) } : null
     toast(total ? t('wiz.map.loaded', { n: buildings.length }) : t('wiz.map.empty'))
     ctx.map.invalidate()
     return true
@@ -179,6 +183,7 @@ export function surroundStep(ctx) {
   const status = h('p', { class: 'where' })
   const effect = h('p', { class: 'note', role: 'status' })
   const noSun = h('p', { class: 'note', id: 'no-sun' })
+  const partial = h('p', { class: 'note', id: 'partial-load' })
   const list = h('div', { class: 'obstacle-list' })
   const showAll = { on: false }
   let shape = ''
@@ -256,7 +261,7 @@ export function surroundStep(ctx) {
   const load = h('button', { class: 'btn primary block', type: 'button', id: 'load-buildings', onclick: async () => { load.disabled = true; await loadBuildings(ctx); load.disabled = false; shape = ''; sync() } }, t('wiz.face.outlines'))
   const el = h('section', { class: 'wiz-step' },
     h('p', {}, t('wiz.sur.intro')),
-    load, status, clockRow.el, shadeNow, effect, noSun, list,
+    load, status, partial, clockRow.el, shadeNow, effect, noSun, list,
     h('p', { class: 'note' }, t('wiz.sur.estNote')),
     h('details', { class: 'more' }, h('summary', {}, t('wiz.sur.addBlockTitle')),
       h('div', { class: 'grid2' }, field('nb-bearing', t('wiz.sur.bearing'), bIn.bearing), field('nb-dist', t('wiz.sur.distance'), bIn.dist), field('nb-width', t('wiz.sur.width'), bIn.width), field('nb-depth', t('wiz.sur.depth'), bIn.depth), field('nb-height', t('wiz.sur.height'), bIn.height)),
@@ -281,6 +286,7 @@ export function surroundStep(ctx) {
     const without = sunHoursInside({ ...s, obstacles: [] })
     effect.textContent = s.obstacles.some((o) => o.on) ? t('wiz.sur.effect', { date: dateText(s.date.month, s.date.day), a: duration(withIt), b: duration(without) }) : t('wiz.sur.effectNone', { date: dateText(s.date.month, s.date.day), b: duration(without) })
     noSun.textContent = without < 1 / 60 ? t('wiz.sur.noSun') : ''
+    partial.textContent = ctx.partial && s.obstacles.some((o) => o.src === 'osm') ? t('wiz.map.partial', ctx.partial) : ''
     addBlock.disabled = addTree.disabled = s.obstacles.length >= MAX_OBSTACLES
     map.selected = sel()
     map.invalidate()

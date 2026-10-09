@@ -46,7 +46,7 @@ All lengths are metres. The interface can show feet, but files and links always 
 | `windows[].balcony` | a balcony outside the window: `depth`, the height `rail` of a solid railing and `ext`, how far the railing reaches past each side. Or `null` | depth 0.3 to 4, rail 0 to 2, ext 0 to 3 |
 | `doors[]` | `wall`, `pos` and width `w`, drawn on the plan and in the room. A door lets no light in | up to 3, width 0.5 to 3 |
 | `place` | `lat` (-80 to 80), `lon`, and `zone`, an IANA name such as `Asia/Taipei` or a fixed offset such as `UTC+8` or `UTC-3:30` | |
-| `obstacles[]` | buildings and trees that cast shade, see below | up to 60 |
+| `obstacles[]` | buildings and trees that cast shade, see below | up to 80 |
 | `date` | month and day of the day shown. Year is fixed at 2026 for daylight saving rules | |
 | `minutes` | local time as minutes after midnight | 0 to 1439 |
 | `items[]` | `kind` (`bed`, `desk`, `sofa`, `table`, `plant`, `box`, `shelf`), position of the corner of the unturned box nearest the left and bottom walls, size and `rot`, the turn in degrees about its centre | up to 16 items, kept inside the room |

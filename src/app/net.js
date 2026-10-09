@@ -77,7 +77,7 @@ export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), w
     },
 
     /** Building outlines around a point, trying each Overpass server in turn. */
-    async buildings(center, radius = 200, signal) {
+    async buildings(center, radius = 200, signal, options) {
       if (!allowed('buildings')) throw new Refused('buildings')
       const body = new URLSearchParams({ data: buildingQuery(center.lat, center.lon, radius) })
       const failures = []
@@ -85,7 +85,7 @@ export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), w
         try {
           const json = await request(host + OVERPASS_PATH, { method: 'POST', body }, signal, 'buildings')
           if (!Array.isArray(json?.elements)) throw new Error('no elements in the answer')
-          return parseBuildings(json, center)
+          return parseBuildings(json, center, options)
         } catch (err) {
           if (signal?.aborted || err instanceof Refused) throw err
           failures.push(`${new URL(host).host}: ${err.message}`)

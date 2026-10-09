@@ -186,6 +186,32 @@ test('building parts replace the outline they sit in, and relations contribute t
   assert.equal(buildings.find((b) => b.id === 2).h, 40)
 })
 
+test('only the buildings that rise highest above the window are kept, and the page is told what was left out', () => {
+  const at = (east, north, size) => {
+    const p = [[east, north], [east + size, north], [east + size, north + size], [east, north + size], [east, north]]
+    return p.map(([e, n]) => ({ lat: n / 111195, lon: e / 111320 }))
+  }
+  const json = { elements: [
+    { type: 'way', id: 1, tags: { building: 'yes', height: '10' }, geometry: at(20, 0, 8) },
+    { type: 'way', id: 2, tags: { building: 'yes', height: '40' }, geometry: at(150, 0, 20) },
+    { type: 'way', id: 3, tags: { building: 'yes', height: '25' }, geometry: at(0, 90, 10) },
+  ] }
+  const center = { lat: 0, lon: 0 }
+  const deg = (h, d) => (Math.atan2(h, d) * 180) / Math.PI
+  // seen from the ground the house is the biggest (10 m at 20 m), then the 25 m block at 90 m, then the tower
+  const ground = parseBuildings(json, center, { limit: 1 })
+  assert.deepEqual(ground.buildings.map((b) => b.id), [1])
+  assert.equal(ground.total, 3)
+  assert.ok(Math.abs(ground.cutoff - deg(25, 90)) < 0.5, `cutoff ${ground.cutoff}`)
+  // seen from a window 15 m up the house is below it and the tower and the block are what matters
+  const high = parseBuildings(json, center, { limit: 2, eye: 15 })
+  assert.deepEqual(high.buildings.map((b) => b.id).sort(), [2, 3])
+  assert.equal(high.cutoff, 0, 'what was left out is lower than the window, so it shades nothing')
+  // nothing left out means nothing to say
+  assert.equal(parseBuildings(json, center).cutoff, 0)
+  assert.equal(parseBuildings(json, center).buildings.length, 3)
+})
+
 test('outlines are thinned to a small corner count that keeps their shape', () => {
   const circle = Array.from({ length: 200 }, (_, i) => [50 * Math.cos((i * 2 * Math.PI) / 200), 50 * Math.sin((i * 2 * Math.PI) / 200)])
   const fit = fitRing(circle)
