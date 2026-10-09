@@ -41,3 +41,20 @@ jobs:
       - run: npm run test:e2e
         env:
           BROWSER: ${{ matrix.browser }}
+
+  # Safari's engine, as an extra signal: touch drags need Chromium's input protocol, so those tests skip here.
+  webkit:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - run: npm run build
+      - run: npm run test:e2e
+        env:
+          BROWSER: webkit

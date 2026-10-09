@@ -528,6 +528,7 @@ chrome()
 panels.build()
 lastLocaleBuild = `${store.ui.units}|${locale()}`
 afterScene()
+el.canvas.setAttribute('aria-label', summary())
 if (store.ui.playing) dock.start()
 document.documentElement.dataset.ready = '1'
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {})

@@ -216,10 +216,17 @@ function drawDimensions(ctx, cam, scene, pal, fmt) {
       }
       ctx.stroke()
       const mid = point((a + b) / 2, lift + 0.32)
+      const text = fmt(b - a)
+      // a length that does not fit its stretch of wall is left unwritten, so neighbours never overprint each other
+      if (ctx.measureText(text).width + 8 > Math.hypot(q[0] - p[0], q[1] - p[1]) * 1.15) {
+        ctx.lineWidth = 1
+        ctx.strokeStyle = pal.muted
+        continue
+      }
       ctx.lineWidth = 3
       ctx.strokeStyle = pal.name === 'dark' ? 'rgba(11, 15, 28, 0.85)' : 'rgba(255, 250, 240, 0.9)'
-      ctx.strokeText(fmt(b - a), mid[0], mid[1])
-      ctx.fillText(fmt(b - a), mid[0], mid[1])
+      ctx.strokeText(text, mid[0], mid[1])
+      ctx.fillText(text, mid[0], mid[1])
       ctx.lineWidth = 1
       ctx.strokeStyle = pal.muted
     }

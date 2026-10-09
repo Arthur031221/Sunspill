@@ -33,6 +33,7 @@ export class Refused extends Error {
  * @param options.wait    (ms) => Promise, replaceable for tests
  */
 export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), wait = (ms) => new Promise((r) => setTimeout(r, ms)), now = () => Date.now(), timeout = 15000 } = {}) {
+  // a busy Overpass server takes about ten seconds to say so, which is long enough to wait before the next one is tried
   let lastSearch = 0
   let queue = Promise.resolve()
 

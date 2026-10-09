@@ -1596,11 +1596,16 @@ function applyHomography(H, [x, y]) {
 // src/core/templates.js
 var win = (wall, pos, w, h, sill, extra = {}) => ({ wall, pos, w, h, sill, eave: { depth: 0, gap: 0.15, ext: 0.3 }, across: null, balcony: null, ...extra });
 var balcony = (depth, rail = 1) => ({ depth, rail, ext: 0.3 });
+var covered = (b, ceiling, sill, h) => ({ depth: b.depth, gap: Math.round((ceiling - sill - h) * 100) / 100, ext: 0.3 });
+var balconyWindow = (wall, pos, w, h, sill, depth, ceiling) => {
+  const b = balcony(depth);
+  return win(wall, pos, w, h, sill, { balcony: b, eave: covered(b, ceiling, sill, h) });
+};
 var TEMPLATES = [
   {
     id: "studio",
     room: { w: 3.3, d: 5.2, h: 2.6, wall: 0.15 },
-    windows: [win("top", 0.45, 2.4, 2.1, 0, { balcony: balcony(1.2) })],
+    windows: [balconyWindow("top", 0.45, 2.4, 2.1, 0, 1.2, 2.6)],
     doors: [{ wall: "bottom", pos: 0.3, w: 0.9 }],
     items: [{ kind: "bed", x: 0.2, y: 2.6, w: 1.5, d: 1.9, h: 0.5 }, { kind: "desk", x: 2, y: 1.4, w: 1.2, d: 0.6, h: 0.75 }, { kind: "sofa", x: 0.2, y: 0.4, w: 1.8, d: 0.9, h: 0.8 }]
   },
@@ -1614,7 +1619,7 @@ var TEMPLATES = [
   {
     id: "master",
     room: { w: 3.6, d: 4.5, h: 2.6, wall: 0.15 },
-    windows: [win("top", 0.7, 2.2, 2.1, 0, { balcony: balcony(1.3) })],
+    windows: [balconyWindow("top", 0.7, 2.2, 2.1, 0, 1.3, 2.6)],
     doors: [{ wall: "bottom", pos: 0.25, w: 0.9 }],
     items: [{ kind: "bed", x: 0.9, y: 1.4, w: 1.8, d: 2, h: 0.5 }, { kind: "desk", x: 2.3, y: 0.3, w: 1.2, d: 0.6, h: 0.75 }, { kind: "shelf", x: 0.1, y: 0.2, w: 0.9, d: 0.5, h: 2.1 }]
   },
@@ -1628,14 +1633,14 @@ var TEMPLATES = [
   {
     id: "living",
     room: { w: 4, d: 5.6, h: 2.7, wall: 0.15 },
-    windows: [win("top", 0.6, 2.8, 2.1, 0, { balcony: balcony(1.5) })],
+    windows: [balconyWindow("top", 0.6, 2.8, 2.1, 0, 1.5, 2.7)],
     doors: [{ wall: "bottom", pos: 0.4, w: 1 }],
     items: [{ kind: "sofa", x: 0.9, y: 1.6, w: 2.2, d: 0.95, h: 0.8 }, { kind: "table", x: 1.3, y: 2.9, w: 1.2, d: 0.7, h: 0.45 }, { kind: "shelf", x: 0.1, y: 4.6, w: 1.6, d: 0.4, h: 1.8 }]
   },
   {
     id: "open",
     room: { w: 4.2, d: 7.2, h: 2.7, wall: 0.15 },
-    windows: [win("top", 0.7, 2.8, 2.1, 0, { balcony: balcony(1.5) }), win("left", 5.6, 1.2, 1.2, 1)],
+    windows: [balconyWindow("top", 0.7, 2.8, 2.1, 0, 1.5, 2.7), win("left", 5.6, 1.2, 1.2, 1)],
     doors: [{ wall: "bottom", pos: 0.5, w: 1 }],
     items: [{ kind: "sofa", x: 1, y: 5, w: 2.2, d: 0.95, h: 0.8 }, { kind: "table", x: 1.4, y: 3, w: 1.6, d: 0.9, h: 0.75 }, { kind: "plant", x: 3.6, y: 6.5, w: 0.35, d: 0.35, h: 1.1 }]
   },

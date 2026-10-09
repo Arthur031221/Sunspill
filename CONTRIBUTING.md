@@ -10,9 +10,19 @@ cd Sunspill
 npm ci
 npm run build
 npm test                                   # unit tests, about 5 seconds
-npx playwright install chromium firefox
-npm run test:e2e                           # browser tests; BROWSER=firefox for Firefox
+npx playwright install chromium firefox webkit
+npm run test:e2e                           # browser tests; BROWSER=firefox or BROWSER=webkit for the others
 node scripts/validate.mjs                  # the numbers quoted in docs/VALIDATION.md
+node scripts/sensitivity.mjs               # the numbers quoted in docs/ACCURACY.md
+```
+
+The reference data in `test/fixtures/` was made with Python and is committed, so the tests need no Python. To make it again:
+
+```sh
+python3 -m venv .venv && .venv/bin/pip install pvlib shapely pyproj pygeomag timezonefinder opencv-python-headless numpy pandas
+.venv/bin/python scripts/make-reference.py            # the sun, with pvlib
+.venv/bin/python scripts/make-geo-reference.py        # declination, compass, offsets, tiles, zones, homography
+.venv/bin/python scripts/make-obstacle-reference.py   # shadows of buildings, trees and rails, with pvlib and shapely
 ```
 
 `dist/` is committed and CI fails when it is stale, so run `npm run build` before you commit.
@@ -20,8 +30,9 @@ node scripts/validate.mjs                  # the numbers quoted in docs/VALIDATI
 ## Where things go
 
 - `src/core` is pure and has no dependencies. Keep it free of DOM calls so it runs in Node and in the browser, and cover every change with a unit test.
-- A change to the light model needs a test against a closed form case and the random comparison in `test/light.test.js` must stay at zero disagreements. If you add a modelling choice, say so in `docs/VALIDATION.md`.
-- `src/app` is the interface. Keep new controls keyboard reachable and give every string a key in `src/locales/en.json`.
+- A change to the light model needs a test against a closed form case, and the random comparisons in `test/light.test.js` and `test/obstacles.test.js`, including the one against the Python reference, must stay at zero disagreements. If you add a modelling choice, say so in `docs/VALIDATION.md`.
+- Anything that makes a request goes through `src/app/net.js`, behind a switch in `src/app/consent.js`, and its host is added to the list there. The page's Content Security Policy is built from that list. Keep `docs/PRIVACY.md` true.
+- `src/app` is the interface. Keep new controls keyboard reachable, make touch targets at least 44 pixels on a phone, and give every string a key in `src/locales/en.json` and all eight other languages.
 
 ## Add or fix a language
 
@@ -37,4 +48,4 @@ Plain code, no framework, comments only where the reason is not obvious. English
 
 ## Real rooms
 
-The model has not been compared with a photograph of a real room yet. If you can measure one, open an issue with the room file, the date, the place, the time and a photograph with a tape measure in the frame. A case like that is worth more than a new feature.
+The model has not been compared with a photograph of a real room yet. If you can measure one, open an issue with the room file (or the link), the date, the place, the time, the observation you marked in the check step and a photograph with a tape measure in the frame. A case like that is worth more than a new feature.

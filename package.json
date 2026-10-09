@@ -1,7 +1,7 @@
 {
   "name": "sunspill",
-  "version": "0.1.0",
-  "description": "Draw your room and its windows, then watch where the sun lands on the floor and walls by hour and season. Runs in the browser, sends nothing.",
+  "version": "0.2.0",
+  "description": "Set up your own room on a phone, then see where the sun lands on its floor by the hour and the season. Buildings and trees from OpenStreetMap, a check against the real sun. Your room stays in the browser.",
   "type": "module",
   "files": [
     "dist/sunspill.js",
@@ -16,7 +16,10 @@
     "test:e2e": "node --test --test-concurrency=1 test/e2e/*.e2e.js",
     "reference": "python3 scripts/make-reference.py",
     "assets": "node scripts/make-assets.mjs",
-    "demo": "node scripts/record-demo.mjs"
+    "demo": "node scripts/record-demo.mjs",
+    "demo:setup": "node scripts/record-setup-demo.mjs",
+    "validate": "node scripts/validate.mjs",
+    "sensitivity": "node scripts/sensitivity.mjs"
   },
   "author": "Arthur031221",
   "license": "MIT",
@@ -33,5 +36,15 @@
     "esbuild": "^0.28.2",
     "playwright": "1.63.0"
   },
-  "private": true
+  "private": true,
+  "keywords": [
+    "sunlight",
+    "sun-position",
+    "shadow",
+    "interior-design",
+    "openstreetmap",
+    "floor-plan",
+    "pwa",
+    "solar"
+  ]
 }

@@ -382,3 +382,7 @@ html[data-wizard] .stage-wrap { grid-template-rows: minmax(0, 1fr); }
   .tpl-grid { grid-template-columns: 1fr 1fr; }
   .wiz-nav .btn { min-height: 46px; }
 }
+
+/* the setup's Back and Next stay uncovered by the short messages */
+html[data-wizard] .toast { bottom: calc(92px + env(safe-area-inset-bottom)); }
+@media (min-width: 961px) { html[data-wizard] .toast { bottom: 24px; } }

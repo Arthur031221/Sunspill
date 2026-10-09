@@ -1,11 +1,11 @@
 import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
-import { chromium, firefox } from 'playwright'
+import { chromium, firefox, webkit } from 'playwright'
 import { readFileSync } from 'node:fs'
 import { serve } from '../serve.js'
 import { decodeGif } from '../helpers/gif-decode.js'
 
-const engine = process.env.BROWSER === 'firefox' ? firefox : chromium
+const engine = { firefox, webkit }[process.env.BROWSER] ?? chromium
 let site
 let browser
 
@@ -378,7 +378,7 @@ test('the compass dial and the bearing box turn the window to a new direction', 
   await context.close()
 })
 
-test('on a touch screen a finger drags a piece of furniture', { skip: engine === firefox }, async () => {
+test('on a touch screen a finger drags a piece of furniture', { skip: engine !== chromium }, async () => {
   const { page, context } = await open({ viewport: { width: 420, height: 900 }, isMobile: true, hasTouch: true })
   const spot = await page.evaluate(() => {
     const { stage } = window.__sunspill

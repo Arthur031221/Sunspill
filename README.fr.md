@@ -6,12 +6,13 @@
   Sunspill
 </h1>
 
-<p align="center"><strong>See where the sun lands in your room, by the hour and the season, before you rent, buy blinds or move a plant.</strong></p>
+<p align="center"><strong>Configurez votre propre pièce en quelques minutes et voyez où le soleil tombe sur son sol, heure par heure et saison par saison.</strong></p>
 
 <p align="center">
   <a href="https://github.com/Arthur031221/Sunspill/actions/workflows/ci.yml"><img src="https://github.com/Arthur031221/Sunspill/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-231b12?style=flat-square" alt="MIT license"></a>
   <a href="https://arthur031221.github.io/Sunspill/"><img src="https://img.shields.io/badge/live%20demo-open-f5a524?style=flat-square" alt="Live demo"></a>
+  <a href="https://github.com/Arthur031221/Sunspill/releases"><img src="https://img.shields.io/github/v/release/Arthur031221/Sunspill?style=flat-square&color=c2410c" alt="Latest release"></a>
   <a href="https://github.com/Arthur031221/Sunspill/stargazers"><img src="https://img.shields.io/github/stars/Arthur031221/Sunspill?style=flat-square&color=f5a524" alt="GitHub stars"></a>
 </p>
 
@@ -19,50 +20,79 @@
   <a href="README.md">English</a> | <a href="README.zh-TW.md">zh-TW</a> | <a href="README.zh-CN.md">zh-CN</a> | <a href="README.ja.md">ja</a> | <a href="README.ko.md">ko</a> | <a href="README.es.md">es</a> | <a href="README.fr.md">fr</a> | <a href="README.de.md">de</a> | <a href="README.pt-BR.md">pt-BR</a>
 </p>
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.png">
-    <img src="assets/hero-light.png" alt="Sunspill montrant une chambre orientée à l'ouest avec la tache de soleil de l'après-midi sur le sol et le lit" width="100%">
-  </picture>
-</p>
+<table align="center">
+  <tr>
+    <td valign="middle">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.png">
+        <img src="assets/hero-light.png" alt="Sunspill montrant une chambre orientée à l'ouest avec la tache de soleil de l'après-midi sur le sol et le lit" width="620">
+      </picture>
+    </td>
+    <td valign="middle"><img src="assets/setup.gif" alt="Sur un téléphone : on cherche une adresse, on choisit un type de pièce, on la tourne sur les bâtiments de la carte jusqu'à ce qu'elle donne sur la rue, et la tache de soleil traverse le sol" width="240"></td>
+  </tr>
+</table>
 
 <p align="center">
-  Hauteur du soleil à moins de <b>0,007 degré</b> de la référence NREL. <b>0 sur 3,77 millions</b> de points de test où la lumière de la fenêtre diffère d'un lancer de rayons indépendant.<br>
-  <sub>Soleil : 403 échantillons dans 15 villes, 5 jours et 6 heures, comparés à l'algorithme de position solaire du NREL via pvlib 0.16.1. L'azimut reste à moins de 0,06 degré. Lumière : 3 767 pièces aléatoires avec fenêtres, auvents, immeubles en face et épaisseur de mur, 5 graines, comparées à un lancer de rayons qui ne partage aucun code. <code>node scripts/validate.mjs</code> les reproduit, et <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> dit ce qui n'est pas vérifié.</sub>
+  Hauteur du soleil à moins de <b>0,007 degré</b> de la référence NREL. <b>0 désaccord sur 54 000 points de test</b> où bâtiments, arbres et balcons font de l'ombre à une fenêtre, face à pvlib et shapely.<br>
+  <sub>Chaque morceau de géométrie est comparé à une référence indépendante : le soleil (pvlib, NREL SPA), les ombres (un traceur de rayons et shapely), la déclinaison magnétique (pygeomag), les décalages sur la carte (pyproj) et la mise à plat des photos (OpenCV). <code>node scripts/validate.mjs</code> le reproduit et <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> liste ce qui n'est pas vérifié. Il n'a pas encore été comparé à la photo d'une vraie pièce, d'où un mode de contrôle qui compare le modèle à ce que vous avez vu. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> dit de combien chaque erreur déplace la tache.</sub>
 </p>
 
-Ce n'est ni un rendu ni une appli de réalité augmentée. La tache sur votre sol est un polygone exact, et on peut la vérifier avec un lancer de rayons.
+Ce n'est ni un rendu ni une application de réalité augmentée. La tache de soleil au sol est un polygone exact, et vous pouvez la comparer à un traceur de rayons.
 
-**[Ouvrir la démo en ligne](https://arthur031221.github.io/Sunspill/)** et faites glisser l'horloge. C'est gratuit, sans compte, rien n'est envoyé nulle part, et la page s'ouvre hors connexion après la première visite.
+**[Ouvrir la démo en ligne](https://arthur031221.github.io/Sunspill/)** . C'est gratuit, sans compte, et ça s'ouvre hors ligne après la première visite. Votre pièce reste dans votre navigateur. La recherche d'adresse, la carte et les contours de bâtiments interrogent OpenStreetMap, mais seulement après votre accord pour chacun.
 
-<p align="center"><img src="assets/demo.gif" alt="La tache de soleil d'une fenêtre ouest traversant le sol de la chambre quand on fait glisser l'horloge, puis la fenêtre tournée vers l'est sans soleil à l'intérieur, enfin une carte des heures de soleil" width="760"></p>
+## Configurer votre propre pièce
+
+Appuyez sur **Configurer ma pièce**. Sur un téléphone, il faut quelques minutes, en sept étapes avec des boutons Retour et Suivant.
+
+1. **Où.** Saisissez une adresse ou posez une épingle sur la carte OpenStreetMap. La latitude, la longitude et le fuseau horaire se remplissent seuls.
+2. **La pièce.** Partez d'un studio, d'une chambre, d'un salon ou d'un bureau typiques de Taïwan, ou décalquez votre plan ou la photo d'une annonce avec une échelle à deux points. Indiquez l'étage.
+3. **Fenêtres et portes.** Dimensions réelles le long des murs, avec aimantation aux bouts du mur, au milieu et entre elles, balcons avec garde-corps, auvents et portes.
+4. **Vers où ça donne.** Tournez la pièce sur le contour de votre immeuble dans la carte, ou posez le téléphone contre la fenêtre et lisez sa boussole avec la déclinaison magnétique ajoutée. Le nord reste toujours visible.
+5. **Ce qui l'entoure.** Les bâtiments voisins et leur hauteur viennent d'OpenStreetMap. Une hauteur estimée est marquée et modifiable. Ajoutez des bâtiments et des arbres à la main.
+6. **Meubles.** Placez, déplacez et tournez lits, bureaux, canapés, étagères et plantes, et regardez le soleil les atteindre.
+7. **Comparer au vrai soleil.** Marquez où se trouvait le soleil au sol à une heure que vous avez vue, ou posez une photo du sol sous le plan. Sunspill montre de combien le modèle s'écarte et ajuste l'orientation et la fenêtre à vos marques.
 
 ## Avant et après
 
-La même chambre à Taipei à 16 h 30 le 15 juillet. Tourner la fenêtre de l'ouest vers l'est change complètement l'après-midi.
+La même chambre à Taipei à 16:30 le 15 juillet. Tournez la fenêtre de l'ouest vers l'est et le soleil de l'après-midi disparaît.
 
 | Fenêtre à l'ouest | Fenêtre à l'est |
 | :---: | :---: |
 | <img src="assets/before.png" alt="Fenêtre à l'ouest avec la tache de soleil sur le sol et le lit" width="380"> | <img src="assets/after.png" alt="Fenêtre à l'est sans soleil à l'intérieur" width="380"> |
-| <b>4 h 28 min</b> de soleil direct par jour après 14 h | <b>0 min</b> |
+| <b>4 h 28 min</b> de soleil direct par jour après 14:00 | <b>0 min</b> |
 
-<sub>Moyenne par jour sur 40 jours échantillonnés de juin à septembre (un jour sur trois), ciel clair et soleil direct seulement, d'après la vérification du soleil de l'après-midi dans l'onglet Résultats. La règle est affichée dans l'appli.</sub>
+<sub>Moyenne par jour sur 40 jours d'échantillon de juin à septembre (un sur trois), ciel dégagé, soleil direct seulement, avec le contrôle du soleil de l'après-midi de l'onglet Résultats. La règle est imprimée dans l'application.</sub>
 
 ## Ce que vous pouvez faire
 
-- **Dessiner la pièce.** Dimensions, épaisseur des murs et jusqu'à quatre fenêtres, chacune avec un auvent ou un balcon au-dessus et un immeuble en face. Faites glisser les fenêtres le long de leur mur et les meubles sur le sol.
-- **Parcourir n'importe quel jour.** Choisissez un lieu dans la liste intégrée, votre position ou une latitude et une longitude. L'horloge, la trajectoire du soleil et la tache suivent, heure d'été comprise.
-- **Voir des heures, pas des impressions.** La carte des heures de soleil colorie le sol, ou une surface à la hauteur choisie, selon les heures de soleil direct par jour sur un jour, un mois, une année ou une plage de mois.
-- **Vérifier l'après-midi.** Une règle affichée, pas une note : les minutes après l'heure choisie où le soleil direct atteint le sol ou un mur, en moyenne sur les mois choisis.
-- **Trouver une place pour une plante.** Plein soleil, mi-ombre ou peu de lumière, pour une assise de 30 cm, avec les meilleures places d'abord, à 60 cm au moins les unes des autres.
-- **Partager.** Un lien qui contient toute la pièce, une carte PNG, un GIF ou un fichier JSON. Un interrupteur arrondit le lieu à des degrés entiers et retire son nom.
-- **Partout.** Neuf langues, thèmes clair et sombre, clavier et tactile, mise en page mobile, annuler et rétablir, et usage hors connexion après la première visite.
+- **Dessiner la pièce.** Taille, épaisseur des murs, jusqu'à quatre fenêtres avec auvent, balcon et garde-corps, jusqu'à trois portes, l'étage et des meubles que l'on peut tourner.
+- **Parcourir n'importe quel jour.** Choisissez une ville, une adresse, votre position ou une latitude et une longitude. L'horloge, la course du soleil et la tache suivent, heure d'été comprise.
+- **Voir ce qui fait de l'ombre.** Bâtiments d'OpenStreetMap avec leur hauteur, arbres, et votre propre balcon et auvent. Coupez-les un à un pour voir ce qu'ils coûtent en heures de soleil.
+- **Voir des heures, pas des suppositions.** La carte des heures de soleil colore le sol, ou une surface à la hauteur choisie, selon les heures de soleil direct par jour.
+- **Vérifier l'après-midi.** Une règle imprimée, pas une note : les minutes après une heure choisie où le soleil direct atteint le sol ou un mur.
+- **Trouver une place pour une plante.** Plein soleil, soleil partiel ou peu de lumière, classées.
+- **Comparer à la réalité.** Marquez la tache que vous avez vue, voyez le recouvrement et l'écart en centimètres, et ajustez l'orientation.
+- **Partager.** Un lien qui contient toute la pièce, une carte PNG, un GIF, ou la pièce en fichier JSON. Un interrupteur arrondit le lieu à des degrés entiers et retire son nom.
+- **L'utiliser partout.** Neuf langues, thèmes clair et sombre, clavier et tactile, annuler et rétablir, hors ligne après la première visite.
 
-Ce qui n'est pas inclus : reflets, lumière diffuse du ciel et ombres des meubles. Ciel clair et soleil direct seulement. Le modèle n'a pas encore été comparé à la photo d'une vraie pièce. Si vous pouvez en prendre une, ouvrez un ticket.
+Ne sont pas inclus : les reflets, la lumière du ciel, les ombres des meubles. Ciel dégagé et soleil direct seulement. Les bâtiments sont des prismes à toit plat et les arbres donnent une ombre pleine. Le modèle n'a pas encore été comparé à la photo d'une vraie pièce. Si vous pouvez en prendre une, ouvrez une issue.
+
+## Vie privée
+
+Votre pièce, les images que vous décalquez et les marques que vous faites ne quittent pas votre navigateur. Pas de compte, pas de mesure d'audience, pas de cookie. Trois services facultatifs parlent à des serveurs d'OpenStreetMap, chacun désactivé tant que vous ne l'autorisez pas, et la page dit d'abord ce qu'il envoie :
+
+| Service | Ce qu'il envoie |
+| --- | --- |
+| Recherche d'adresse (Nominatim) | le texte que vous saisissez |
+| Images de la carte (tuiles OpenStreetMap) | la partie de la carte que vous regardez |
+| Contours de bâtiments (Overpass) | la position de la pièce, à un mètre près |
+
+Vous pouvez désactiver chacun dans « Services en ligne ». La politique de sécurité de contenu de la page ne nomme que ces hôtes, et les tests du navigateur le vérifient. Voir [docs/PRIVACY.md](docs/PRIVACY.md).
 
 ## Installation
 
-Ouvrez <https://arthur031221.github.io/Sunspill/> dans le navigateur, rien à installer. Pour le lancer vous-même :
+Ouvrez <https://arthur031221.github.io/Sunspill/> dans le navigateur. Rien à installer. Pour l'exécuter vous-même :
 
 ```sh
 git clone https://github.com/Arthur031221/Sunspill.git
@@ -74,8 +104,8 @@ npx --yes serve dist
 
 ## Documentation
 
-La documentation est en anglais. [Usage](docs/USAGE.md) | [Install](docs/INSTALL.md) | [Config and file format](docs/CONFIG.md) | [Library API](docs/API.md) | [Architecture](docs/ARCHITECTURE.md) | [Validation](docs/VALIDATION.md) | [Contributing](CONTRIBUTING.md)
+La documentation est en anglais. [Usage](docs/USAGE.md) | [Privacy](docs/PRIVACY.md) | [Accuracy](docs/ACCURACY.md) | [Validation](docs/VALIDATION.md) | [Install](docs/INSTALL.md) | [Config and file format](docs/CONFIG.md) | [Library API](docs/API.md) | [Architecture](docs/ARCHITECTURE.md) | [Contributing](CONTRIBUTING.md) | [Changelog](CHANGELOG.md)
 
-## Licence
+## Licence et données
 
-MIT. La police Fraunces est intégrée sous la SIL Open Font License, voir [THIRD_PARTY.md](THIRD_PARTY.md).
+MIT. La police Fraunces intégrée est sous SIL Open Font License. Les images de la carte, les contours de bâtiments et la recherche d'adresse viennent des contributeurs d'OpenStreetMap et sont sous Open Database License. La table des fuseaux horaires est `@photostructure/tz-lookup` (CC0) et le modèle du champ magnétique est le World Magnetic Model 2025 (domaine public). Voir [THIRD_PARTY.md](THIRD_PARTY.md).

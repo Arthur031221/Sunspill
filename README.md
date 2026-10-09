@@ -6,12 +6,13 @@
   Sunspill
 </h1>
 
-<p align="center"><strong>See where the sun lands in your room, by the hour and the season, before you rent, buy blinds or move a plant.</strong></p>
+<p align="center"><strong>Set up your own room in a few minutes, then see where the sun lands on its floor, by the hour and the season.</strong></p>
 
 <p align="center">
   <a href="https://github.com/Arthur031221/Sunspill/actions/workflows/ci.yml"><img src="https://github.com/Arthur031221/Sunspill/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-231b12?style=flat-square" alt="MIT license"></a>
   <a href="https://arthur031221.github.io/Sunspill/"><img src="https://img.shields.io/badge/live%20demo-open-f5a524?style=flat-square" alt="Live demo"></a>
+  <a href="https://github.com/Arthur031221/Sunspill/releases"><img src="https://img.shields.io/github/v/release/Arthur031221/Sunspill?style=flat-square&color=c2410c" alt="Latest release"></a>
   <a href="https://github.com/Arthur031221/Sunspill/stargazers"><img src="https://img.shields.io/github/stars/Arthur031221/Sunspill?style=flat-square&color=f5a524" alt="GitHub stars"></a>
 </p>
 
@@ -19,27 +20,42 @@
   <a href="README.md">English</a> | <a href="README.zh-TW.md">zh-TW</a> | <a href="README.zh-CN.md">zh-CN</a> | <a href="README.ja.md">ja</a> | <a href="README.ko.md">ko</a> | <a href="README.es.md">es</a> | <a href="README.fr.md">fr</a> | <a href="README.de.md">de</a> | <a href="README.pt-BR.md">pt-BR</a>
 </p>
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.png">
-    <img src="assets/hero-light.png" alt="Sunspill showing a west facing bedroom with the afternoon sun patch across the floor and the bed" width="100%">
-  </picture>
-</p>
+<table align="center">
+  <tr>
+    <td valign="middle">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.png">
+        <img src="assets/hero-light.png" alt="Sunspill showing a west facing bedroom with the afternoon sun patch across the floor and the bed" width="620">
+      </picture>
+    </td>
+    <td valign="middle"><img src="assets/setup.gif" alt="On a phone: an address is searched, a room type picked, the room turned over the buildings on the map until it faces the street, and the sun patch crosses the floor" width="240"></td>
+  </tr>
+</table>
 
 <p align="center">
-  Sun elevation within <b>0.007 degrees</b> of the NREL reference. <b>0 of 3.77 million</b> probe points where the window light disagrees with an independent ray tracer.<br>
-  <sub>Sun: 403 samples in 15 cities, 5 days and 6 times of day, against the NREL Solar Position Algorithm through pvlib 0.16.1. Azimuth is within 0.06 degrees. Light: 3,767 random rooms with windows, shades, buildings across the street and wall thickness, 5 seeds, compared with a ray tracer that shares no code with it. <code>node scripts/validate.mjs</code> reproduces both. <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lists what isn't checked.</sub>
+  Sun elevation within <b>0.007 degrees</b> of the NREL reference. <b>0 disagreements in 54,000 probe points</b> where buildings, trees and balconies shade a window, against pvlib and shapely.<br>
+  <sub>Every geometry piece is compared with an independent reference, from the sun (pvlib, NREL SPA) and the shadows (a ray tracer and shapely) to the magnetic declination (pygeomag), the map offsets (pyproj) and the photo flattening (OpenCV). <code>node scripts/validate.mjs</code> reproduces it, and <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lists the choices that aren't checked. It hasn't been compared with a photograph of a real room yet, so there's a check mode that compares the model with what you saw. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> says how far each wrong input moves the patch.</sub>
 </p>
 
 It isn't a rendering or an AR app. The patch on your floor is an exact polygon, and you can check it against a ray tracer.
 
-**[Open the live demo](https://arthur031221.github.io/Sunspill/)** and drag the clock. It's free, needs no login, sends nothing anywhere and opens offline after the first visit.
+**[Open the live demo](https://arthur031221.github.io/Sunspill/)**. It's free, needs no login and opens offline after the first visit. Your room stays in your browser. Address search, the map and building outlines ask OpenStreetMap, but only after you say yes to each one.
 
-<p align="center"><img src="assets/demo.gif" alt="The sun patch from a west window crossing a bedroom floor as the clock is dragged, then the window turned east so no sun comes in, then a sun hours map" width="760"></p>
+## Set up your own room
+
+Press **Set up my room**. On a phone it takes a few minutes, in seven steps with a Back and a Next button.
+
+1. **Where.** Type an address or drop a pin on the OpenStreetMap map. The latitude, longitude and time zone fill in by themselves.
+2. **The room.** Start from a typical Taiwanese studio suite, bedroom, living room or home office, or trace your own floor plan or listing photo with a two point scale. Set the floor number.
+3. **Windows and doors.** Real dimensions along the walls, snapping to the wall ends, the middle and each other, balconies with a railing, eaves and doors.
+4. **Which way it faces.** Turn the room over the outline of your building on the map, or hold the phone against the window and read its compass with the magnetic declination added. North is always on screen.
+5. **What stands around it.** Neighbouring buildings and their heights load from OpenStreetMap. A height that was guessed is marked and can be edited. Add buildings and trees by hand.
+6. **Furniture.** Place, drag and turn beds, desks, sofas, shelves and plants, and see the sun land on them.
+7. **Check against the real sun.** Mark where the sun really was on the floor at a time you saw it, or lay a photo of the floor under the plan. Sunspill shows how far the model is off and can fit the facing and the window to your marks.
 
 ## Before and after
 
-The same bedroom in Taipei at 16:30 on 15 July. Turn the window from west to east and the afternoon changes completely.
+The same bedroom in Taipei at 16:30 on 15 July. Turn the window from west to east and the afternoon sun is gone.
 
 | West window | East window |
 | :---: | :---: |
@@ -52,7 +68,7 @@ The same bedroom in Taipei at 16:30 on 15 July. Turn the window from west to eas
 
 > *West sun is a standing worry for people who rent in Taiwan, and a listing photo cannot show what it will do in your room.*
 
-A compass app gives you an angle. A map shadow tool draws the buildings in the street. Neither shows the patch of light on the floor of the room you're about to sign for. Sunspill does. You describe the room, the window and the shade above it, pick a place and a date, and the patch moves as you drag the clock. The same engine answers the other questions people ask about light: how many hours a desk or a plant gets, and which corner is best.
+A compass app gives you an angle. A map shadow tool draws the buildings in the street. Neither shows the patch of light on the floor of the room you're about to sign for. Sunspill does. You describe the room, the window and what stands outside, pick a place and a date, and the patch moves as you drag the clock. The same engine answers the other questions people ask about light: how many hours a desk or a plant gets, and which corner is best.
 
 ## What it makes
 
@@ -65,24 +81,38 @@ A compass app gives you an angle. A map shadow tool draws the buildings in the s
   </tr>
 </table>
 
-*New in 0.1: 1080 by 1350 share cards, a 540 pixel GIF of the sun crossing the room, the sun hours map, the afternoon check, a plant spot finder, nine languages and a library for the sun and light code.*
+*New in 0.2: a guided setup for a phone, address search and a map pin, the phone compass with declination, neighbouring buildings and trees from OpenStreetMap, balconies, doors, floors and turned furniture, tracing a floor plan, and a check against the sun you saw.*
 
 ## What you can do
 
-- **Draw the room.** Size, wall thickness, up to four windows, and for each window a shade or balcony above it and a building across the street. Drag windows along their walls and furniture across the floor.
-- **Scrub any day.** Pick a city from the built-in list, your location or a latitude and longitude. The clock, the sun path and the patch follow, with daylight saving handled.
+- **Draw the room.** Size, wall thickness, up to four windows with a shade, a balcony and a rail, up to three doors, the floor number and furniture you can turn.
+- **Scrub any day.** Pick a city, an address, your location or a latitude and longitude. The clock, the sun path and the patch follow, with daylight saving handled.
+- **See what shades it.** Buildings from OpenStreetMap with their heights, trees, and your own balcony and eave. Switch any of them off to see what it costs in hours of sun.
 - **See hours, not guesses.** The sun hours map colours the floor, or a surface at a height you set, by the hours of direct sun per day for a day, a month, a year or a range of months. Hover for the number.
 - **Check the afternoon.** A printed rule, not a score: the minutes after a time you choose when direct sun reaches the floor or a wall, averaged over the months you choose.
 - **Find a spot for a plant.** Full sun, partial sun or low light, for a 30 cm footprint, ranked, at least 60 cm apart.
-- **Share it.** A link that holds the whole room, a PNG card, a GIF, or the room as a JSON file. One switch rounds the place to whole degrees and drops its name from all of them.
-- **Use it anywhere.** Nine languages, light and dark themes, keyboard and touch, phone layout, undo and redo, offline after the first visit.
+- **Compare with reality.** Mark the patch you saw, see the overlap and the offset in centimetres, and fit the direction.
+- **Share it.** A link that holds the whole room, a PNG card, a GIF, or the room as a JSON file. One switch rounds the place to whole degrees and drops the names from all of them.
+- **Use it anywhere.** Nine languages, light and dark themes, keyboard and touch, undo and redo, offline after the first visit.
+
+## Privacy
+
+Your room, the pictures you trace and the marks you make never leave your browser. There's no account, no analytics and no cookie. Three optional services talk to OpenStreetMap servers, each off until you allow it, with the page saying what it sends first:
+
+| Service | Sends |
+| --- | --- |
+| Address search (Nominatim) | the text you type |
+| Map pictures (OpenStreetMap tiles) | the part of the map you look at |
+| Building outlines (Overpass) | the position of the room, to about one metre |
+
+You can switch each one off again under "Online services". The page's Content Security Policy names those four hosts and no others, and the browser tests check it. See [docs/PRIVACY.md](docs/PRIVACY.md).
 
 ## Install
 
 <details>
 <summary><b>In the browser (recommended)</b></summary>
 
-Open <https://arthur031221.github.io/Sunspill/>. Nothing to install. After one visit it opens with no connection. CI tests it in Chromium and Firefox. Safari isn't tested.
+Open <https://arthur031221.github.io/Sunspill/>. Nothing to install. After one visit it opens with no connection. CI tests it in Chromium and Firefox and runs WebKit as an extra check. A real iPhone hasn't been tried.
 </details>
 
 <details>
@@ -100,7 +130,7 @@ npx --yes serve dist
 <details>
 <summary><b>On your own site</b></summary>
 
-Copy `dist/index.html` and `dist/sw.js` to any static host. The page asks for no network access at all, so it works under a strict Content Security Policy. See [docs/INSTALL.md](docs/INSTALL.md).
+Copy `dist/index.html` and `dist/sw.js` to any static host. Only the three optional services above reach out, and they stay off until you allow them. See [docs/INSTALL.md](docs/INSTALL.md).
 </details>
 
 <details>
@@ -124,22 +154,22 @@ No dependencies, no DOM, runs in Node 20 or newer and in the browser. See [docs/
 
 ## How it works
 
-The sun position follows the NOAA equations. A window opening is trimmed by the wall thickness and the shadows of the shade and the building across the street, which leaves a few convex pieces. Each piece is carried along the sun rays onto the floor and walls and clipped there. The room is convex, so a ray that gets in meets the boundary once and nothing inside can block it. Hours come from stamping those patches onto a grid through the day. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the details and [docs/VALIDATION.md](docs/VALIDATION.md) says what was compared with what.
+The sun position follows the NOAA equations. A window opening is trimmed by the wall thickness and the shadows of the eave, the balcony rail, and every building and tree outside, which leaves a few convex pieces. Each piece is carried along the sun rays onto the floor and walls and clipped there. A building outline of any shape is cut into convex prisms first, and the shadow of a prism on the window is the hull of its corners carried along the rays. The room is convex, so a ray that gets in meets the boundary once and nothing inside can block it. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the details.
 
-What it leaves out is listed on the page and on every picture it exports: clear sky and direct sun only, no reflections, no furniture shadows, one box shaped room. Beams almost parallel to a wall are ignored. I have not compared the model with a photograph of a real room yet. If you can take one, [please open an issue](CONTRIBUTING.md#real-rooms).
+What it leaves out is listed on the page and on every picture it exports: clear sky and direct sun only, no reflections, no furniture shadows, one box shaped room, buildings as flat topped prisms and trees as solid shade. Beams almost parallel to a wall are ignored. If you can photograph a room under a sun you can date, [please open an issue](CONTRIBUTING.md#real-rooms).
 
 ## Docs
 
-[Usage](docs/USAGE.md) | [Install](docs/INSTALL.md) | [Config and file format](docs/CONFIG.md) | [Library API](docs/API.md) | [Architecture](docs/ARCHITECTURE.md) | [Validation](docs/VALIDATION.md) | [Contributing](CONTRIBUTING.md)
+[Usage](docs/USAGE.md) | [Privacy](docs/PRIVACY.md) | [Accuracy](docs/ACCURACY.md) | [Validation](docs/VALIDATION.md) | [Install](docs/INSTALL.md) | [Config and file format](docs/CONFIG.md) | [Library API](docs/API.md) | [Architecture](docs/ARCHITECTURE.md) | [Contributing](CONTRIBUTING.md) | [Changelog](CHANGELOG.md)
 
 ## Planned
 
-L shaped rooms. Tracing a wall on a satellite map to set the direction. Vertical fins and blinds. Shadows from furniture. A comparison with a photographed room. Published npm package.
+L shaped rooms. Vertical fins and blinds. Shadows from furniture. A comparison with photographed rooms. Leaf-off seasons for trees. Published npm package.
 
 ## Related tools
 
 [SunCalc](https://github.com/mourner/suncalc) gives sun angles as a library. Sunspill uses its own NOAA implementation, checked against NREL. [building-sunlight-simulator](https://github.com/SeanWong17/building-sunlight-simulator) shows building shadows for housing estates. The [Flat Sun and Shade Simulator](https://www.smartcalculator.sg/housing/flat-sun-shade-simulator) covers flats in Singapore. Sunspill is for the inside of one room, anywhere, with the code open.
 
-## License
+## License and data
 
-MIT. The Fraunces font is embedded under the SIL Open Font License. See [THIRD_PARTY.md](THIRD_PARTY.md).
+MIT. The Fraunces font is embedded under the SIL Open Font License. Map pictures, building outlines and address search come from OpenStreetMap contributors and are under the Open Database License. The time zone table is `@photostructure/tz-lookup` (CC0) and the magnetic field model is the World Magnetic Model 2025 (public domain). See [THIRD_PARTY.md](THIRD_PARTY.md).

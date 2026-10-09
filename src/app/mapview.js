@@ -140,7 +140,7 @@ export class MapView {
     if (mode === 'pin') this.cam.zoom = this.pinZoom ?? 16
     else {
       // show about sixty metres across, so the room and the buildings round it are both visible
-      const ppm = Math.min(this.width, this.height) / (mode === 'surround' ? 140 : 60)
+      const ppm = Math.min(this.width, this.height) / (mode === 'surround' ? 140 : 45)
       this.cam.zoom = Math.log2(ppm * 40075016.686 * Math.cos(place.lat * RAD) / TILE)
     }
     this.invalidate()
@@ -309,7 +309,12 @@ export class MapView {
         this.path(ctx, pts)
         ctx.fill()
         ctx.stroke()
-        if (ppm >= 1.6 || picked) {
+        // a height is written on a building only when the building is big enough on screen to carry it
+        const xs = pts.map((p) => p[0])
+        const ys = pts.map((p) => p[1])
+        const wide = Math.max(...xs) - Math.min(...xs)
+        const high = Math.max(...ys) - Math.min(...ys)
+        if (picked || (wide >= 46 && high >= 22)) {
           const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length
           const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length
           ctx.setLineDash([])
