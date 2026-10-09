@@ -1,4 +1,4 @@
-const CACHE = 'sunspill-b4cba263d9'
+const CACHE = 'sunspill-c2a871babf'
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['./'])).then(() => self.skipWaiting()))
 })

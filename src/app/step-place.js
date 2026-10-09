@@ -28,7 +28,7 @@ export function placeStep(ctx) {
   let generation = 0
 
   /** Move the room to a place: the name, the point and the time zone together. */
-  function choose(place) {
+  function choose(place, { recentre = true } = {}) {
     const old = store.scene.place
     const zone = (isZone(place.zone) && place.zone) || zoneAt(place.lat, place.lon) || old.zone
     store.update((d) => {
@@ -39,7 +39,8 @@ export function placeStep(ctx) {
     ctx.actions.afterPlace()
     results.replaceChildren()
     status.textContent = ''
-    map.fit('pin')
+    // a result from the search brings the map to it, a tap on the map leaves the view where the person put it
+    if (recentre) map.fit('pin')
   }
 
   function row(place, tag) {
@@ -111,7 +112,7 @@ export function placeStep(ctx) {
   map.on.pin = (lat, lon) => {
     const old = store.scene.place
     const close = haversine(old, { lat, lon }) < 150
-    choose({ name: close ? old.name : t('wiz.place.pin'), lat: Math.round(lat * 1e5) / 1e5, lon: Math.round(lon * 1e5) / 1e5 })
+    choose({ name: close ? old.name : t('wiz.place.pin'), lat: Math.round(lat * 1e5) / 1e5, lon: Math.round(lon * 1e5) / 1e5 }, { recentre: false })
     toast(t('wiz.place.pinned'))
   }
 

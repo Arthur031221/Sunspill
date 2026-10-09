@@ -61,7 +61,7 @@ button { cursor: pointer; }
 .skip:focus { left: 8px; }
 [hidden] { display: none !important; }
 
-.app { display: grid; grid-template-rows: auto 1fr; min-height: 100dvh; }
+.app { display: grid; grid-template-rows: auto 1fr; grid-template-columns: minmax(0, 1fr); min-height: 100dvh; }
 
 /* top bar */
 .top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; }
@@ -273,7 +273,7 @@ input[type="text"], input[type="search"], input[type="time"], input[type="url"],
 .dial:focus-visible .ring { stroke: var(--focus); stroke-width: 4; }
 
 /* guided setup */
-.setup { margin-left: 4px; white-space: nowrap; height: 36px; box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 30%, transparent); }
+.setup { margin-left: 4px; min-height: 36px; height: auto; padding-top: 5px; padding-bottom: 5px; line-height: 1.2; max-width: 100%; box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 30%, transparent); }
 .wizard {
   display: none; flex-direction: column; min-height: 0; background: var(--surface); border: 1px solid var(--line);
   border-radius: 22px; box-shadow: var(--shadow); overflow: hidden;
@@ -386,3 +386,12 @@ html[data-wizard] .stage-wrap { grid-template-rows: minmax(0, 1fr); }
 /* the setup's Back and Next stay uncovered by the short messages */
 html[data-wizard] .toast { bottom: calc(92px + env(safe-area-inset-bottom)); }
 @media (min-width: 961px) { html[data-wizard] .toast { bottom: 24px; } }
+
+/* a wide system font, a long language name or a narrow phone must wrap the header, never widen the page */
+.app > *, .layout > *, .top > * { min-width: 0; }
+.top-tools { flex-wrap: wrap; row-gap: 6px; }
+@media (max-width: 960px) {
+  .select { max-width: min(150px, 42vw); }
+  .top-tools { max-width: 100%; }
+  html[data-wizard] .top-tools { flex-wrap: wrap; justify-content: flex-end; }
+}

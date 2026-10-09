@@ -44,4 +44,4 @@ See [API.md](API.md) for every export.
 ## Requirements
 
 - Any browser from the last two years (Chrome, Edge, Firefox, Safari). The page needs canvas, `Intl.DateTimeFormat` with time zones and ES2022. The phone compass needs a browser that shares `DeviceOrientation`, and iOS asks permission first.
-- To build or test: Node 20 or newer. The browser tests use Playwright, installed by `npm ci`, and download Chromium, Firefox and WebKit with `npx playwright install chromium firefox webkit`.
+- To build or test: Node 20 or newer. The browser tests use Playwright, installed by `npm ci`, and download Chromium and Firefox with `npx playwright install chromium firefox`.

@@ -172,7 +172,7 @@ export class PictureCanvas {
       if (c.hasPointerCapture(e.pointerId)) c.releasePointerCapture(e.pointerId)
       const d = this.drag
       if (this.pointers.size === 0) this.drag = null
-      if (cancelled || !known || !d || d.kind !== 'pan' || d.moved > 6 || performance.now() - known.at > 700 || !this.image) return
+      if (cancelled || !known || !d || d.kind !== 'pan' || d.moved > 6 || performance.now() - known.at > 1000 || !this.image) return
       const pic = this.toPicture([known.x, known.y])
       if (pic[0] >= 0 && pic[1] >= 0 && pic[0] <= this.image.width && pic[1] <= this.image.height) this.onTap?.(pic)
     }

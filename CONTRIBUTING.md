@@ -10,8 +10,8 @@ cd Sunspill
 npm ci
 npm run build
 npm test                                   # unit tests, about 5 seconds
-npx playwright install chromium firefox webkit
-npm run test:e2e                           # browser tests; BROWSER=firefox or BROWSER=webkit for the others
+npx playwright install chromium firefox
+npm run test:e2e                           # browser tests; BROWSER=firefox for Firefox
 node scripts/validate.mjs                  # the numbers quoted in docs/VALIDATION.md
 node scripts/sensitivity.mjs               # the numbers quoted in docs/ACCURACY.md
 ```

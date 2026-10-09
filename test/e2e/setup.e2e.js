@@ -241,6 +241,7 @@ test('a tap on the map drops the pin: latitude, longitude and the zone of that s
     map.cam = { lat: -33.8688, lon: 151.2093, zoom: 13 }
     map.invalidate()
   })
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))
   const [x, y] = await centerOf(page, '.map-canvas')
   await page.touchscreen.tap(x, y)
   const s = await scene(page)
@@ -248,6 +249,7 @@ test('a tap on the map drops the pin: latitude, longitude and the zone of that s
   assert.equal(s.place.zone, 'Australia/Sydney')
   assert.equal(s.place.name, 'Pin')
   // a second tap 300 pixels away moves it again, and the coordinates have five decimals
+  await page.waitForTimeout(700) // two quick taps are a double tap, which zooms
   await page.touchscreen.tap(x + 100, y - 60)
   const t = await scene(page)
   assert.ok(Math.abs(t.place.lat - s.place.lat) > 0.001)

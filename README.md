@@ -112,7 +112,7 @@ You can switch each one off again under "Online services". The page's Content Se
 <details>
 <summary><b>In the browser (recommended)</b></summary>
 
-Open <https://arthur031221.github.io/Sunspill/>. Nothing to install. After one visit it opens with no connection. CI tests it in Chromium and Firefox and runs WebKit as an extra check. A real iPhone hasn't been tried.
+Open <https://arthur031221.github.io/Sunspill/>. Nothing to install. After one visit it opens with no connection. CI tests it in Chromium and Firefox. Safari and a real iPhone haven't been tried, so the phone compass in particular is untested on iOS.
 </details>
 
 <details>
@@ -164,7 +164,7 @@ What it leaves out is listed on the page and on every picture it exports: clear 
 
 ## Planned
 
-L shaped rooms. Vertical fins and blinds. Shadows from furniture. A comparison with photographed rooms. Leaf-off seasons for trees. Published npm package.
+L shaped rooms. Vertical fins and blinds. Shadows from furniture. A comparison with photographed rooms. Leaf-off seasons for trees. Tests on Safari and a real iPhone. Published npm package.
 
 ## Related tools
 

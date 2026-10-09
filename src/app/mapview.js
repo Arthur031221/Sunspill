@@ -634,7 +634,7 @@ export class MapView {
     const g = this.gesture
     if (this.pointers.size === 0) this.gesture = null
     else if (this.pointers.size === 1 && g?.kind === 'pinch') this.gesture = { kind: 'pan', moved: 99 }
-    if (cancelled || !known || !g || g.kind === 'pinch' || g.moved > 6 || performance.now() - known.at > 700) return
+    if (cancelled || !known || !g || g.kind === 'pinch' || g.moved > 6 || performance.now() - known.at > 1000) return
     // a tap
     const x = known.x
     const y = known.y
