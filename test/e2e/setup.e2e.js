@@ -169,6 +169,7 @@ test('address search asks first, says who gets the text, and sets place and time
   assert.equal(outside[0].method, 'GET')
   assert.equal(outside[0].body, null)
   await page.click('.result-list >> text=台北101')
+  assert.equal(await page.evaluate(() => document.activeElement.className), 'where', 'the focus does not fall to the page when the list goes')
   const s = await scene(page)
   assert.ok(Math.abs(s.place.lat - 25.0338352) < 1e-6 && Math.abs(s.place.lon - 121.5644995) < 1e-6, `${s.place.lat}, ${s.place.lon}`)
   assert.equal(s.place.zone, 'Asia/Taipei')

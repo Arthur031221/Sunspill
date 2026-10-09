@@ -23,7 +23,7 @@ export function placeStep(ctx) {
   const input = h('input', { type: 'search', id: 'place-q', placeholder: t('wiz.place.placeholder'), 'aria-label': t('wiz.place.placeholder'), autocomplete: 'off', enterKeyHint: 'search', maxLength: 200 })
   const results = h('ul', { class: 'result-list', 'aria-label': t('wiz.place.results') })
   const status = h('p', { class: 'note', role: 'status' })
-  const where = h('p', { class: 'where', 'aria-live': 'polite' })
+  const where = h('p', { class: 'where', 'aria-live': 'polite', tabIndex: -1 })
   let abort = null
   let generation = 0
 
@@ -38,8 +38,11 @@ export function placeStep(ctx) {
     })
     ctx.actions.afterPlace()
     ctx.loadNote = ''
+    // the button that was pressed goes with the list, so the focus moves to the line that says where the room is now
+    const focused = results.contains(document.activeElement)
     results.replaceChildren()
     status.textContent = ''
+    if (focused) where.focus({ preventScroll: true })
     // a result from the search brings the map to it, a tap on the map leaves the view where the person put it
     if (recentre) map.fit('pin')
   }

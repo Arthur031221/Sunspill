@@ -8,7 +8,7 @@ Walking the live page with real addresses and the real OpenStreetMap servers fou
 - **Buildings.** `overpass.openstreetmap.fr` answers every browser with 403 ("white-listed usages") and no CORS header, so one of the three servers could never help. `overpass.kumi.systems` takes its place. When no server sends the buildings, the page now says so in plain words, stays on the page after the toast, and offers the way on (try again, or add them by hand), where it showed a raw error list that was gone in a few seconds.
 - **Pressing Next while buildings load.** Leaving the facing or surroundings step cancelled the request, so a person who tapped Load and then Next arrived at a step that said "No buildings". The load now goes on across steps and stops only when the setup is closed, and a second tap says it is loading.
 - **Check step.** Putting right the date or time no longer clears the corners already marked.
-- **Screen reader.** A door's width box said "Window width" and now says "Door width", a door's wall shows its compass direction, and the remove and copy buttons and the shade boxes name the piece they belong to.
+- **Screen reader.** A door's width box said "Window width" and now says "Door width", a door's wall shows its compass direction, and the remove and copy buttons and the shade boxes name the piece they belong to. Choosing an address from the list no longer drops the focus to the page, it moves to the line that says where the room is.
 
 ## 0.2.2 (2026-10-10)
 
