@@ -98,7 +98,7 @@
  "place.zone": "Zona horaria (un nombre como Asia/Taipei, o UTC+8)",
  "place.zoneBad": "No se conoce esa zona horaria.",
  "place.summary": "Mostrando {date}. Cambia la fecha bajo la habitación.",
- "place.note": "Las ciudades vienen de una lista dentro de esta página y tu ubicación se queda en tu navegador. No se envía nada a ninguna parte.",
+ "place.note": "Las ciudades salen de una lista dentro de esta página y tu ubicación se queda en tu navegador. La búsqueda de direcciones y el mapa están en la configuración guiada, y cada uno pregunta antes de enviar nada.",
  "things.title": "Muebles y plantas",
  "things.note": "Arrastra una pieza por el suelo. Su parte superior muestra el sol que le llega. En esta versión los muebles no proyectan sombra.",
  "things.empty": "Todavía no hay nada.",

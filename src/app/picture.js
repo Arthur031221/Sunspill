@@ -8,6 +8,8 @@ const MAX_SIDE = 2200
 
 /** Read an image file into a canvas no larger than MAX_SIDE on its long side. */
 export async function loadPicture(file) {
+  // a photo of a few megapixels is plenty to tap corners on, and a huge file would only fill the memory of a phone
+  if (file.size > 40_000_000) throw new Error('too large')
   const url = URL.createObjectURL(file)
   try {
     const img = await new Promise((resolve, reject) => {

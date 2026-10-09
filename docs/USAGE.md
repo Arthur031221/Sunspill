@@ -49,6 +49,7 @@ The tabs under the room are for changes after the setup. **Room** has the size, 
 | Delete on a selected piece or window | remove it |
 | Arrow keys, `+` and `-` on the map | pan and zoom |
 | `[` and `]` on the map in the facing step | turn the room 1 degree (Shift: 15) |
+| Shift + arrow keys on the map in the facing step | move the room 50 cm (Alt: 25 cm) |
 | Ctrl or Cmd + Z, Shift + Z | undo, redo |
 
 On a phone, drag to turn the room, drag pieces and windows to move them, and use the steps under the room. Reduced motion settings stop the autoplay and the view animations.

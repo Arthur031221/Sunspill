@@ -98,7 +98,7 @@
  "place.zone": "Time zone (name such as Asia/Taipei, or UTC+8)",
  "place.zoneBad": "That time zone is not known.",
  "place.summary": "Showing {date}. Change the date under the room.",
- "place.note": "Cities come from a list inside this page and your location stays in your browser. Nothing is sent anywhere.",
+ "place.note": "Cities come from a list inside this page and your location stays in your browser. Address search and the map are in the guided setup, and each asks before it sends anything.",
  "things.title": "Furniture and plants",
  "things.note": "Drag a piece on the floor. Its top shows the sun that reaches it. Furniture does not cast shadows in this version.",
  "things.empty": "Nothing here yet.",

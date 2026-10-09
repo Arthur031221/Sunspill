@@ -98,7 +98,7 @@
  "place.zone": "Fuso horário (um nome como Asia/Taipei ou UTC+8)",
  "place.zoneBad": "Esse fuso horário não é conhecido.",
  "place.summary": "Mostrando {date}. Mude a data abaixo do cômodo.",
- "place.note": "As cidades vêm de uma lista dentro desta página e sua localização fica no navegador. Nada é enviado a lugar nenhum.",
+ "place.note": "As cidades vêm de uma lista dentro desta página e a sua localização fica no seu navegador. A busca de endereços e o mapa estão na configuração guiada, e cada um pergunta antes de enviar qualquer coisa.",
  "things.title": "Móveis e plantas",
  "things.note": "Arraste uma peça pelo chão. O topo dela mostra o sol que chega até ele. Nesta versão os móveis não projetam sombra.",
  "things.empty": "Nada aqui ainda.",

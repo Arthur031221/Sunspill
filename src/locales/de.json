@@ -98,7 +98,7 @@
  "place.zone": "Zeitzone (ein Name wie Asia/Taipei oder UTC+8)",
  "place.zoneBad": "Diese Zeitzone ist unbekannt.",
  "place.summary": "Angezeigt wird der {date}. Das Datum änderst du unter dem Zimmer.",
- "place.note": "Die Städte stammen aus einer Liste in dieser Seite, und dein Standort bleibt im Browser. Es wird nichts gesendet.",
+ "place.note": "Die Städte stammen aus einer Liste in dieser Seite, und dein Standort bleibt in deinem Browser. Adresssuche und Karte gehören zur geführten Einrichtung, und jede fragt, bevor sie etwas sendet.",
  "things.title": "Möbel und Pflanzen",
  "things.note": "Zieh ein Teil über den Boden. Seine Oberseite zeigt die Sonne, die sie erreicht. In dieser Version werfen Möbel keinen Schatten.",
  "things.empty": "Noch nichts da.",

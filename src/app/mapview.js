@@ -650,6 +650,13 @@ export class MapView {
   }
 
   key(e) {
+    // in the facing step Shift and an arrow move the room itself, half a metre at a time (a quarter with Alt)
+    if (this.mode === 'facing' && e.shiftKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+      e.preventDefault()
+      const by = e.altKey ? 0.25 : 0.5
+      this.on.moveRoom?.({ ArrowLeft: -by, ArrowRight: by }[e.key] ?? 0, { ArrowUp: by, ArrowDown: -by }[e.key] ?? 0)
+      return
+    }
     const step = e.shiftKey ? 120 : 40
     const move = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[e.key]
     if (move) {

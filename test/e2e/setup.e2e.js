@@ -713,3 +713,21 @@ test('the list opens for a building picked on the map, and what was drawn by han
   assert.equal(await page.locator('.obstacle-list [data-obstacle="12"]').count(), 1, 'now the building has a card to edit')
   await context.close()
 })
+
+test('on the map in the facing step the keyboard moves the room and turns it', async () => {
+  const { page, context } = await open()
+  await openWizard(page, 3)
+  const before = await scene(page)
+  await page.focus('.map-canvas')
+  await page.keyboard.press('Shift+ArrowRight')
+  await page.keyboard.press('Shift+ArrowUp')
+  const moved = await scene(page)
+  // half a metre east and half a metre north
+  assert.ok(Math.abs((moved.place.lon - before.place.lon) * 111320 * Math.cos((25.033 * Math.PI) / 180) - 0.5) < 0.02)
+  assert.ok(Math.abs((moved.place.lat - before.place.lat) * 110750 - 0.5) < 0.02)
+  await page.keyboard.press(']')
+  assert.equal((await scene(page)).facing, before.facing + 1)
+  await page.keyboard.press('Shift+]')
+  assert.equal((await scene(page)).facing, before.facing + 16)
+  await context.close()
+})

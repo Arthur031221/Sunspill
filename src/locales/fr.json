@@ -98,7 +98,7 @@
  "place.zone": "Fuseau horaire (un nom comme Asia/Taipei, ou UTC+8)",
  "place.zoneBad": "Ce fuseau horaire est inconnu.",
  "place.summary": "Affichage du {date}. Changez la date sous la pièce.",
- "place.note": "Les villes viennent d'une liste intégrée à cette page et votre position reste dans votre navigateur. Rien n'est envoyé nulle part.",
+ "place.note": "Les villes viennent d'une liste dans cette page et votre position reste dans votre navigateur. La recherche d'adresse et la carte sont dans la configuration guidée, et chacune demande avant d'envoyer quoi que ce soit.",
  "things.title": "Meubles et plantes",
  "things.note": "Faites glisser une pièce sur le sol. Son dessus montre le soleil qui l'atteint. Dans cette version, les meubles ne projettent pas d'ombre.",
  "things.empty": "Rien pour l'instant.",
