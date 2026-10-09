@@ -731,3 +731,29 @@ test('on the map in the facing step the keyboard moves the room and turns it', a
   assert.equal((await scene(page)).facing, before.facing + 16)
   await context.close()
 })
+
+test('the map shows where the sun is and tints the buildings that shade a window at that time', async () => {
+  const { page, context } = await open()
+  await page.evaluate(() => {
+    const s = window.__sunspill
+    s.store.update((d) => {
+      d.place = { name: 'x', lat: 25.0288, lon: 121.5442, zone: 'Asia/Taipei' }
+      d.facing = 270
+      d.date = { month: 7, day: 15 }
+      d.minutes = 16 * 60 + 30
+      d.floor = { n: 1, storey: 3 }
+      d.obstacles = [{ type: 'building', src: 'manual', ring: [[-12, -20], [-12, 20], [-28, 20], [-28, -20]], h: 25, base: 0 }, { type: 'building', src: 'manual', ring: [[30, -10], [30, 10], [50, 10], [50, -10]], h: 25, base: 0 }]
+    })
+  })
+  await openWizard(page, 4)
+  // the block to the west is in the way of a 16:30 sun, the one to the east is not
+  assert.match(await page.locator('#shade-now').innerText(), /At 16:30, 1 of these put their shadow on a window/)
+  assert.deepEqual(await page.evaluate(() => [...window.__sunspill.map.sunNow().shading]), [0])
+  // the clock moves the sun: at 9:00 the sun is in the east, where the second block stands
+  await page.locator('#map-time').evaluate((el) => { el.value = 9 * 60; el.dispatchEvent(new Event('input', { bubbles: true })) })
+  await page.waitForTimeout(200)
+  assert.equal((await scene(page)).minutes, 540)
+  assert.match(await page.locator('#shade-now').innerText(), /At 09:00/)
+  assert.equal(await page.locator('.map-time').innerText(), '09:00')
+  await context.close()
+})

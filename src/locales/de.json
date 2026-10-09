@@ -407,5 +407,8 @@
  "wiz.things.onPlan": "Im Zimmer",
  "app.restored": "Dein letztes Zimmer wurde aus diesem Browser wiederhergestellt. Im Tab Teilen kannst du neu anfangen.",
  "wiz.check.byNumbers": "Eine Ecke über ihre Abstände hinzufügen",
- "wiz.check.addCorner": "Diese Ecke hinzufügen"
+ "wiz.check.addCorner": "Diese Ecke hinzufügen",
+ "wiz.sur.shadeNow": "Um {time} werfen {n} davon ihren Schatten auf ein Fenster. Sie sind auf der Karte orange umrandet.",
+ "wiz.sur.shadeNone": "Um {time} wirft keines davon einen Schatten auf ein Fenster.",
+ "wiz.map.sunNote": "Die gepunktete Linie auf der Karte zeigt zur Sonne zu dieser Uhrzeit. Ziehe die Uhr auf die Zeit, zu der die Sonne bei dir hereinschien, und sieh, worüber sie kommt."
 }

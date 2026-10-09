@@ -4,7 +4,11 @@
 import { h } from './dom.js'
 import { t } from './i18n.js'
 import { numberField, compassDial } from './fields.js'
-import { bearingText, duration, dateText } from './format.js'
+import { bearingText, duration, dateText, clock } from './format.js'
+import { sunTimes } from '../core/solar.js'
+import { sunAt } from '../core/hours.js'
+import { sunInRoom } from '../core/room.js'
+import { shadingObstacles } from '../core/obstacles.js'
 import { WALLS, wallBearing, MAX_OBSTACLES } from '../core/room.js'
 import { moveRoom, refreshOwn, blockRing, haversine } from '../core/geo.js'
 import { openCompass, compassSupported } from './compass-ui.js'
@@ -42,6 +46,31 @@ export async function loadBuildings(ctx) {
   }
 }
 
+/** A clock for the map: drag it and the sun's line on the map and the buildings that shade a window follow. */
+function timeRow(ctx) {
+  const { store } = ctx
+  const slider = h('input', { type: 'range', id: 'map-time', min: 0, max: 1439, step: 5, 'aria-label': t('dock.time') })
+  const time = h('b', { class: 'map-time' })
+  const line = h('span', { class: 'note', style: 'margin:0' })
+  slider.addEventListener('input', () => store.update((d) => { d.minutes = Number(slider.value) }, { history: false }))
+  const el = h('div', { class: 'time-row' }, h('div', { class: 'row', style: 'flex-wrap:nowrap;align-items:center' }, time, slider), line, h('p', { class: 'note' }, t('wiz.map.sunNote')))
+  return {
+    el,
+    sync() {
+      const s = store.scene
+      const { sunrise, sunset } = sunTimes(2026, s.date.month, s.date.day, s.place.lat, s.place.lon, s.place.zone)
+      // whole fives, so the thumb lands on times like 09:00 and not on 08:59
+      slider.min = sunrise == null ? 0 : Math.ceil(sunrise / 5) * 5
+      slider.max = sunset == null ? 1435 : Math.floor(sunset / 5) * 5
+      slider.value = s.minutes
+      slider.setAttribute('aria-valuetext', clock(s.minutes))
+      time.textContent = clock(s.minutes)
+      const sun = sunAt(s.place, s.date.month, s.date.day, s.minutes)
+      line.textContent = sun.elevation > 0 ? t('dock.sunAt', { el: Math.round(sun.elevation), dir: bearingText(sun.azimuth) }) : t('dock.belowHorizon')
+    },
+  }
+}
+
 export function facingStep(ctx) {
   const { store, map, toast } = ctx
   const fields = []
@@ -59,8 +88,10 @@ export function facingStep(ctx) {
   const compassBtn = compassSupported() ? h('button', { class: 'btn block', type: 'button', id: 'compass-open', onclick: startCompass }, t('room.useCompass')) : null
   const outlines = h('button', { class: 'btn block', type: 'button', id: 'load-buildings', onclick: async () => { outlines.disabled = true; await loadBuildings(ctx); outlines.disabled = false; sync() } }, t('wiz.face.outlines'))
   const outlinesNote = h('p', { class: 'note' })
+  const clockRow = timeRow(ctx)
   const main = h('div', {},
     h('p', {}, t('wiz.face.intro')),
+    clockRow.el,
     chips,
     faceLine,
     dial.el, bearing.el, turn,
@@ -100,6 +131,7 @@ export function facingStep(ctx) {
 
   function sync() {
     fields.forEach((f) => f.sync())
+    clockRow.sync()
     dial.sync()
     const s = store.scene
     const list = s.windows.length ? s.windows : [{ wall: 'top' }]
@@ -202,10 +234,12 @@ export function surroundStep(ctx) {
     select(store.scene.obstacles.length - 1)
   } }, t('wiz.sur.addTree'))
 
+  const clockRow = timeRow(ctx)
+  const shadeNow = h('p', { class: 'note', role: 'status', id: 'shade-now' })
   const load = h('button', { class: 'btn primary block', type: 'button', id: 'load-buildings', onclick: async () => { load.disabled = true; await loadBuildings(ctx); load.disabled = false; shape = ''; sync() } }, t('wiz.face.outlines'))
   const el = h('section', { class: 'wiz-step' },
     h('p', {}, t('wiz.sur.intro')),
-    load, status, effect, list,
+    load, status, clockRow.el, shadeNow, effect, list,
     h('p', { class: 'note' }, t('wiz.sur.estNote')),
     h('details', { class: 'more' }, h('summary', {}, t('wiz.sur.addBlockTitle')),
       h('div', { class: 'grid2' }, field('nb-bearing', t('wiz.sur.bearing'), bIn.bearing), field('nb-dist', t('wiz.sur.distance'), bIn.dist), field('nb-width', t('wiz.sur.width'), bIn.width), field('nb-depth', t('wiz.sur.depth'), bIn.depth), field('nb-height', t('wiz.sur.height'), bIn.height)),
@@ -220,6 +254,10 @@ export function surroundStep(ctx) {
     const s = store.scene
     if (shape !== `${s.obstacles.length}|${showAll.on}|${s.obstacles.map((o) => `${o.on}${o.est}`).join('')}`) renderList()
     fields.forEach((f) => f.sync())
+    clockRow.sync()
+    const sun = sunAt(s.place, s.date.month, s.date.day, s.minutes)
+    const shading = sun.elevation > 0 && s.obstacles.length ? shadingObstacles(s, sunInRoom(s, sun.azimuth, sun.elevation)) : []
+    shadeNow.textContent = !s.obstacles.length || !(sun.elevation > 0) ? '' : shading.length ? t('wiz.sur.shadeNow', { time: clock(s.minutes), n: shading.length }) : t('wiz.sur.shadeNone', { time: clock(s.minutes) })
     list.querySelectorAll('.card.ob').forEach((c) => c.classList.toggle('selected', sel() === Number(c.dataset.obstacle)))
     status.textContent = s.obstacles.length ? t('wiz.sur.status', { n: s.obstacles.length, est: s.obstacles.filter((o) => o.est).length }) : t('wiz.sur.none')
     const withIt = sunHoursInside(s)

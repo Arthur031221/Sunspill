@@ -49,7 +49,7 @@ Pulsa **Configurar mi habitación**. En un móvil lleva unos minutos, en siete p
 2. **La habitación.** Empieza por un estudio, dormitorio, salón o despacho típicos de Taiwán, o calca tu propio plano o la foto de un anuncio con una escala de dos puntos. Indica la planta.
 3. **Ventanas y puertas.** Medidas reales a lo largo de los muros, con ajuste a los extremos, al centro y entre sí, balcones con barandilla, aleros y puertas.
 4. **Hacia dónde mira.** Gira la habitación sobre el contorno de tu edificio en el mapa, o apoya el móvil en la ventana y lee su brújula con la declinación magnética sumada. El norte siempre está a la vista.
-5. **Qué hay alrededor.** Los edificios vecinos y sus alturas se cargan de OpenStreetMap. Una altura supuesta queda marcada y se puede cambiar. Añade edificios y árboles a mano.
+5. **Qué hay alrededor.** Los edificios vecinos y sus alturas se cargan de OpenStreetMap. Una altura supuesta queda marcada y se puede cambiar. Añade edificios y árboles a mano. Un reloj en el mapa muestra dónde está el sol y marca los edificios que dan sombra a una ventana a esa hora.
 6. **Muebles.** Coloca, arrastra y gira camas, escritorios, sofás, estanterías y plantas, y mira cómo les da el sol.
 7. **Comprobar con el sol real.** Marca dónde estuvo el sol en el suelo a una hora que viste, o coloca una foto del suelo bajo el plano. Sunspill muestra cuánto se aparta el modelo y ajusta la orientación y la ventana a tus marcas.
 

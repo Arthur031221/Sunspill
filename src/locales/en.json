@@ -407,5 +407,8 @@
  "wiz.things.onPlan": "In the room",
  "app.restored": "Your last room was brought back from this browser. Start over in the Share tab.",
  "wiz.check.byNumbers": "Add a corner by typing its distances",
- "wiz.check.addCorner": "Add this corner"
+ "wiz.check.addCorner": "Add this corner",
+ "wiz.sur.shadeNow": "At {time}, {n} of these put their shadow on a window. They are outlined in orange on the map.",
+ "wiz.sur.shadeNone": "At {time}, none of these puts a shadow on a window.",
+ "wiz.map.sunNote": "The dotted line on the map points toward the sun at this time. Drag the clock to the time you remember the sun shining in, and see what it comes over."
 }

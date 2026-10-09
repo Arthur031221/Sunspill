@@ -9,7 +9,7 @@
 // light.js subtracts that hull from the lit opening, the same way it does for
 // an eave.
 
-import { clipHalf, signedArea, dedupe, area, selfCrossing } from './poly.js'
+import { clipHalf, signedArea, dedupe, area, selfCrossing, clipConvex, rect } from './poly.js'
 import { wallFrame, localToRoom, floorLift } from './room.js'
 
 const FRONT = 1e-6
@@ -140,23 +140,53 @@ export function crownRing(x, y, r) {
  * as long as the scene object lives.
  */
 const memo = new WeakMap()
+
+/** The convex prisms of one building or tree, in room metres with heights counted from the room's floor. */
+export function obstaclePrisms(scene, o) {
+  const lift = floorLift(scene)
+  if (o.type === 'tree') {
+    // the crown is laid out on the compass, so turning the room does not change its shape
+    return [{ footprint: crownRing(o.x, o.y, o.r).map(([e, n]) => localToRoom(scene, e, n)), z0: o.base - lift, z1: o.h - lift }]
+  }
+  const ring = o.ring.map(([e, n]) => localToRoom(scene, e, n))
+  return convexParts(ring).map((part) => ({ footprint: part, z0: o.base - lift, z1: o.h - lift }))
+}
+
 export function sceneObstacles(scene) {
   let hit = memo.get(scene)
   if (hit) return hit
-  const lift = floorLift(scene)
   hit = []
-  for (const o of scene.obstacles || []) {
-    if (!o.on) continue
-    if (o.type === 'tree') {
-      // the crown is laid out on the compass, so turning the room does not change its shape
-      hit.push({ footprint: crownRing(o.x, o.y, o.r).map(([e, n]) => localToRoom(scene, e, n)), z0: o.base - lift, z1: o.h - lift })
-      continue
-    }
-    const ring = o.ring.map(([e, n]) => localToRoom(scene, e, n))
-    for (const part of convexParts(ring)) hit.push({ footprint: part, z0: o.base - lift, z1: o.h - lift })
-  }
+  for (const o of scene.obstacles || []) if (o.on) hit.push(...obstaclePrisms(scene, o))
   memo.set(scene, hit)
   return hit
+}
+
+/** The sun is this far in front of a wall at least, as in light.js, for a beam to be traced at all. */
+const MIN_NORMAL = 0.02
+
+/**
+ * Which of the switched on buildings and trees put a shadow on an opening right
+ * now: their indexes in scene.obstacles. s is the unit vector toward the sun in room axes.
+ */
+export function shadingObstacles(scene, s) {
+  const { room } = scene
+  const out = []
+  if (!(s[2] > 0.003)) return out
+  scene.obstacles.forEach((o, index) => {
+    if (!o.on) return
+    const prisms = obstaclePrisms(scene, o)
+    const casts = scene.windows.some((win) => {
+      const frame = wallFrame(room, win.wall)
+      if (s[0] * frame.n[0] + s[1] * frame.n[1] < MIN_NORMAL) return false
+      const opening = rect(0, win.sill, win.w, win.sill + win.h)
+      return prisms.some((prism) => {
+        const shadow = prismShadow(room, win, frame, s, prism)
+        return shadow ? clipConvex(shadow, opening).length > 0 : false
+      })
+    })
+    if (casts) out.push(index)
+  })
+  return out
 }
 
 /** The solid part of a balcony rail in front of a window, as a thin prism. */

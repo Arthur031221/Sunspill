@@ -407,5 +407,8 @@
  "wiz.things.onPlan": "部屋の家具",
  "app.restored": "このブラウザーから前回の部屋を復元しました。「共有」タブでやり直せます。",
  "wiz.check.byNumbers": "距離を入力して角を追加",
- "wiz.check.addCorner": "この角を追加"
+ "wiz.check.addCorner": "この角を追加",
+ "wiz.sur.shadeNow": "{time} には、このうち {n} 件が窓に影を落とします。地図ではオレンジの枠で示しています。",
+ "wiz.sur.shadeNone": "{time} には、どれも窓に影を落としません。",
+ "wiz.map.sunNote": "地図の点線は、この時刻の太陽の方向を指します。日が差し込んでいたと覚えている時刻に時計を動かして、何の上から来るかを見てください。"
 }

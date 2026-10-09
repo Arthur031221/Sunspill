@@ -407,5 +407,8 @@
  "wiz.things.onPlan": "방 안의 가구",
  "app.restored": "이 브라우저에서 지난번 방을 복원했습니다. 공유 탭에서 처음부터 다시 시작할 수 있습니다.",
  "wiz.check.byNumbers": "거리를 입력해 모서리 추가",
- "wiz.check.addCorner": "이 모서리 추가"
+ "wiz.check.addCorner": "이 모서리 추가",
+ "wiz.sur.shadeNow": "{time}에는 이 중 {n}개가 창문에 그림자를 드리웁니다. 지도에서 주황색 테두리로 표시됩니다.",
+ "wiz.sur.shadeNone": "{time}에는 이것들 중 어느 것도 창문에 그림자를 드리우지 않습니다.",
+ "wiz.map.sunNote": "지도의 점선은 이 시각 태양이 있는 방향을 가리킵니다. 햇빛이 들어왔던 시각으로 시계를 옮겨 무엇 위에서 오는지 보세요."
 }

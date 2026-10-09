@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { windowPatches, scenePatches, totalArea } from '../src/core/light.js'
-import { convexParts, hullOf, prismShadow, sceneObstacles, crownRing } from '../src/core/obstacles.js'
+import { convexParts, hullOf, prismShadow, sceneObstacles, crownRing, shadingObstacles } from '../src/core/obstacles.js'
 import { area, insideConvex } from '../src/core/poly.js'
 import { normalizeScene, sunInRoom, wallFrame, roomToLocal, localToRoom, itemFootprint } from '../src/core/room.js'
 import { rayHitsPrism } from './helpers/raytrace.js'
@@ -176,4 +176,27 @@ test('a self crossing outline with no net area still becomes its hull', () => {
   const parts = convexParts(bow)
   assert.equal(parts.length, 1)
   assert.ok(Math.abs(area(parts[0]) - 4) < 1e-9, `area ${parts[0] && area(parts[0])}`)
+})
+
+test('the buildings that shade a window now are the ones whose shadow reaches its opening', () => {
+  const scene = normalizeScene({
+    facing: 270, room: { w: 4, d: 5, h: 2.6, wall: 0.15 }, windows: [{ wall: 'top', pos: 1, w: 2, h: 1.4, sill: 0.9 }], items: [],
+    obstacles: [
+      { type: 'building', ring: [[-12, -20], [-12, 20], [-28, 20], [-28, -20]], h: 15 }, // west, tall and close
+      { type: 'building', ring: [[-12, -20], [-12, 20], [-28, 20], [-28, -20]], h: 15, on: false }, // the same, switched off
+      { type: 'building', ring: [[-12, -20], [-12, 20], [-28, 20], [-28, -20]], h: 2.5 }, // west but lower than the sill
+      { type: 'building', ring: [[28, -20], [28, 20], [12, 20], [12, -20]], h: 60 }, // east, behind the window
+      { type: 'building', ring: [[-12, 80], [-12, 120], [-28, 120], [-28, 80]], h: 15 }, // west but far to the north of the sun path
+    ],
+  })
+  const low = sunInRoom(scene, 270, 25)
+  assert.deepEqual(shadingObstacles(scene, low), [0], 'only the tall one close to the west')
+  const high = sunInRoom(scene, 270, 70)
+  assert.deepEqual(shadingObstacles(scene, high), [], 'a high sun clears every roof')
+  assert.deepEqual(shadingObstacles(scene, sunInRoom(scene, 90, 30)), [], 'a sun behind the window is not shaded by anything')
+  assert.deepEqual(shadingObstacles(scene, [0, 1, -0.2]), [], 'nothing shades at night')
+  // and it agrees with the light model: switching the flagged building off brings light back
+  const without = normalizeScene({ ...scene, obstacles: scene.obstacles.map((o, i) => (i === 0 ? { ...o, on: false } : o)) })
+  assert.equal(totalArea(scenePatches(scene, { azimuth: 270, elevation: 25 }).floor), 0)
+  assert.ok(totalArea(scenePatches(without, { azimuth: 270, elevation: 25 }).floor) > 0.5)
 })

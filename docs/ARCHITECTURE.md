@@ -6,7 +6,7 @@ src/core     pure code, no DOM, runs in Node and the browser
   poly.js      convex polygon clipping and subtraction
   room.js      the scene, its limits, wall frames, normalizeScene
   light.js     window opening, shade, projection onto floor and walls
-  obstacles.js buildings, trees and balcony rails as prisms, and their shadow on a window
+  obstacles.js buildings, trees and balcony rails as prisms, their shadow on a window, and which of them shade a window now
   hours.js     day steps, sun hours grids, afternoon check, plant spots
   geo.js       latitude and longitude to metres, map tiles, moving the room on the ground
   osm.js       OpenStreetMap answers (buildings, address matches) turned into scene parts

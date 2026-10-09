@@ -407,5 +407,8 @@
  "wiz.things.onPlan": "No cômodo",
  "app.restored": "Seu último cômodo foi recuperado deste navegador. Recomece na aba Compartilhar.",
  "wiz.check.byNumbers": "Adicionar um canto digitando as distâncias",
- "wiz.check.addCorner": "Adicionar este canto"
+ "wiz.check.addCorner": "Adicionar este canto",
+ "wiz.sur.shadeNow": "Às {time}, {n} deles projetam sombra sobre uma janela. Eles estão contornados em laranja no mapa.",
+ "wiz.sur.shadeNone": "Às {time}, nenhum deles projeta sombra sobre uma janela.",
+ "wiz.map.sunNote": "A linha pontilhada no mapa aponta para o sol neste horário. Arraste o relógio para a hora em que você lembra do sol entrando e veja sobre o que ele vem."
 }

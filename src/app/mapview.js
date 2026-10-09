@@ -7,7 +7,9 @@ import { h } from './dom.js'
 import { t } from './i18n.js'
 import { bearingText, lengthText } from './format.js'
 import { lonLatToTile, tileToLonLat, fromLocal, toLocal, roomCorners, metresPerPixel } from '../core/geo.js'
-import { wallBearing, wallFrame, roomToLocal } from '../core/room.js'
+import { wallBearing, wallFrame, roomToLocal, sunInRoom } from '../core/room.js'
+import { sunAt } from '../core/hours.js'
+import { shadingObstacles } from '../core/obstacles.js'
 import { PALETTES } from '../render/palette.js'
 
 const TILE = 256
@@ -278,9 +280,21 @@ export class MapView {
     ctx.closePath()
   }
 
+  /** The sun now, and which buildings and trees put their shadow on a window at this moment. Kept for as long as the scene is. */
+  sunNow() {
+    const sc = this.scene
+    if (this.sunMemo?.scene !== sc) {
+      const sun = sunAt(sc.place, sc.date.month, sc.date.day, sc.minutes)
+      const up = sun.elevation > 0
+      this.sunMemo = { scene: sc, sun, up, shading: new Set(up ? shadingObstacles(sc, sunInRoom(sc, sun.azimuth, sun.elevation)) : []) }
+    }
+    return this.sunMemo
+  }
+
   drawObstacles(ctx, pal) {
     const dark = pal.name === 'dark'
     const ppm = this.pixelsPerMetre
+    const shading = this.sunNow().shading
     this.scene.obstacles.forEach((o, i) => {
       const picked = this.selected === i
       ctx.save()
@@ -288,8 +302,8 @@ export class MapView {
         const [x, y] = this.local(o.x, o.y)
         ctx.globalAlpha = o.on ? 1 : 0.35
         ctx.fillStyle = dark ? 'rgba(110, 190, 120, 0.7)' : 'rgba(80, 150, 80, 0.62)'
-        ctx.strokeStyle = picked ? pal.selection : dark ? '#9fe0a4' : '#3c7a41'
-        ctx.lineWidth = picked ? 3 : 1.5
+        ctx.strokeStyle = picked ? pal.selection : shading.has(i) ? '#e8590c' : dark ? '#9fe0a4' : '#3c7a41'
+        ctx.lineWidth = picked ? 3 : shading.has(i) ? 3 : 1.5
         ctx.beginPath()
         ctx.arc(x, y, Math.max(3, o.r * ppm), 0, Math.PI * 2)
         ctx.fill()
@@ -303,11 +317,15 @@ export class MapView {
         const alpha = Math.min(0.7, 0.22 + o.h / 90)
         ctx.globalAlpha = o.on ? 1 : 0.4
         ctx.fillStyle = dark ? `rgba(150, 165, 205, ${alpha})` : `rgba(96, 104, 130, ${alpha})`
-        ctx.strokeStyle = picked ? pal.selection : dark ? 'rgba(200, 212, 245, 0.8)' : 'rgba(60, 66, 92, 0.85)'
-        ctx.lineWidth = picked ? 3 : 1.4
+        ctx.strokeStyle = picked ? pal.selection : shading.has(i) ? '#e8590c' : dark ? 'rgba(200, 212, 245, 0.8)' : 'rgba(60, 66, 92, 0.85)'
+        ctx.lineWidth = picked ? 3 : shading.has(i) ? 3 : 1.4
         ctx.setLineDash(o.est ? [5, 3] : o.own ? [2, 3] : [])
         this.path(ctx, pts)
         ctx.fill()
+        if (shading.has(i)) {
+          ctx.fillStyle = 'rgba(232, 89, 12, 0.3)'
+          ctx.fill()
+        }
         ctx.stroke()
         // a height is written on a building only when the building is big enough on screen to carry it
         const xs = pts.map((p) => p[0])
@@ -411,6 +429,38 @@ export class MapView {
     ctx.fill()
     ctx.restore()
     this.roomHull = corners
+    this.drawSun(ctx, pal, centre)
+  }
+
+  /** A line from the room toward where the sun is at the time on the clock, so a building on that line can be spotted by eye. */
+  drawSun(ctx, pal, centre) {
+    const { sun, up } = this.sunNow()
+    if (!up) return
+    const az = (sun.azimuth * Math.PI) / 180
+    const reach = Math.min(Math.min(this.width, this.height) * 0.42, 150)
+    const tip = [centre[0] + Math.sin(az) * reach, centre[1] - Math.cos(az) * reach]
+    ctx.save()
+    ctx.strokeStyle = pal.sun
+    ctx.lineWidth = 2.5
+    ctx.setLineDash([2, 6])
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    ctx.moveTo(centre[0], centre[1])
+    ctx.lineTo(tip[0], tip[1])
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.shadowColor = pal.glow
+    ctx.shadowBlur = 14
+    ctx.fillStyle = pal.sun
+    ctx.beginPath()
+    ctx.arc(tip[0], tip[1], 9, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.shadowBlur = 0
+    ctx.fillStyle = pal.sunCore
+    ctx.beginPath()
+    ctx.arc(tip[0], tip[1], 4, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
   }
 
   drawPin(ctx, pal) {

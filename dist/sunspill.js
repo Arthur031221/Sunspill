@@ -592,20 +592,19 @@ function crownRing(x, y, r) {
   return Array.from({ length: 12 }, (_, i) => [x + R * Math.cos(i * Math.PI / 6), y + R * Math.sin(i * Math.PI / 6)]);
 }
 var memo = /* @__PURE__ */ new WeakMap();
+function obstaclePrisms(scene, o) {
+  const lift = floorLift(scene);
+  if (o.type === "tree") {
+    return [{ footprint: crownRing(o.x, o.y, o.r).map(([e, n]) => localToRoom(scene, e, n)), z0: o.base - lift, z1: o.h - lift }];
+  }
+  const ring = o.ring.map(([e, n]) => localToRoom(scene, e, n));
+  return convexParts(ring).map((part) => ({ footprint: part, z0: o.base - lift, z1: o.h - lift }));
+}
 function sceneObstacles(scene) {
   let hit = memo.get(scene);
   if (hit) return hit;
-  const lift = floorLift(scene);
   hit = [];
-  for (const o of scene.obstacles || []) {
-    if (!o.on) continue;
-    if (o.type === "tree") {
-      hit.push({ footprint: crownRing(o.x, o.y, o.r).map(([e, n]) => localToRoom(scene, e, n)), z0: o.base - lift, z1: o.h - lift });
-      continue;
-    }
-    const ring = o.ring.map(([e, n]) => localToRoom(scene, e, n));
-    for (const part of convexParts(ring)) hit.push({ footprint: part, z0: o.base - lift, z1: o.h - lift });
-  }
+  for (const o of scene.obstacles || []) if (o.on) hit.push(...obstaclePrisms(scene, o));
   memo.set(scene, hit);
   return hit;
 }

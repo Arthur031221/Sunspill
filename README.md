@@ -49,7 +49,7 @@ Press **Set up my room**. On a phone it takes a few minutes, in seven steps with
 2. **The room.** Start from a typical Taiwanese studio suite, bedroom, living room or home office, or trace your own floor plan or listing photo with a two point scale. Set the floor number.
 3. **Windows and doors.** Real dimensions along the walls, snapping to the wall ends, the middle and each other, balconies with a railing, eaves and doors.
 4. **Which way it faces.** Turn the room over the outline of your building on the map, or hold the phone against the window and read its compass with the magnetic declination added. North is always on screen.
-5. **What stands around it.** Neighbouring buildings and their heights load from OpenStreetMap. A height that was guessed is marked and can be edited. Add buildings and trees by hand.
+5. **What stands around it.** Neighbouring buildings and their heights load from OpenStreetMap. A height that was guessed is marked and can be edited. Add buildings and trees by hand. A clock on the map shows where the sun is and outlines the buildings that shade a window at that time.
 6. **Furniture.** Place, drag and turn beds, desks, sofas, shelves and plants, and see the sun land on them.
 7. **Check against the real sun.** Mark where the sun really was on the floor at a time you saw it, or lay a photo of the floor under the plan. Sunspill shows how far the model is off and can fit the facing and the window to your marks.
 

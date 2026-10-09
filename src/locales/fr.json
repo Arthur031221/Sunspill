@@ -407,5 +407,8 @@
  "wiz.things.onPlan": "Dans la pièce",
  "app.restored": "Votre dernière pièce a été rétablie depuis ce navigateur. Recommencez dans l'onglet Partager.",
  "wiz.check.byNumbers": "Ajouter un coin en saisissant ses distances",
- "wiz.check.addCorner": "Ajouter ce coin"
+ "wiz.check.addCorner": "Ajouter ce coin",
+ "wiz.sur.shadeNow": "À {time}, {n} d'entre eux projettent leur ombre sur une fenêtre. Ils sont cerclés d'orange sur la carte.",
+ "wiz.sur.shadeNone": "À {time}, aucun d'entre eux ne projette d'ombre sur une fenêtre.",
+ "wiz.map.sunNote": "La ligne pointillée de la carte indique la direction du soleil à cette heure. Faites glisser l'horloge à l'heure où vous vous souvenez que le soleil entrait, et voyez au-dessus de quoi il arrive."
 }

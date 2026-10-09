@@ -49,7 +49,7 @@ Toque em **Configurar meu cômodo**. No celular leva alguns minutos, em sete pas
 2. **O cômodo.** Comece por um studio, quarto, sala ou escritório típicos de Taiwan, ou trace a sua própria planta ou a foto de um anúncio com uma escala de dois pontos. Informe o andar.
 3. **Janelas e portas.** Medidas reais ao longo das paredes, com encaixe nas pontas da parede, no meio e entre si, varandas com guarda-corpo, beirais e portas.
 4. **Para onde aponta.** Gire o cômodo no mapa sobre o contorno do seu prédio, ou encoste o celular na janela e leia a bússola com a declinação magnética somada. O norte está sempre à vista.
-5. **O que há ao redor.** Os prédios vizinhos e suas alturas vêm do OpenStreetMap. Uma altura estimada fica marcada e pode ser editada. Adicione prédios e árvores à mão.
+5. **O que há ao redor.** Os prédios vizinhos e suas alturas vêm do OpenStreetMap. Uma altura estimada fica marcada e pode ser editada. Adicione prédios e árvores à mão. Um relógio no mapa mostra onde está o sol e contorna os prédios que fazem sombra numa janela nesse horário.
 6. **Móveis.** Coloque, arraste e gire camas, escrivaninhas, sofás, estantes e plantas, e veja o sol cair sobre elas.
 7. **Conferir com o sol de verdade.** Marque onde o sol estava no chão num horário que você viu, ou ponha uma foto do chão sob a planta. O Sunspill mostra quanto o modelo erra e ajusta a direção e a janela às suas marcas.
 

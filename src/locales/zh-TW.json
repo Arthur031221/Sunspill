@@ -407,5 +407,8 @@
  "wiz.things.onPlan": "房間裡的家具",
  "app.restored": "已從這個瀏覽器還原你上次的房間。可在「分享」分頁重新開始。",
  "wiz.check.byNumbers": "輸入距離來新增一個角",
- "wiz.check.addCorner": "新增這個角"
+ "wiz.check.addCorner": "新增這個角",
+ "wiz.sur.shadeNow": "{time} 時，其中 {n} 個會把影子投在窗戶上，在地圖上以橘色框線標出。",
+ "wiz.sur.shadeNone": "{time} 時，這些都不會把影子投在窗戶上。",
+ "wiz.map.sunNote": "地圖上的虛線指向這個時間太陽所在的方向。把時鐘拖到你記得陽光照進來的時間，看看它是從什麼上方過來的。"
 }

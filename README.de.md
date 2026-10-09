@@ -49,7 +49,7 @@ Tippe auf **Mein Zimmer einrichten**. Auf dem Handy dauert es ein paar Minuten, 
 2. **Das Zimmer.** Starte mit einem typischen taiwanischen Apartment, Schlafzimmer, Wohnzimmer oder Arbeitszimmer, oder zeichne deinen eigenen Grundriss oder das Foto aus einer Anzeige mit einem Zwei-Punkte-Maßstab nach. Gib die Etage an.
 3. **Fenster und Türen.** Echte Maße entlang der Wände, mit Einrasten an Wandenden, Mitte und aneinander, Balkone mit Brüstung, Vordächer und Türen.
 4. **Wohin es zeigt.** Drehe das Zimmer auf der Karte über den Umriss deines Hauses, oder halte das Handy ans Fenster und lies den Kompass mit addierter magnetischer Deklination ab. Norden bleibt immer sichtbar.
-5. **Was drumherum steht.** Nachbargebäude und ihre Höhen kommen von OpenStreetMap. Eine geschätzte Höhe ist markiert und lässt sich ändern. Gebäude und Bäume kannst du selbst hinzufügen.
+5. **Was drumherum steht.** Nachbargebäude und ihre Höhen kommen von OpenStreetMap. Eine geschätzte Höhe ist markiert und lässt sich ändern. Gebäude und Bäume kannst du selbst hinzufügen. Eine Uhr auf der Karte zeigt, wo die Sonne steht, und umrandet die Gebäude, die zu dieser Zeit ein Fenster beschatten.
 6. **Möbel.** Stelle Betten, Schreibtische, Sofas, Regale und Pflanzen auf, verschiebe und drehe sie, und sieh, wie die Sonne darauf fällt.
 7. **Mit der echten Sonne vergleichen.** Markiere, wo die Sonne zu einer Zeit, die du gesehen hast, auf dem Boden war, oder lege ein Foto des Bodens unter den Plan. Sunspill zeigt, wie weit das Modell daneben liegt, und passt Ausrichtung und Fenster an deine Markierungen an.
 

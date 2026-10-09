@@ -49,7 +49,7 @@ Appuyez sur **Configurer ma pièce**. Sur un téléphone, il faut quelques minut
 2. **La pièce.** Partez d'un studio, d'une chambre, d'un salon ou d'un bureau typiques de Taïwan, ou décalquez votre plan ou la photo d'une annonce avec une échelle à deux points. Indiquez l'étage.
 3. **Fenêtres et portes.** Dimensions réelles le long des murs, avec aimantation aux bouts du mur, au milieu et entre elles, balcons avec garde-corps, auvents et portes.
 4. **Vers où ça donne.** Tournez la pièce sur le contour de votre immeuble dans la carte, ou posez le téléphone contre la fenêtre et lisez sa boussole avec la déclinaison magnétique ajoutée. Le nord reste toujours visible.
-5. **Ce qui l'entoure.** Les bâtiments voisins et leur hauteur viennent d'OpenStreetMap. Une hauteur estimée est marquée et modifiable. Ajoutez des bâtiments et des arbres à la main.
+5. **Ce qui l'entoure.** Les bâtiments voisins et leur hauteur viennent d'OpenStreetMap. Une hauteur estimée est marquée et modifiable. Ajoutez des bâtiments et des arbres à la main. Une horloge sur la carte montre où est le soleil et cerne les bâtiments qui font de l'ombre à une fenêtre à cette heure.
 6. **Meubles.** Placez, déplacez et tournez lits, bureaux, canapés, étagères et plantes, et regardez le soleil les atteindre.
 7. **Comparer au vrai soleil.** Marquez où se trouvait le soleil au sol à une heure que vous avez vue, ou posez une photo du sol sous le plan. Sunspill montre de combien le modèle s'écarte et ajuste l'orientation et la fenêtre à vos marques.
 

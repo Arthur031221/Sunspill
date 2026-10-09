@@ -408,3 +408,7 @@ html[data-wizard] .toast { bottom: calc(92px + env(safe-area-inset-bottom)); }
   .wiz-nav { padding-top: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
 }
 html[data-wizard] .hint { display: none; }
+
+.time-row { margin: 10px 0; }
+.map-time { font: 600 20px/1 var(--display); font-variant-numeric: tabular-nums lining-nums; min-width: 3.4em; }
+.time-row input[type="range"] { flex: 1; min-width: 0; }
