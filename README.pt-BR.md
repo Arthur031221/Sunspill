@@ -33,7 +33,7 @@
 </table>
 
 <p align="center">
-  Elevação do sol a menos de <b>0,007 grau</b> da referência NREL. <b>0 divergências em 54.000 pontos de teste</b> em que prédios, árvores e varandas fazem sombra numa janela, contra pvlib e shapely.<br>
+  Elevação do sol a menos de <b>0,007 grau</b> da referência NREL. <b>0 divergências em 54.000 pontos de teste</b> contra pvlib e shapely (1.275 deles escuros só porque um prédio, uma árvore ou um guarda-corpo de varanda faz sombra na janela).<br>
   <sub>Cada peça de geometria é comparada com uma referência independente: o sol (pvlib, NREL SPA), as sombras (um traçador de raios e o shapely), a declinação magnética (pygeomag), os deslocamentos no mapa (pyproj) e a planificação de fotos (OpenCV). <code>node scripts/validate.mjs</code> reproduz isso e <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lista o que não é verificado. Ainda não foi comparado com a foto de um cômodo real, por isso há um modo de conferência que compara o modelo com o sol que você viu. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> diz quanto cada dado errado desloca a mancha.</sub>
 </p>
 

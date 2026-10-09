@@ -75,15 +75,24 @@ export function moveRoom(scene, dEast, dNorth) {
 }
 
 /**
- * Put the room at a new point that is not the result of dragging it. Outlines
- * loaded from OpenStreetMap for the old spot would sit in the wrong place, so
- * they go when the point is more than 25 metres away. Buildings drawn by hand stay.
+ * Put the room at a new point that is not the result of dragging it. A move of
+ * 25 metres or less is a nudge: every building and tree stays where it is on
+ * the ground, as when the room is dragged. A longer one is a different place,
+ * so the outlines loaded from OpenStreetMap for the old spot go, and buildings
+ * drawn by hand stay as they were.
  */
 export function setPlacePoint(scene, lat, lon) {
-  if (haversine(scene.place, { lat, lon }) > 25) scene.obstacles = scene.obstacles.filter((o) => o.src !== 'osm')
-  scene.place.lat = lat
-  scene.place.lon = lon
-  return scene
+  const [east, north] = toLocal(scene.place, lat, lon)
+  if (Math.hypot(east, north) > 25) {
+    scene.obstacles = scene.obstacles.filter((o) => o.src !== 'osm')
+    scene.place.lat = lat
+    scene.place.lon = lon
+    return scene
+  }
+  const moved = moveRoom(scene, east, north)
+  scene.place = { ...scene.place, lat: moved.place.lat, lon: moved.place.lon }
+  scene.obstacles = moved.obstacles
+  return refreshOwn(scene)
 }
 
 /** True when the point is inside the outline (any simple polygon). */

@@ -288,7 +288,7 @@
  "wiz.room.templates": "Zimmertypen",
  "wiz.room.size": "Größe und Etage",
  "wiz.room.floor": "Etage",
- "wiz.room.floorNote": "Die Etage wie im Aufzug angezeigt. Das Erdgeschoss ist 1. Sie entscheidet, ob Gebäude gegenüber die Sonne verdecken können.",
+ "wiz.room.floorNote": "Zähle von der Straße aus: das Erdgeschoss ist 1. Zeigt der Aufzug auf Straßenhöhe 0 oder G, addiere 1. Die Etage entscheidet, ob Gebäude gegenüber die Sonne verdecken können.",
  "wiz.room.more": "Mehr: Wanddicke und Geschosshöhe",
  "wiz.room.storey": "Höhe eines Geschosses",
  "wiz.room.trace": "Oder zeichne deinen eigenen Grundriss nach",
@@ -404,5 +404,8 @@
  "wiz.fit.dismiss": "Jetzt nicht",
  "wiz.fit.applied": "Angepasst. Du kannst es rückgängig machen.",
  "kind.shelf": "Regal",
- "wiz.things.onPlan": "Im Zimmer"
+ "wiz.things.onPlan": "Im Zimmer",
+ "app.restored": "Dein letztes Zimmer wurde aus diesem Browser wiederhergestellt. Im Tab Teilen kannst du neu anfangen.",
+ "wiz.check.byNumbers": "Eine Ecke über ihre Abstände hinzufügen",
+ "wiz.check.addCorner": "Diese Ecke hinzufügen"
 }

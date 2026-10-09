@@ -11,6 +11,8 @@ import { itemSunHours } from './frame.js'
 import { compareCheck, fitScene, shiftAlongWall } from '../core/fit.js'
 import { flattenPhoto } from '../core/trace.js'
 import { PictureCanvas, loadPicture, dot } from './picture.js'
+import { utcToLocal } from '../core/solar.js'
+import { fromUnit } from './format.js'
 
 export function thingsStep(ctx) {
   const { store, stage, toast } = ctx
@@ -96,11 +98,11 @@ function shiftText(scene, shift, windowIndex, units) {
 export function checkStep(ctx) {
   const { store, stage, toast, overlay } = ctx
   // marks that are not saved yet survive a rebuild of the step (a new language, new units)
-  const draft = (ctx.draft ??= { points: [], marking: false })
+  const draft = (ctx.draft ??= { points: [], marking: false, underlay: null, dated: false })
   let points = draft.points
   let marking = draft.marking
   let fit = null
-  let photo = Boolean(overlay.underlay)
+  let photo = Boolean(draft.underlay)
   let session = null
   let gone = false
 
@@ -128,9 +130,25 @@ export function checkStep(ctx) {
   const undoPoint = h('button', { class: 'btn', type: 'button', onclick: () => { points.pop(); refreshOverlay(); sync() } }, t('wiz.check.undoPoint'))
   const clearPoints = h('button', { class: 'btn', type: 'button', onclick: () => { points = draft.points = []; refreshOverlay(); sync() } }, t('trace.clear'))
   const savePatch = h('button', { class: 'btn primary', type: 'button', id: 'save-patch', onclick: save }, t('wiz.check.save'))
+  const cornerX = h('input', { type: 'number', id: 'corner-x', inputMode: 'decimal', step: 'any', min: 0, class: 'num-in', 'aria-label': t('f.x') })
+  const cornerY = h('input', { type: 'number', id: 'corner-y', inputMode: 'decimal', step: 'any', min: 0, class: 'num-in', 'aria-label': t('f.y') })
+  const typed = h('details', { class: 'more' }, h('summary', {}, t('wiz.check.byNumbers')),
+    h('div', { class: 'grid2' }, h('div', { class: 'field compact' }, h('label', { htmlFor: 'corner-x' }, t('f.x')), cornerX), h('div', { class: 'field compact' }, h('label', { htmlFor: 'corner-y' }, t('f.y')), cornerY)),
+    h('button', { class: 'btn', type: 'button', id: 'corner-add', onclick: () => {
+      const { room } = store.scene
+      const x = Math.min(room.w, Math.max(0, fromUnit(Number(cornerX.value), store.ui.units)))
+      const y = Math.min(room.d, Math.max(0, fromUnit(Number(cornerY.value), store.ui.units)))
+      if (!Number.isFinite(x) || !Number.isFinite(y) || cornerX.value === '' || cornerY.value === '') return
+      points.push([Math.round(x * 100) / 100, Math.round(y * 100) / 100])
+      if (!marking) setMarking(true)
+      cornerX.value = ''
+      cornerY.value = ''
+      refreshOverlay()
+      sync()
+    } }, t('wiz.check.addCorner')))
   const photoCard = h('div', { hidden: true })
   const photoBtn = h('button', { class: 'btn block', type: 'button', id: 'photo-open', onclick: startPhoto }, t('wiz.check.photo'))
-  const photoOff = h('button', { class: 'btn block', type: 'button', onclick: () => { overlay.underlay = null; photo = null; refreshOverlay(); sync() } }, t('wiz.check.photoOff'))
+  const photoOff = h('button', { class: 'btn block', type: 'button', onclick: () => { overlay.underlay = draft.underlay = null; photo = false; refreshOverlay(); sync() } }, t('wiz.check.photoOff'))
   const checksList = h('div', {})
   const verdict = h('div', { class: 'verdict' })
   const fitBtn = h('button', { class: 'btn primary block', type: 'button', id: 'fit-run', onclick: runFit }, t('wiz.check.fit'))
@@ -235,7 +253,7 @@ export function checkStep(ctx) {
       out.width = width
       out.height = height
       out.getContext('2d').putImageData(new ImageData(flat.data, width, height), 0, 0)
-      overlay.underlay = { canvas: out, alpha: 0.8 }
+      overlay.underlay = draft.underlay = { canvas: out, alpha: 0.8 }
       photo = true
       refreshOverlay()
       toast(t('wiz.photo.ready'))
@@ -320,7 +338,7 @@ export function checkStep(ctx) {
     h('p', {}, t('wiz.check.intro')),
     h('h3', {}, t('wiz.check.when')),
     h('div', { class: 'row' }, month, day, time),
-    markBtn, pointsLine, h('div', { class: 'row' }, undoPoint, clearPoints, savePatch),
+    markBtn, pointsLine, h('div', { class: 'row' }, undoPoint, clearPoints, savePatch), typed,
     photoBtn, photoOff,
     h('h3', {}, t('wiz.check.saved.title')), checksList, verdict, fitBtn, fitOut,
     h('p', { class: 'note' }, t('wiz.check.accuracy')),
@@ -331,18 +349,28 @@ export function checkStep(ctx) {
     el,
     sync,
     enter() {
+      overlay.underlay = draft.underlay
+      // a patch is marked for a moment that was seen, which is most often today and a little while ago
+      if (!draft.dated && !store.scene.checks.length) {
+        const now = utcToLocal(Date.now(), store.scene.place.zone)
+        store.update((d) => {
+          d.date.month = now.month
+          d.date.day = now.day
+          d.minutes = Math.round(now.minutes / 5) * 5
+        }, { history: false })
+      }
+      draft.dated = true
       refreshOverlay()
       store.setUi({ playing: false })
       if (marking) setMarking(true)
     },
-    leave({ rebuilding } = {}) {
+    leave() {
       gone = true
       session?.end()
       stage.setTool(null)
-      if (rebuilding) return // the new step takes up the same marks and photo
+      // the marks and the photo wait for a return to this step, and go when the setup closes
       overlay.marks = null
       overlay.underlay = null
-      ctx.draft = null
       stage.invalidate()
     },
   }

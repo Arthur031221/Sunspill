@@ -288,7 +288,7 @@
  "wiz.room.templates": "部屋のタイプ",
  "wiz.room.size": "サイズと階",
  "wiz.room.floor": "階数",
- "wiz.room.floorNote": "階数はエレベーターの表示どおりで、1 階が 1 です。向かいの建物が日差しをさえぎるかどうかに関わります。",
+ "wiz.room.floorNote": "道路面から数えて、1 階が 1 です。エレベーターが道路面を 0 や G と表示する場合は 1 を足してください。階数は、向かいの建物が日差しをさえぎるかどうかに関わります。",
  "wiz.room.more": "詳細：壁の厚さと階高",
  "wiz.room.storey": "1 階の高さ",
  "wiz.room.trace": "または自分の間取り図をなぞる",
@@ -404,5 +404,8 @@
  "wiz.fit.dismiss": "今はしない",
  "wiz.fit.applied": "調整しました。元に戻せます。",
  "kind.shelf": "棚",
- "wiz.things.onPlan": "部屋の家具"
+ "wiz.things.onPlan": "部屋の家具",
+ "app.restored": "このブラウザーから前回の部屋を復元しました。「共有」タブでやり直せます。",
+ "wiz.check.byNumbers": "距離を入力して角を追加",
+ "wiz.check.addCorner": "この角を追加"
 }

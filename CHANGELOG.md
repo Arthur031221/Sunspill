@@ -11,6 +11,7 @@ A room set up on a phone in a few minutes, and a way to check it against the sun
 - **Surroundings.** Buildings and their heights from OpenStreetMap, with guessed heights marked and editable, trees, and buildings you add. Outlines of any shape. Switch each one off to see what it costs in hours of sun.
 - **Check mode.** Mark the sun patch you saw on the floor, or lay a photo of the floor under the plan. See the overlap and offset, and fit the facing and the window to your marks.
 - **Validation.** Every geometry piece is compared with an independent reference: pvlib and shapely for the shadows, pygeomag, pyproj, timezonefinder and OpenCV for the rest. 0 disagreements in 54,000 shadow probes. docs/ACCURACY.md shows how much each wrong input moves the patch.
+- **Kept on your device.** The last room you edited comes back when you open the page without a link. "Start over" in the Share tab forgets it.
 - **Sharing.** A new link format (`r2`) that carries buildings, floors, balconies and observations. Old links still open. "Hide my exact location" also drops building names.
 - **Library.** New exports for obstacles, geography, declination, the compass, fitting and tracing.
 - **Fixed.** A sun running exactly along a wall no longer lights it. An outline that crosses itself no longer disappears. Wall patches above a raised plane were already fixed in 0.1.

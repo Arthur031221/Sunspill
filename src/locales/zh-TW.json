@@ -288,7 +288,7 @@
  "wiz.room.templates": "房型",
  "wiz.room.size": "尺寸與樓層",
  "wiz.room.floor": "樓層",
- "wiz.room.floorNote": "樓層以電梯上顯示的為準，一樓是 1。它決定對面的建築是否會擋住陽光。",
+ "wiz.room.floorNote": "從街面算起，地面層是 1。如果電梯在街面顯示 0 或 G，請加 1。樓層決定對面的建築是否會擋住陽光。",
  "wiz.room.more": "更多：牆厚與樓層高度",
  "wiz.room.storey": "每層樓高",
  "wiz.room.trace": "或描繪你自己的平面圖",
@@ -404,5 +404,8 @@
  "wiz.fit.dismiss": "暫不",
  "wiz.fit.applied": "已調整，可以復原。",
  "kind.shelf": "置物架",
- "wiz.things.onPlan": "房間裡的家具"
+ "wiz.things.onPlan": "房間裡的家具",
+ "app.restored": "已從這個瀏覽器還原你上次的房間。可在「分享」分頁重新開始。",
+ "wiz.check.byNumbers": "輸入距離來新增一個角",
+ "wiz.check.addCorner": "新增這個角"
 }

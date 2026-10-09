@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { toLocal, fromLocal, metresPerDegree, haversine, lonLatToTile, tileToLonLat, moveRoom, insideRing, ownBuilding, roomCorners, metresPerPixel } from '../src/core/geo.js'
+import { toLocal, fromLocal, metresPerDegree, haversine, lonLatToTile, tileToLonLat, moveRoom, insideRing, ownBuilding, roomCorners, metresPerPixel, setPlacePoint } from '../src/core/geo.js'
 import { parseBuildings, parseLength, buildingHeight, buildingQuery, fitRing, simplifyRing, parsePlaces, shortLabel } from '../src/core/osm.js'
 import { declination, decimalYear, inRange } from '../src/core/declination.js'
 import { headingFromAngles, rotationMatrix, circularMean, circularSpread, createAverager, trueHeading } from '../src/core/compass.js'
@@ -198,7 +198,7 @@ test('outlines are thinned to a small corner count that keeps their shape', () =
 
 test('the Overpass query names the area and asks for outlines with tags', () => {
   const q = buildingQuery(25.0288, 121.5442, 200)
-  assert.ok(q.includes('around:200,25.028800,121.544200') && q.includes('out geom tags') && q.startsWith('[out:json]'))
+  assert.ok(q.includes('around:200,25.02880,121.54420') && q.includes('out geom tags') && q.startsWith('[out:json]'))
 })
 
 test('address matches from Nominatim keep a short label, and junk rows are dropped', () => {
@@ -305,4 +305,32 @@ test('hiding the location also drops building names and ids', () => {
   assert.equal(hidden.obstacles[0].name, '')
   assert.equal(hidden.obstacles[0].id, undefined)
   assert.equal(hidden.obstacles[0].ring.length, 3)
+})
+
+test('a nudge of the pin keeps every outline on the ground, and a long move drops the loaded ones but not those drawn by hand', () => {
+  const scene = normalizeScene({
+    place: { name: 'x', lat: 25.0288, lon: 121.5442, zone: 'Asia/Taipei' },
+    obstacles: [
+      { type: 'building', src: 'osm', ring: [[-5, -5], [5, -5], [5, 5], [-5, 5]], h: 10, own: true, on: false },
+      { type: 'building', src: 'osm', ring: [[20, 10], [30, 10], [30, 20], [20, 20]], h: 12 },
+      { type: 'tree', src: 'manual', x: -12, y: 4, r: 2, h: 8 },
+    ],
+  })
+  const ground = (sc, o) => (o.type === 'tree' ? fromLocal(sc.place, o.x, o.y) : fromLocal(sc.place, o.ring[0][0], o.ring[0][1]))
+  const near = structuredClone(scene)
+  const target = fromLocal(scene.place, 18, 3)
+  setPlacePoint(near, target.lat, target.lon)
+  assert.equal(near.obstacles.length, 3, 'a nudge removes nothing')
+  for (let i = 0; i < 3; i++) {
+    const a = ground(scene, scene.obstacles[i])
+    const b = ground(near, near.obstacles[i])
+    assert.ok(Math.abs(a.lat - b.lat) < 1e-8 && Math.abs(a.lon - b.lon) < 1e-8, `outline ${i} stayed on the ground`)
+  }
+  assert.equal(near.obstacles[0].own, false, 'the room is no longer inside the first building')
+  assert.equal(near.obstacles[0].on, true, 'so that building counts as shade again')
+  const far = structuredClone(scene)
+  const away = fromLocal(scene.place, 400, 0)
+  setPlacePoint(far, away.lat, away.lon)
+  assert.deepEqual(far.obstacles.map((o) => o.src), ['manual'])
+  assert.ok(Math.abs(far.place.lat - away.lat) < 1e-9)
 })

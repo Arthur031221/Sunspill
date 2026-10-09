@@ -5,7 +5,7 @@ Every geometry piece in Sunspill is compared with a reference that shares no cod
 | Piece | Compared with | Result |
 | --- | --- | --- |
 | Sun position | The NREL Solar Position Algorithm in pvlib 0.16.1 | 403 samples, worst 0.0068 degrees in elevation and 0.0588 in azimuth |
-| Light through a window | A ray tracer written separately, `test/helpers/raytrace.js` | 3,767,000 probes, 0 disagreements |
+| Light through a window | A ray tracer written separately, `test/helpers/raytrace.js`, which borrows only the wall frame helper | 3,767,000 probes, 0 disagreements |
 | Shadows of buildings, trees, balcony rails and eaves | The same ray tracer, which uses the real outline of each building | 987,660 probes, 0 disagreements |
 | Shadows of buildings, trees, balcony rails and eaves | pvlib for the sun, then shapely rays against extruded polygons in a world frame | 54,000 probes, 0 disagreements |
 | East and north offsets from latitude and longitude | pyproj, WGS84 topocentric frame | 80 points within 400 m, worst 3.8 cm |
@@ -31,7 +31,7 @@ The reference rows are in `test/fixtures/solar-reference.json`. `scripts/make-re
 
 ## Which points a window lights
 
-Each case is a random room (2.5 to 8 metres a side), one to four windows with random size, sill, shade and building across the street, a wall thickness from none to 40 cm, a random sun direction aimed at one of the windows and a random floor or table height. The exact polygons from `src/core/light.js` are compared with a ray tracer that shares no code with them (`test/helpers/raytrace.js`): from each probe point it follows the ray toward the sun through the room, the wall, the shade and the building, and asks whether it gets out of a window.
+Each case is a random room (2.5 to 8 metres a side), one to four windows with random size, sill, shade and building across the street, a wall thickness from none to 40 cm, a random sun direction aimed at one of the windows and a random floor or table height. The exact polygons from `src/core/light.js` are compared with a ray tracer written separately (`test/helpers/raytrace.js`, which only borrows the wall frame helper from `src/core/room.js`): from each probe point it follows the ray toward the sun through the room, the wall, the shade and the building, and asks whether it gets out of a window.
 
 - Across five random seeds, 3,767 rooms and 3,767,000 probe points on the floor and the four walls, of which 213,948 were lit: 0 disagreements.
 - `node scripts/validate.mjs` runs the five seeds (1 to 5). The tests in `test/light.test.js` run a sixth seed on every change and fail on a single disagreement.

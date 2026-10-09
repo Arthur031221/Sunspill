@@ -66,7 +66,7 @@ test('buildings come from the first Overpass server that answers, and the positi
   assert.deepEqual(h.calls.map((c) => new URL(c.url).origin), ['https://overpass-api.de', 'https://overpass.openstreetmap.fr', 'https://overpass.private.coffee'])
   const body = h.calls[0].init.body
   assert.ok(body instanceof URLSearchParams)
-  assert.match(body.get('data'), /around:200,25\.028800,121\.544200/)
+  assert.match(body.get('data'), /around:200,25\.02880,121\.54420/)
   assert.equal(h.calls[0].init.method, 'POST')
 })
 

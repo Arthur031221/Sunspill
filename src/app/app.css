@@ -395,3 +395,16 @@ html[data-wizard] .toast { bottom: calc(92px + env(safe-area-inset-bottom)); }
   .top-tools { max-width: 100%; }
   html[data-wizard] .top-tools { flex-wrap: wrap; justify-content: flex-end; }
 }
+
+/* a phone on its side: the view and the step side by side, as on a desktop */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 960px) {
+  html[data-wizard] .layout { flex-direction: row; gap: 8px; }
+  html[data-wizard] .stage-wrap { flex: 1 1 52%; display: grid; grid-template-rows: minmax(0, 1fr); }
+  html[data-wizard] .stage { height: 100%; min-height: 0; }
+  html[data-wizard] .wizard { flex: 1 1 48%; }
+  html[data-wizard] .top { padding: 2px 12px; }
+  .wiz-head { padding: 6px 12px 4px; }
+  .wiz-title { font-size: 18px; margin: 0 0 2px; }
+  .wiz-nav { padding-top: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+}
+html[data-wizard] .hint { display: none; }

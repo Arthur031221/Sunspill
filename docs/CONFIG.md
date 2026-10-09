@@ -69,6 +69,6 @@ The part after `#` is `r2=` followed by the scene as a short JSON array in base6
 
 ## Interface preferences
 
-Stored in the browser under `localStorage["sunspill.prefs"]` and never sent anywhere: `theme` (`auto`, `light`, `dark`), `lang`, `units` (`m` or `ft`), `arc` (show the sun path), `net` (which of the three online services you allowed, see [PRIVACY.md](PRIVACY.md)) and `setup` (whether you finished the guided setup).
+Stored in the browser under `localStorage["sunspill.prefs"]` and never sent anywhere: `theme` (`auto`, `light`, `dark`), `lang`, `units` (`m` or `ft`), `arc` (show the sun path), `net` (which of the three online services you allowed, see [PRIVACY.md](PRIVACY.md)) and `setup` (whether you finished the guided setup). The last room you edited is kept under `localStorage["sunspill.room"]` in the link format below, and "Start over" removes it.
 
 The language is picked from the browser language list the first time. Supported: English, Traditional Chinese, Simplified Chinese, Japanese, Korean, Spanish, French, German and Brazilian Portuguese. Messages live in `src/locales/*.json`, one flat file per language. A test checks that every language has every key and the same placeholders.

@@ -33,7 +33,7 @@
 </table>
 
 <p align="center">
-  太阳仰角与 NREL 参考值相差在 <b>0.007 度</b>内。建筑、树木和阳台遮住窗户的计算，与 pvlib 和 shapely 比对，<b>54,000 个探测点有 0 处不一致</b>。<br>
+  太阳仰角与 NREL 参考值相差在 <b>0.007 度</b>内。建筑、树木和阳台遮住窗户的计算，与 pvlib 和 shapely 比对，<b>54,000 个探测点有 0 处不一致</b>（其中 1,275 点只因建筑、树木或阳台栏杆而变暗）。<br>
   <sub>每一个几何环节都和独立的参考值比对：太阳（pvlib、NREL SPA）、阴影（光线追踪程序和 shapely）、磁偏角（pygeomag）、地图位移（pyproj）、照片展平（OpenCV）。用 <code>node scripts/validate.mjs</code> 可以复现，没有验证的选择写在 <a href="docs/VALIDATION.md">docs/VALIDATION.md</a>。它还没有和实拍的房间照片比对过，所以有一个核对模式，让你拿模型和亲眼看到的阳光比。<a href="docs/ACCURACY.md">docs/ACCURACY.md</a> 说明每个输入错了会让光斑偏多少。</sub>
 </p>
 

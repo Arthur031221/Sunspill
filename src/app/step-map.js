@@ -25,8 +25,9 @@ export async function loadBuildings(ctx) {
     const now = store.scene.place
     if (mine.signal.aborted || haversine(asked, now) > 25) return false
     store.update((d) => {
+      // what was drawn by hand is kept, and the loaded outlines take the room that is left
       const manual = d.obstacles.filter((o) => o.src !== 'osm')
-      d.obstacles = [...buildings, ...manual].slice(0, MAX_OBSTACLES)
+      d.obstacles = [...buildings.slice(0, Math.max(0, MAX_OBSTACLES - manual.length)), ...manual]
       refreshOwn(d)
     })
     store.setUi({ obstacle: null })
@@ -141,6 +142,12 @@ export function surroundStep(ctx) {
   }
   map.on.select = (i) => {
     select(i)
+    // a building past the first few has no card until the list shows them all
+    if (i != null && i >= 8 && !showAll.on) {
+      showAll.on = true
+      shape = ''
+      sync()
+    }
     if (i != null) list.querySelector(`[data-obstacle="${i}"]`)?.scrollIntoView({ block: 'nearest' })
   }
   map.on.moveObstacle = (i, e, n) => store.update((d) => {

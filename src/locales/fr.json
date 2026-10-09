@@ -288,7 +288,7 @@
  "wiz.room.templates": "Types de pièce",
  "wiz.room.size": "Taille et étage",
  "wiz.room.floor": "Numéro d'étage",
- "wiz.room.floorNote": "Le numéro d'étage comme dans l'ascenseur. Le rez-de-chaussée est 1. Il décide si les immeubles d'en face peuvent masquer le soleil.",
+ "wiz.room.floorNote": "Comptez depuis la rue : le rez-de-chaussée est 1. Si l'ascenseur affiche 0 ou G au niveau de la rue, ajoutez 1. L'étage décide si les immeubles d'en face peuvent masquer le soleil.",
  "wiz.room.more": "Plus : épaisseur du mur et hauteur d'étage",
  "wiz.room.storey": "Hauteur d'un étage",
  "wiz.room.trace": "Ou décalquez votre propre plan",
@@ -404,5 +404,8 @@
  "wiz.fit.dismiss": "Pas maintenant",
  "wiz.fit.applied": "Ajusté. Vous pouvez annuler.",
  "kind.shelf": "Étagère",
- "wiz.things.onPlan": "Dans la pièce"
+ "wiz.things.onPlan": "Dans la pièce",
+ "app.restored": "Votre dernière pièce a été rétablie depuis ce navigateur. Recommencez dans l'onglet Partager.",
+ "wiz.check.byNumbers": "Ajouter un coin en saisissant ses distances",
+ "wiz.check.addCorner": "Ajouter ce coin"
 }

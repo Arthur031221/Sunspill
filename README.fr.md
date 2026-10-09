@@ -33,7 +33,7 @@
 </table>
 
 <p align="center">
-  Hauteur du soleil à moins de <b>0,007 degré</b> de la référence NREL. <b>0 désaccord sur 54 000 points de test</b> où bâtiments, arbres et balcons font de l'ombre à une fenêtre, face à pvlib et shapely.<br>
+  Hauteur du soleil à moins de <b>0,007 degré</b> de la référence NREL. <b>0 désaccord sur 54 000 points de test</b> face à pvlib et shapely (dont 1 275 ne sont sombres que parce qu'un bâtiment, un arbre ou un garde-corps de balcon ombrage la fenêtre).<br>
   <sub>Chaque morceau de géométrie est comparé à une référence indépendante : le soleil (pvlib, NREL SPA), les ombres (un traceur de rayons et shapely), la déclinaison magnétique (pygeomag), les décalages sur la carte (pyproj) et la mise à plat des photos (OpenCV). <code>node scripts/validate.mjs</code> le reproduit et <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> liste ce qui n'est pas vérifié. Il n'a pas encore été comparé à la photo d'une vraie pièce, d'où un mode de contrôle qui compare le modèle à ce que vous avez vu. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> dit de combien chaque erreur déplace la tache.</sub>
 </p>
 

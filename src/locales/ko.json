@@ -288,7 +288,7 @@
  "wiz.room.templates": "방 유형",
  "wiz.room.size": "크기와 층",
  "wiz.room.floor": "층 번호",
- "wiz.room.floorNote": "층 번호는 엘리베이터에 표시된 대로이며 1층이 1입니다. 맞은편 건물이 햇빛을 가리는지 여부를 정합니다.",
+ "wiz.room.floorNote": "도로면에서 세어 1층이 1입니다. 엘리베이터가 도로면을 0이나 G로 표시하면 1을 더하세요. 층은 맞은편 건물이 햇빛을 가리는지 여부를 정합니다.",
  "wiz.room.more": "더 보기: 벽 두께와 층고",
  "wiz.room.storey": "한 층의 높이",
  "wiz.room.trace": "또는 내 평면도 따라 그리기",
@@ -404,5 +404,8 @@
  "wiz.fit.dismiss": "나중에",
  "wiz.fit.applied": "맞췄습니다. 되돌릴 수 있습니다.",
  "kind.shelf": "선반",
- "wiz.things.onPlan": "방 안의 가구"
+ "wiz.things.onPlan": "방 안의 가구",
+ "app.restored": "이 브라우저에서 지난번 방을 복원했습니다. 공유 탭에서 처음부터 다시 시작할 수 있습니다.",
+ "wiz.check.byNumbers": "거리를 입력해 모서리 추가",
+ "wiz.check.addCorner": "이 모서리 추가"
 }

@@ -33,7 +33,7 @@
 </table>
 
 <p align="center">
-  태양 고도는 NREL 기준값과 <b>0.007도</b> 이내로 일치합니다. 건물, 나무, 발코니가 창문에 그늘을 드리우는 계산은 pvlib, shapely와 비교해 <b>54,000개 검사 지점에서 불일치 0건</b>입니다.<br>
+  태양 고도는 NREL 기준값과 <b>0.007도</b> 이내로 일치합니다. 건물, 나무, 발코니가 창문에 그늘을 드리우는 계산은 pvlib, shapely와 비교해 <b>54,000개 검사 지점에서 불일치 0건</b>입니다(그중 1,275개는 건물, 나무, 발코니 난간 때문에만 어두워진 지점).<br>
   <sub>기하의 모든 부분을 독립된 기준과 비교했습니다. 태양은 pvlib(NREL SPA), 그림자는 광선 추적기와 shapely, 자기편각은 pygeomag, 지도 위 변위는 pyproj, 사진 펴기는 OpenCV입니다. <code>node scripts/validate.mjs</code>로 재현할 수 있고, 확인하지 않은 가정은 <a href="docs/VALIDATION.md">docs/VALIDATION.md</a>에 있습니다. 실제로 찍은 방 사진과 비교한 적은 아직 없어서, 본 햇빛과 모델을 견주는 확인 모드를 넣었습니다. 입력이 틀리면 햇빛 조각이 얼마나 밀리는지는 <a href="docs/ACCURACY.md">docs/ACCURACY.md</a>에 있습니다.</sub>
 </p>
 

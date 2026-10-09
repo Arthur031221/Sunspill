@@ -288,7 +288,7 @@
  "wiz.room.templates": "Tipos de habitación",
  "wiz.room.size": "Tamaño y planta",
  "wiz.room.floor": "Número de planta",
- "wiz.room.floorNote": "El número de planta como en el ascensor. La planta baja es 1. Decide si los edificios de enfrente pueden tapar el sol.",
+ "wiz.room.floorNote": "Cuenta desde la calle: la planta baja es 1. Si el ascensor marca 0 o G en la calle, suma 1. La planta decide si los edificios de enfrente pueden tapar el sol.",
  "wiz.room.more": "Más: grosor del muro y altura de planta",
  "wiz.room.storey": "Altura de una planta",
  "wiz.room.trace": "O calca tu propio plano",
@@ -404,5 +404,8 @@
  "wiz.fit.dismiss": "Ahora no",
  "wiz.fit.applied": "Ajustado. Puedes deshacerlo.",
  "kind.shelf": "Estantería",
- "wiz.things.onPlan": "En la habitación"
+ "wiz.things.onPlan": "En la habitación",
+ "app.restored": "Se ha recuperado tu última habitación de este navegador. Empieza de nuevo en la pestaña Compartir.",
+ "wiz.check.byNumbers": "Añadir una esquina escribiendo sus distancias",
+ "wiz.check.addCorner": "Añadir esta esquina"
 }

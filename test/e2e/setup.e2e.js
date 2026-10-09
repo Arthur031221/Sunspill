@@ -124,7 +124,7 @@ test('the first screen offers the setup and the seven steps fit a phone one afte
   await context.close()
 })
 
-test('the sample page still asks nothing of anyone: no outside request, and the policy names three hosts only', async () => {
+test('the sample page still asks nothing of anyone: no outside request, and the policy names five hosts only', async () => {
   const { page, context, outside } = await open()
   await page.waitForTimeout(300)
   assert.deepEqual(outside, [])
@@ -371,7 +371,7 @@ test('facing: the buildings load after a yes, the first server may fail, and dra
   await page.click('.modal button.primary')
   await page.waitForFunction(() => window.__sunspill.store.scene.obstacles.length > 0)
   assert.deepEqual(outside.map((o) => o.host), ['overpass-api.de', 'overpass.openstreetmap.fr'], 'the second server answered after the first was busy')
-  assert.match(outside[0].body, /around%3A200%2C25\.028800%2C121\.544200/)
+  assert.match(outside[0].body, /around%3A200%2C25\.02880%2C121\.54420/)
   assert.match(await page.locator('.wiz-step').innerText(), /37 buildings are loaded/)
   const s0 = await scene(page)
   assert.equal(s0.obstacles.length, 37)
@@ -480,7 +480,7 @@ test('furniture: add a shelf, turn it with the buttons, the handle and the keybo
 test('check: marked corners agree with the model, a wrong facing is fitted back, and it can be undone', async () => {
   const { page, context } = await open()
   await openWizard(page, 6)
-  await page.evaluate(() => window.__sunspill.store.update((d) => { d.minutes = 16 * 60 + 30; d.items = [] }, { history: false }))
+  await page.evaluate(() => window.__sunspill.store.update((d) => { d.date = { month: 7, day: 15 }; d.minutes = 16 * 60 + 30; d.items = [] }, { history: false }))
   await page.waitForTimeout(100)
   await page.click('#mark-toggle')
   // tap the corners of the model patch itself, as if the sun had landed exactly there
@@ -623,4 +623,93 @@ test('a dark phone, a wide phone and a tablet keep the setup usable', async () =
     assert.ok(stage.height > 150, `${viewport.width}: the view is ${stage.height} px`)
     await context.close()
   }
+})
+
+test('the room you edited comes back next time, a friend\'s link does not replace it, and Start over forgets it', async () => {
+  const { page, context } = await open()
+  await page.evaluate(() => window.__sunspill.store.update((d) => { d.room.w = 4.4; d.windows[0].w = 2.2 }))
+  await page.waitForTimeout(500)
+  assert.match(await page.evaluate(() => localStorage.getItem('sunspill.room')), /^r2=/)
+  // the page opened again with no link in the address
+  await page.goto(site.url)
+  await page.waitForSelector('html[data-ready]')
+  assert.equal((await scene(page)).room.w, 4.4)
+  assert.match(await page.locator('#toast').innerText(), /last room was brought back/)
+  assert.equal((await ui(page)).playing, false, 'a room that comes back does not start playing')
+  // somebody else's link opens their room and leaves yours in the store
+  const theirs = await page.evaluate(() => {
+    const s = structuredClone(window.__sunspill.store.scene)
+    s.room.w = 7
+    return location.origin + location.pathname + '#' + window.__sunspill.encode(s)
+  })
+  await page.goto(theirs)
+  await page.waitForSelector('html[data-ready]')
+  assert.equal((await scene(page)).room.w, 7)
+  await page.waitForTimeout(500)
+  await page.goto(site.url)
+  await page.waitForSelector('html[data-ready]')
+  assert.equal((await scene(page)).room.w, 4.4, 'viewing a link does not overwrite your room')
+  // Start over forgets it
+  await page.click('#tab-share')
+  await page.click('text=Start over')
+  await page.waitForTimeout(500)
+  assert.equal(await page.evaluate(() => localStorage.getItem('sunspill.room')), null)
+  await page.goto(site.url)
+  await page.waitForSelector('html[data-ready]')
+  assert.equal((await scene(page)).room.w, 3.6)
+  await context.close()
+})
+
+test('the check step starts from today, and corners can be typed for a keyboard or a screen reader', async () => {
+  const { page, context } = await open()
+  await openWizard(page, 6)
+  const today = await page.evaluate(() => {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', month: 'numeric', day: 'numeric' }).formatToParts(new Date())
+    return { month: Number(parts.find((p) => p.type === 'month').value), day: Number(parts.find((p) => p.type === 'day').value) }
+  })
+  const s0 = await scene(page)
+  assert.deepEqual({ month: s0.date.month, day: s0.date.day }, today, 'not the 15 July of the sample')
+  await page.click('summary:has-text("Add a corner by typing its distances")')
+  for (const [x, y] of [['0.6', '2.5'], ['1.8', '2.5'], ['1.8', '3.9']]) {
+    await page.fill('#corner-x', x)
+    await page.fill('#corner-y', y)
+    await page.click('#corner-add')
+  }
+  assert.match(await page.locator('.wiz-step').innerText(), /3 points/)
+  await page.click('#save-patch')
+  const s = await scene(page)
+  assert.equal(s.checks.length, 1)
+  assert.deepEqual(s.checks[0].poly, [[0.6, 2.5], [1.8, 2.5], [1.8, 3.9]])
+  // marks that were not saved survive a trip to the step before and back
+  await page.click('#mark-toggle')
+  await page.fill('#corner-x', '2.5')
+  await page.fill('#corner-y', '1')
+  await page.click('#corner-add')
+  await page.click('#wiz-back')
+  await page.click('#wiz-next')
+  assert.match(await page.locator('.wiz-step').innerText(), /1 points/)
+  await context.close()
+})
+
+test('the list opens for a building picked on the map, and what was drawn by hand survives loading', async () => {
+  const { page, context } = await open()
+  await page.evaluate(() => {
+    const s = window.__sunspill
+    s.store.update((d) => {
+      d.place = { name: 'Da-an', lat: 25.0288, lon: 121.5442, zone: 'Asia/Taipei' }
+      d.obstacles = [{ type: 'tree', src: 'manual', x: -9, y: 5, r: 2.5, h: 9, base: 2 }]
+    })
+    s.consent.set('buildings', true)
+  })
+  await openWizard(page, 4)
+  await page.click('#load-buildings')
+  await page.waitForFunction(() => window.__sunspill.store.scene.obstacles.length > 20)
+  const after = await scene(page)
+  assert.equal(after.obstacles.filter((o) => o.src === 'manual').length, 1, 'the tree stays')
+  assert.ok(after.obstacles.length <= 80)
+  assert.equal(await page.locator('.obstacle-list [data-obstacle="12"]').count(), 0, 'only the first few have a card')
+  await page.evaluate(() => window.__sunspill.map.on.select(12))
+  await page.waitForTimeout(250)
+  assert.equal(await page.locator('.obstacle-list [data-obstacle="12"]').count(), 1, 'now the building has a card to edit')
+  await context.close()
 })

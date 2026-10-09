@@ -288,7 +288,7 @@
  "wiz.room.templates": "Tipos de cômodo",
  "wiz.room.size": "Tamanho e andar",
  "wiz.room.floor": "Número do andar",
- "wiz.room.floorNote": "O número do andar como no elevador. O térreo é 1. Ele decide se os prédios da frente podem bloquear o sol.",
+ "wiz.room.floorNote": "Conte a partir da rua: o térreo é 1. Se o elevador mostra 0 ou G no nível da rua, some 1. O andar decide se os prédios da frente podem bloquear o sol.",
  "wiz.room.more": "Mais: espessura da parede e altura do andar",
  "wiz.room.storey": "Altura de um andar",
  "wiz.room.trace": "Ou trace a sua própria planta",
@@ -404,5 +404,8 @@
  "wiz.fit.dismiss": "Agora não",
  "wiz.fit.applied": "Ajustado. Você pode desfazer.",
  "kind.shelf": "Estante",
- "wiz.things.onPlan": "No cômodo"
+ "wiz.things.onPlan": "No cômodo",
+ "app.restored": "Seu último cômodo foi recuperado deste navegador. Recomece na aba Compartilhar.",
+ "wiz.check.byNumbers": "Adicionar um canto digitando as distâncias",
+ "wiz.check.addCorner": "Adicionar este canto"
 }

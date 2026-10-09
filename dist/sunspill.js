@@ -155,7 +155,7 @@ var OBSTACLE_TYPES = ["building", "tree"];
 var MAX_WINDOWS = 4;
 var MAX_DOORS = 3;
 var MAX_ITEMS = 16;
-var MAX_OBSTACLES = 60;
+var MAX_OBSTACLES = 80;
 var MAX_RING = 40;
 var MAX_CHECKS = 6;
 var YEAR = 2026;
@@ -1092,6 +1092,7 @@ function insideRing(ring, [x, y]) {
 }
 
 // src/core/osm.js
+var OSM_LIMIT = 60;
 var LEVEL = 3.2;
 var TYPICAL = {
   house: 7,
@@ -1205,7 +1206,7 @@ function fitRing(ring) {
   return out.length > MAX_RING ? out.filter((_, i) => i % Math.ceil(out.length / MAX_RING) === 0) : out;
 }
 function buildingQuery(lat, lon, radius = 200) {
-  const around = `around:${Math.round(radius)},${lat.toFixed(6)},${lon.toFixed(6)}`;
+  const around = `around:${Math.round(radius)},${lat.toFixed(5)},${lon.toFixed(5)}`;
   return `[out:json][timeout:20];(way["building"](${around});way["building:part"](${around});relation["building"](${around}););out geom tags;`;
 }
 var ringOf = (geometry, center) => {
@@ -1218,7 +1219,7 @@ var ringOf = (geometry, center) => {
   pts.pop();
   return pts;
 };
-function parseBuildings(json, center, { limit = MAX_OBSTACLES } = {}) {
+function parseBuildings(json, center, { limit = OSM_LIMIT } = {}) {
   const found = [];
   for (const el of Array.isArray(json?.elements) ? json.elements : []) {
     const tags = el.tags || {};

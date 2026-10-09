@@ -3,7 +3,10 @@
 // from Nominatim. Nothing here makes a request; src/app/net.js does.
 
 import { toLocal, insideRing } from './geo.js'
-import { LIMITS, MAX_RING, MAX_OBSTACLES } from './room.js'
+import { LIMITS, MAX_RING } from './room.js'
+
+/** Most buildings kept from one answer, which leaves room in the scene for the ones drawn by hand. */
+export const OSM_LIMIT = 60
 
 const LEVEL = 3.2
 
@@ -95,7 +98,8 @@ export function fitRing(ring) {
 
 /** The Overpass query for building outlines within a radius of a point. */
 export function buildingQuery(lat, lon, radius = 200) {
-  const around = `around:${Math.round(radius)},${lat.toFixed(6)},${lon.toFixed(6)}`
+  // five decimals are about a metre, which is what the page tells people it sends
+  const around = `around:${Math.round(radius)},${lat.toFixed(5)},${lon.toFixed(5)}`
   return `[out:json][timeout:20];(way["building"](${around});way["building:part"](${around});relation["building"](${around}););out geom tags;`
 }
 
@@ -117,7 +121,7 @@ const ringOf = (geometry, center) => {
  * is split into parts that carry their own heights, the parts replace it.
  * @returns {{buildings: object[], total: number}}
  */
-export function parseBuildings(json, center, { limit = MAX_OBSTACLES } = {}) {
+export function parseBuildings(json, center, { limit = OSM_LIMIT } = {}) {
   const found = []
   for (const el of Array.isArray(json?.elements) ? json.elements : []) {
     const tags = el.tags || {}

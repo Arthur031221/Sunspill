@@ -2,17 +2,17 @@
 
 Your room stays in your browser. It is never sent anywhere by Sunspill. It lives in the address bar of the page (the part after the `#`, which browsers do not send to a server), in the page's local storage for a few settings, and in files you save yourself.
 
-Three optional services talk to other servers. Each one is off until you allow it, and the page names it and says what it sends before the first request. You can turn each one off again from "Online services" at the bottom of the page, and in the setup under its step title.
+Three optional services talk to public servers. Each one is off until you allow it, and the page names it and says what it sends before the first request. You can turn each one off again from "Online services" at the bottom of the page, and in the setup under its step title.
 
 | Service | Used for | Server | What it receives |
 | --- | --- | --- | --- |
 | Address search | Finding your address or building | nominatim.openstreetmap.org (OpenStreetMap Foundation) | The text you type in the search box |
 | Map pictures | The map behind the pin and the room | tile.openstreetmap.org (OpenStreetMap Foundation) | The map tiles for the part of the world you are looking at |
-| Building outlines | Neighbouring buildings and their heights | overpass-api.de, or if it fails overpass.openstreetmap.fr and then overpass.private.coffee | The latitude and longitude of the room, to about one metre, and the radius of 200 metres |
+| Building outlines | Neighbouring buildings and their heights | overpass-api.de, or if it fails overpass.openstreetmap.fr and then overpass.private.coffee (run by OpenStreetMap France and by the private.coffee collective, not by the OpenStreetMap Foundation) | The latitude and longitude of the room, rounded to five decimals (about one metre), and the radius of 200 metres |
 
 Every request also carries what any web request carries: your network address, your browser's name and the site this page is on (not its full address, and never the part after the `#`). OpenStreetMap's own [privacy policy](https://wiki.osmfoundation.org/wiki/Privacy_Policy) and the policies of the Overpass server operators say what they do with it.
 
-The page's Content Security Policy lists exactly those four hosts and no others, so even a mistake in the code could not send anything elsewhere. `test/e2e/setup.e2e.js` checks that:
+The page's Content Security Policy lists exactly those five hosts (the Nominatim server, three Overpass servers and the tile server) and no others, so the browser blocks a script request to anything else. It does not stop a link that someone clicks. `test/e2e/setup.e2e.js` checks that:
 
 - a fresh page makes no request but its own,
 - a "Not now" sends nothing,
@@ -29,7 +29,9 @@ The page's Content Security Policy lists exactly those four hosts and no others,
 
 ## Remembered on your device
 
-`localStorage` holds the language, the theme, the units, whether the sun path shows, which of the three services you allowed, and whether you finished the setup. Clearing site data forgets all of that.
+`localStorage` holds the language, the theme, the units, whether the sun path shows, which of the three services you allowed, whether you finished the setup, and the last room you edited, so that it comes back the next time you open the page. "Start over" in the Share tab forgets that room, and clearing site data forgets everything.
+
+The link in the address bar holds the whole room too, so it sits in your browser history, and in synced history if you use sync.
 
 ## Sharing
 

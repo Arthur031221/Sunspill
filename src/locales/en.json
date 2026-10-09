@@ -288,7 +288,7 @@
  "wiz.room.templates": "Room types",
  "wiz.room.size": "Size and floor",
  "wiz.room.floor": "Floor number",
- "wiz.room.floorNote": "Floor number as shown in the lift. The ground floor is 1. It decides whether buildings across the street can block the sun.",
+ "wiz.room.floorNote": "Count from the street: the ground floor is 1. If the lift shows 0 or G for the street level, add 1. The floor decides whether buildings across the street can block the sun.",
  "wiz.room.more": "More: wall thickness and floor height",
  "wiz.room.storey": "Height of one floor",
  "wiz.room.trace": "Or trace your own plan",
@@ -404,5 +404,8 @@
  "wiz.fit.dismiss": "Not now",
  "wiz.fit.applied": "Fitted. You can undo this.",
  "kind.shelf": "Shelf",
- "wiz.things.onPlan": "In the room"
+ "wiz.things.onPlan": "In the room",
+ "app.restored": "Your last room was brought back from this browser. Start over in the Share tab.",
+ "wiz.check.byNumbers": "Add a corner by typing its distances",
+ "wiz.check.addCorner": "Add this corner"
 }

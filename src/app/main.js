@@ -42,8 +42,19 @@ const savePrefs = (ui) => {
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
 const dark = matchMedia('(prefers-color-scheme: dark)')
 const prefs = loadPrefs()
+const ROOM_KEY = 'sunspill.room'
+const loadRoom = () => {
+  try {
+    return decodeScene(localStorage.getItem(ROOM_KEY) || '')
+  } catch {
+    return null
+  }
+}
 const fromLink = decodeScene(location.hash.slice(1))
-const initial = fromLink ?? defaultScene()
+// without a link, the room that was last edited here comes back
+const restored = fromLink ? null : loadRoom()
+const initial = fromLink ?? restored ?? defaultScene()
+let edited = false
 const lang = LOCALES[prefs.lang] ? prefs.lang : pickLocale(navigator.languages)
 const imperial = /^en-(US|LR|MM)$/i.test(navigator.language || '')
 const northern = initial.place.lat >= 0
@@ -62,7 +73,7 @@ const store = createStore(initial, {
   selected: null,
   selectedWindow: 0,
   showArc: prefs.arc !== false,
-  playing: !fromLink && !reduced,
+  playing: !fromLink && !restored && !reduced,
   mode: '3d',
   heat: { on: false, period: 'day', from: 6, to: 8, z: 0 },
   west: { from: northern ? 6 : 12, to: northern ? 9 : 3, after: 14 * 60 },
@@ -179,12 +190,19 @@ const actions = {
       const data = JSON.parse(await file.text())
       if (!data || typeof data !== 'object' || !data.room) throw new Error('no room')
       store.replace(data)
+      edited = true
       toast(t('share.imported'))
     } catch {
       toast(t('share.importFailed'))
     }
   },
   reset() {
+    edited = false
+    try {
+      localStorage.removeItem(ROOM_KEY)
+    } catch {
+      // nothing was kept
+    }
     store.replace(defaultScene())
     store.setUi({ playing: !reduced })
     dock.start()
@@ -416,6 +434,14 @@ const writeHash = (() => {
     timer = setTimeout(() => {
       lastHash = `#${encodeScene(store.scene)}`
       history.replaceState(null, '', lastHash)
+      // only a room that was edited here is kept: opening somebody's link must not replace your own
+      if (edited) {
+        try {
+          localStorage.setItem(ROOM_KEY, lastHash.slice(1))
+        } catch {
+          // private mode: the link still holds the room
+        }
+      }
     }, 300)
   }
 })()
@@ -450,6 +476,7 @@ const afterScene = frameThrottle(() => {
 })
 
 store.onEdit = () => {
+  edited = true
   if (store.ui.playing) store.setUi({ playing: false })
   el.hint.classList.add('gone')
 }
@@ -526,6 +553,7 @@ onLocale(() => {
 resolveTheme()
 chrome()
 panels.build()
+if (restored) toast(t('app.restored'))
 lastLocaleBuild = `${store.ui.units}|${locale()}`
 afterScene()
 el.canvas.setAttribute('aria-label', summary())
@@ -539,4 +567,5 @@ window.__sunspill = {
   floorArea: () => floorArea(frameFor(store.scene).patches),
   decode: (hash) => decodeScene(hash.slice(1)),
   declination: (lat, lon) => declination(lat, lon, decimalYear(Date.now())),
+  encode: (scene) => encodeScene(scene),
 }

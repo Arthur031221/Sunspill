@@ -33,7 +33,7 @@
 </table>
 
 <p align="center">
-  太陽高度は NREL の基準値との差が <b>0.007 度</b>以内。建物、木、バルコニーが窓を日陰にする計算は、pvlib と shapely との比較で <b>54,000 の確認点すべてが一致</b>しました。<br>
+  太陽高度は NREL の基準値との差が <b>0.007 度</b>以内。建物、木、バルコニーが窓を日陰にする計算は、pvlib と shapely との比較で <b>54,000 の確認点すべてが一致</b>しました（うち 1,275 点は建物、木、バルコニーの手すりのせいで暗くなった点）。<br>
   <sub>幾何の各部分を独立した基準と比べています。太陽は pvlib（NREL SPA）、影は光線追跡と shapely、磁気偏角は pygeomag、地図上のずれは pyproj、写真の補正は OpenCV です。<code>node scripts/validate.mjs</code> で再現でき、確かめていない前提は <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> にあります。実際に撮った部屋の写真との比較はまだないので、見た日差しとモデルを比べる確認モードがあります。入力が間違うと日だまりがどれだけずれるかは <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> にあります。</sub>
 </p>
 

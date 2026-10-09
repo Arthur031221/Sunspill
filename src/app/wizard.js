@@ -80,6 +80,10 @@ export function createWizard(ctx) {
 
   function close(finished) {
     leave()
+    // marks and a photo that were never saved do not wait for the next time
+    ctx.draft = null
+    ctx.overlay.marks = null
+    ctx.overlay.underlay = null
     active = false
     delete document.documentElement.dataset.wizard
     root.hidden = true

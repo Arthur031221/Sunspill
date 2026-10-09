@@ -33,7 +33,7 @@
 </table>
 
 <p align="center">
-  Sonnenhöhe innerhalb von <b>0,007 Grad</b> der NREL-Referenz. <b>0 Abweichungen bei 54.000 Prüfpunkten</b>, an denen Gebäude, Bäume und Balkone ein Fenster beschatten, gegen pvlib und shapely.<br>
+  Sonnenhöhe innerhalb von <b>0,007 Grad</b> der NREL-Referenz. <b>0 Abweichungen bei 54.000 Prüfpunkten</b> gegen pvlib und shapely (davon 1.275 nur dunkel, weil ein Gebäude, ein Baum oder eine Balkonbrüstung das Fenster beschattet).<br>
   <sub>Jedes geometrische Teil wird mit einer unabhängigen Referenz verglichen: die Sonne (pvlib, NREL SPA), die Schatten (ein Strahlenverfolger und shapely), die magnetische Deklination (pygeomag), die Verschiebungen auf der Karte (pyproj) und das Entzerren von Fotos (OpenCV). <code>node scripts/validate.mjs</code> reproduziert das, und <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> nennt, was nicht geprüft ist. Mit dem Foto eines echten Zimmers wurde es noch nicht verglichen, deshalb gibt es einen Prüfmodus, der das Modell mit der Sonne vergleicht, die du gesehen hast. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> sagt, wie weit jede falsche Eingabe den Fleck verschiebt.</sub>
 </p>
 

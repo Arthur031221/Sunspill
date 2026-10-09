@@ -33,13 +33,13 @@
 </table>
 
 <p align="center">
-  Sun elevation within <b>0.007 degrees</b> of the NREL reference. <b>0 disagreements in 54,000 probe points</b> where buildings, trees and balconies shade a window, against pvlib and shapely.<br>
+  Sun elevation within <b>0.007 degrees</b> of the NREL reference. <b>0 disagreements in 54,000 probe points</b> against pvlib and shapely (4,036 lit, 1,275 of them dark only because a building, a tree or a balcony rail shades the window).<br>
   <sub>Every geometry piece is compared with an independent reference, from the sun (pvlib, NREL SPA) and the shadows (a ray tracer and shapely) to the magnetic declination (pygeomag), the map offsets (pyproj) and the photo flattening (OpenCV). <code>node scripts/validate.mjs</code> reproduces it, and <a href="docs/VALIDATION.md">docs/VALIDATION.md</a> lists the choices that aren't checked. It hasn't been compared with a photograph of a real room yet, so there's a check mode that compares the model with what you saw. <a href="docs/ACCURACY.md">docs/ACCURACY.md</a> says how far each wrong input moves the patch.</sub>
 </p>
 
 It isn't a rendering or an AR app. The patch on your floor is an exact polygon, and you can check it against a ray tracer.
 
-**[Open the live demo](https://arthur031221.github.io/Sunspill/)**. It's free, needs no login and opens offline after the first visit. Your room stays in your browser. Address search, the map and building outlines ask OpenStreetMap, but only after you say yes to each one.
+**[Open the live demo](https://arthur031221.github.io/Sunspill/)**. It's free, needs no login and opens offline after the first visit. Your room stays in your browser, and the last one you edited is kept on your device. Address search, the map and building outlines ask public OpenStreetMap servers, but only after you say yes to each one.
 
 ## Set up your own room
 
@@ -66,7 +66,7 @@ The same bedroom in Taipei at 16:30 on 15 July. Turn the window from west to eas
 
 ## Why I built it
 
-> *West sun is a standing worry for people who rent in Taiwan, and a listing photo cannot show what it will do in your room.*
+> *West sun is a standing worry for people who rent in Taiwan, and a listing photo can't show what it will do in your room.*
 
 A compass app gives you an angle. A map shadow tool draws the buildings in the street. Neither shows the patch of light on the floor of the room you're about to sign for. Sunspill does. You describe the room, the window and what stands outside, pick a place and a date, and the patch moves as you drag the clock. The same engine answers the other questions people ask about light: how many hours a desk or a plant gets, and which corner is best.
 
@@ -97,7 +97,7 @@ A compass app gives you an angle. A map shadow tool draws the buildings in the s
 
 ## Privacy
 
-Your room, the pictures you trace and the marks you make never leave your browser. There's no account, no analytics and no cookie. Three optional services talk to OpenStreetMap servers, each off until you allow it, with the page saying what it sends first:
+Your room, the pictures you trace and the marks you make never leave your browser. There's no account, no analytics and no cookie. Three optional services talk to public OpenStreetMap servers (the building outlines may come from one of three Overpass servers run by others), each off until you allow it, with the page saying what it sends first:
 
 | Service | Sends |
 | --- | --- |
@@ -105,14 +105,14 @@ Your room, the pictures you trace and the marks you make never leave your browse
 | Map pictures (OpenStreetMap tiles) | the part of the map you look at |
 | Building outlines (Overpass) | the position of the room, to about one metre |
 
-You can switch each one off again under "Online services". The page's Content Security Policy names those four hosts and no others, and the browser tests check it. See [docs/PRIVACY.md](docs/PRIVACY.md).
+You can switch each one off again under "Online services". The page's Content Security Policy names those five hosts and no others, and the browser tests check it. See [docs/PRIVACY.md](docs/PRIVACY.md).
 
 ## Install
 
 <details>
 <summary><b>In the browser (recommended)</b></summary>
 
-Open <https://arthur031221.github.io/Sunspill/>. Nothing to install. After one visit it opens with no connection. CI tests it in Chromium and Firefox. Safari and a real iPhone haven't been tried, so the phone compass in particular is untested on iOS.
+Open <https://arthur031221.github.io/Sunspill/>. Nothing to install. After one visit it opens with no connection. CI tests it in Chromium and Firefox. Safari and a real iPhone haven't been tried, so the phone compass is untested on iOS.
 </details>
 
 <details>
