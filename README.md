@@ -41,7 +41,7 @@ It isn't a rendering or an AR app. The patch on your floor is an exact polygon, 
 
 ## Set up your own room
 
-Press **Set up my room**. It's seven steps with a Back and a Next button, and on a phone it takes a few minutes.
+Press **Set up my room**. Seven steps, a Back and a Next button, a few minutes on a phone.
 
 1. **Where.** Type an address or drop a pin on the OpenStreetMap map. The latitude, longitude and time zone fill themselves in.
 2. **The room.** Start from a studio suite, bedroom, living room or home office (the sizes follow typical Taiwanese flats, so correct them), or trace your own floor plan or listing photo with a two point scale. Set the floor number.
