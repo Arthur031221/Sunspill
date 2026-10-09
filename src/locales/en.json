@@ -291,6 +291,7 @@
  "wiz.room.templates": "Room types",
  "wiz.room.size": "Size and floor",
  "wiz.room.floor": "Floor number",
+ "wiz.room.area": "Floor area: {area}.",
  "wiz.room.floorNote": "Count from the street: the ground floor is 1. If the lift shows 0 or G for the street level, add 1. The floor decides whether buildings across the street can block the sun.",
  "wiz.room.more": "More: wall thickness and floor height",
  "wiz.room.storey": "Height of one floor",

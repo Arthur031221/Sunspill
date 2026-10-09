@@ -4,7 +4,7 @@
 import { h } from './dom.js'
 import { t } from './i18n.js'
 import { numberField } from './fields.js'
-import { lengthText } from './format.js'
+import { lengthText, floorAreaText } from './format.js'
 import { TEMPLATES, applyTemplate } from '../core/templates.js'
 import { WALLS, MAX_WINDOWS, MAX_DOORS, wallBearing, wallLength } from '../core/room.js'
 import { bearingText } from './format.js'
@@ -32,6 +32,7 @@ export function roomStep(ctx) {
       },
     }, h('b', {}, t(`tpl.${tp.id}`)), size))
   }
+  const area = h('p', { class: 'where', id: 'floor-area' })
   const main = h('div', {},
     h('p', {}, t('wiz.room.intro')),
     grid,
@@ -41,6 +42,7 @@ export function roomStep(ctx) {
       add({ label: t('f.depth'), min: 1.5, max: 20, step: 0.05, get: (s) => s.room.d, set: (d, v) => { d.room.d = v }, key: 'room.d' }),
       add({ label: t('f.height'), min: 2, max: 6, step: 0.05, get: (s) => s.room.h, set: (d, v) => { d.room.h = v }, key: 'room.h' }),
       add({ label: t('wiz.room.floor'), kind: 'num', places: 0, min: 1, max: 99, step: 1, get: (s) => s.floor.n, set: (d, v) => { d.floor.n = Math.round(v) }, key: 'floor.n' })),
+    area,
     h('p', { class: 'note' }, t('wiz.room.floorNote')),
     h('details', { class: 'more' }, h('summary', {}, t('wiz.room.more')),
       h('div', { class: 'grid2' },
@@ -74,6 +76,7 @@ export function roomStep(ctx) {
     el,
     sync() {
       fields.forEach((f) => f.sync())
+      area.textContent = t('wiz.room.area', { area: floorAreaText(store.scene.room.w * store.scene.room.d, store.ui.units) })
       for (const [small, tp] of sizes) small.textContent = `${lengthText(tp.room.w, store.ui.units)} × ${lengthText(tp.room.d, store.ui.units)}`
     },
     leave() {

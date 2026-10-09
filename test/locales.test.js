@@ -66,3 +66,16 @@ test('t fills placeholders, falls back to English and then to the key', () => {
   assert.equal(t('fmt.hm', { h: 1 }), '1 Std. {m} Min.')
   setLocale('en')
 })
+
+test('the floor area line adds ping (坪) for the Traditional Chinese page only', async () => {
+  const { floorAreaText } = await import('../src/app/format.js')
+  setLocale('en')
+  assert.equal(floorAreaText(15.84, 'm'), '15.8 m²')
+  assert.equal(floorAreaText(15, 'ft'), '161 ft²')
+  setLocale('zh-TW')
+  assert.equal(floorAreaText(15.84, 'm'), '15.8 m²（約 4.8 坪）')
+  assert.equal(t('wiz.room.area', { area: floorAreaText(3.3058, 'm') }), '地板面積：3.3 m²（約 1 坪）。')
+  setLocale('zh-CN')
+  assert.equal(floorAreaText(15.84, 'm'), '15.8 m²')
+  setLocale('en')
+})

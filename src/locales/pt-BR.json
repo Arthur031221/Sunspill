@@ -291,6 +291,7 @@
  "wiz.room.templates": "Tipos de cômodo",
  "wiz.room.size": "Tamanho e andar",
  "wiz.room.floor": "Número do andar",
+ "wiz.room.area": "Área do piso: {area}.",
  "wiz.room.floorNote": "Conte a partir da rua: o térreo é 1. Se o elevador mostra 0 ou G no nível da rua, some 1. O andar decide se os prédios da frente podem bloquear o sol.",
  "wiz.room.more": "Mais: espessura da parede e altura do andar",
  "wiz.room.storey": "Altura de um andar",

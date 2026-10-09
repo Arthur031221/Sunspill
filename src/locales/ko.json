@@ -291,6 +291,7 @@
  "wiz.room.templates": "방 유형",
  "wiz.room.size": "크기와 층",
  "wiz.room.floor": "층 번호",
+ "wiz.room.area": "바닥 면적: {area}.",
  "wiz.room.floorNote": "도로면에서 세어 1층이 1입니다. 엘리베이터가 도로면을 0이나 G로 표시하면 1을 더하세요. 층은 맞은편 건물이 햇빛을 가리는지 여부를 정합니다.",
  "wiz.room.more": "더 보기: 벽 두께와 층고",
  "wiz.room.storey": "한 층의 높이",

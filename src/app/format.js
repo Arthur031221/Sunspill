@@ -12,6 +12,10 @@ export function trim(n, places = 2) {
 export const lengthText = (m, units) => `${trim(toUnit(m, units), units === 'ft' ? 1 : 2)} ${units === 'ft' ? 'ft' : 'm'}`
 export const areaText = (m2, units) => (units === 'ft' ? `${trim(m2 * FT * FT, 0)} ft²` : `${trim(m2, 1)} m²`)
 
+const PING = 3.305785
+/** The floor area of the room. Listings in Taiwan give rooms and flats in ping (坪), so the Traditional Chinese page adds it. */
+export const floorAreaText = (m2, units) => areaText(m2, units) + (locale() === 'zh-TW' ? `（約 ${trim(m2 / PING, 1)} 坪）` : '')
+
 export function clock(minutes) {
   const m = Math.round(minutes)
   const hh = Math.floor(m / 60) % 24

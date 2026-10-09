@@ -291,6 +291,7 @@
  "wiz.room.templates": "Tipos de habitación",
  "wiz.room.size": "Tamaño y planta",
  "wiz.room.floor": "Número de planta",
+ "wiz.room.area": "Superficie del suelo: {area}.",
  "wiz.room.floorNote": "Cuenta desde la calle: la planta baja es 1. Si el ascensor marca 0 o G en la calle, suma 1. La planta decide si los edificios de enfrente pueden tapar el sol.",
  "wiz.room.more": "Más: grosor del muro y altura de planta",
  "wiz.room.storey": "Altura de una planta",

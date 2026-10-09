@@ -291,6 +291,7 @@
  "wiz.room.templates": "房型",
  "wiz.room.size": "尺寸与楼层",
  "wiz.room.floor": "楼层",
+ "wiz.room.area": "地板面积：{area}。",
  "wiz.room.floorNote": "从街面算起，地面层是 1。如果电梯在街面显示 0 或 G，请加 1。楼层决定对面的建筑是否会挡住阳光。",
  "wiz.room.more": "更多：墙厚与楼层高度",
  "wiz.room.storey": "每层楼高",

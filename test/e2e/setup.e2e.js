@@ -1238,3 +1238,16 @@ test('saved rooms: name two rooms, they survive a reload, opening one sets the o
   assert.deepEqual(errors, [])
   await context.close()
 })
+
+test('the room step shows the floor area, with ping (坪) on the Traditional Chinese page', async () => {
+  const en = await open()
+  await openWizard(en.page, 1)
+  assert.equal(await en.page.locator('#floor-area').innerText(), 'Floor area: 15.8 m².')
+  await en.page.click('[data-template="studio"]')
+  assert.match(await en.page.locator('#floor-area').innerText(), /^Floor area: \d+(\.\d)? m²\.$/)
+  await en.context.close()
+  const zh = await open({ locale: 'zh-TW' })
+  await openWizard(zh.page, 1)
+  assert.equal(await zh.page.locator('#floor-area').innerText(), '地板面積：15.8 m²（約 4.8 坪）。')
+  await zh.context.close()
+})

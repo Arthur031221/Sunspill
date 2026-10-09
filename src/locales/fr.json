@@ -291,6 +291,7 @@
  "wiz.room.templates": "Types de pièce",
  "wiz.room.size": "Taille et étage",
  "wiz.room.floor": "Numéro d'étage",
+ "wiz.room.area": "Surface au sol : {area}.",
  "wiz.room.floorNote": "Comptez depuis la rue : le rez-de-chaussée est 1. Si l'ascenseur affiche 0 ou G au niveau de la rue, ajoutez 1. L'étage décide si les immeubles d'en face peuvent masquer le soleil.",
  "wiz.room.more": "Plus : épaisseur du mur et hauteur d'étage",
  "wiz.room.storey": "Hauteur d'un étage",

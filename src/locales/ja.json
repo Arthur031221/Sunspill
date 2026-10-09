@@ -291,6 +291,7 @@
  "wiz.room.templates": "部屋のタイプ",
  "wiz.room.size": "サイズと階",
  "wiz.room.floor": "階数",
+ "wiz.room.area": "床面積：{area}。",
  "wiz.room.floorNote": "道路面から数えて、1 階が 1 です。エレベーターが道路面を 0 や G と表示する場合は 1 を足してください。階数は、向かいの建物が日差しをさえぎるかどうかに関わります。",
  "wiz.room.more": "詳細：壁の厚さと階高",
  "wiz.room.storey": "1 階の高さ",
