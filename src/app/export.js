@@ -7,7 +7,7 @@ import { makeFrameCamera } from './stage.js'
 import { computeFrame, floorArea } from './frame.js'
 import { dayCurve } from './timeline.js'
 import { buildPalette, makeIndexer, createGif } from '../core/gif.js'
-import { blurPlace } from '../core/codec.js'
+import { blurScene } from '../core/codec.js'
 import { daySteps } from '../core/hours.js'
 import { t } from './i18n.js'
 import { clock, dateText, bearingText, duration, areaText } from './format.js'
@@ -24,7 +24,7 @@ export function paintScene(ctx, { scene, width, height, palette, dpr = 1, view =
   return frame
 }
 
-const hidden = (scene) => ({ ...scene, place: blurPlace(scene.place) })
+const hidden = (scene) => blurScene(scene)
 
 async function loadFonts() {
   try {

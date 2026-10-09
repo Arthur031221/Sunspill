@@ -8,8 +8,9 @@ comes from a library that shares no code with Sunspill:
                               and map tile numbers from the slippy map formula
   zone-reference.json         time zones from timezonefinder, the polygons of
                               the timezone-boundary-builder project
+  homography-reference.json   four point perspective maps from OpenCV
 
-  python3 -m venv .venv && .venv/bin/pip install pygeomag pyproj timezonefinder numpy
+  python3 -m venv .venv && .venv/bin/pip install pygeomag pyproj timezonefinder numpy opencv-python-headless
   .venv/bin/python scripts/make-geo-reference.py
 """
 import json
@@ -17,6 +18,7 @@ import math
 import random
 from pathlib import Path
 
+import cv2
 import numpy as np
 from pygeomag import GeoMag
 from pyproj import Transformer
@@ -104,7 +106,23 @@ def zones():
     write("zone-reference.json", "timezonefinder, timezone-boundary-builder polygons", ["lat", "lon", "zone"], rows)
 
 
+def homography():
+    random.seed(13)
+    rows = []
+    for _ in range(40):
+        w, h = random.uniform(200, 900), random.uniform(200, 900)
+        src = [[0, 0], [w, 0], [w, h], [0, h]]
+        # a photo of that rectangle: the corners moved by up to a third of a side, kept convex by construction
+        dst = [[x + random.uniform(-0.3, 0.3) * w + 600, y + random.uniform(-0.3, 0.3) * h + 300] for x, y in src]
+        m = cv2.getPerspectiveTransform(np.float32(src), np.float32(dst))
+        pts = [[random.uniform(0, w), random.uniform(0, h)] for _ in range(6)]
+        mapped = cv2.perspectiveTransform(np.float32([pts]), m)[0].tolist()
+        rows.append([src, dst, pts, mapped])
+    write("homography-reference.json", "OpenCV getPerspectiveTransform and perspectiveTransform", ["src", "dst", "points", "mapped"], rows)
+
+
 if __name__ == "__main__":
+    homography()
     declination()
     compass()
     geo()

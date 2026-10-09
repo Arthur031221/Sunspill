@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ORIGINS } from '../src/app/net.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (file) => readFileSync(resolve(root, file), 'utf8')
@@ -39,14 +40,15 @@ const css = read('src/app/app.css').replace('__FONT__', () => font)
 const logo = read('assets/logo.svg').replace(/<svg /u, '<svg class="logo" ').replace(/\s*\n\s*/gu, '')
 const favicon = `data:image/svg+xml,${encodeURIComponent(read('assets/logo.svg').replace(/\s*\n\s*/gu, ''))}`
 const hash = createHash('sha256').update(js).digest('base64')
-// The page makes no request after it loads, so connect-src is closed.
+// The page makes no request until a person allows one of the three online
+// services in src/app/net.js. The policy names exactly those hosts and no others.
 const csp = [
   "default-src 'none'",
   `script-src 'sha256-${hash}'`,
   "style-src 'unsafe-inline'",
   'font-src data:',
-  'img-src data: blob:',
-  "connect-src 'none'",
+  `img-src data: blob: ${ORIGINS.images.join(' ')}`,
+  `connect-src ${ORIGINS.connect.join(' ')}`,
   "worker-src 'self'",
   "form-action 'none'",
   "base-uri 'none'",

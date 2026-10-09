@@ -9,7 +9,7 @@ import { WALLS, ITEM_KINDS, ITEM_SIZES, MAX_WINDOWS, MAX_ITEMS, wallBearing, wal
 import { searchCities, cityPlace } from '../core/cities.js'
 import { isZone } from '../core/solar.js'
 import { periodDays } from './analysis.js'
-import { encodeScene, blurPlace } from '../core/codec.js'
+import { encodeScene, blurScene } from '../core/codec.js'
 
 export const TABS = ['room', 'place', 'things', 'results', 'share']
 
@@ -49,7 +49,7 @@ function roomTab({ store, stage }) {
   })
   const bearingNum = numberField({ store, label: t('room.facingDeg'), kind: 'deg', min: 0, max: 359, step: 1, get: (s) => wallBearing(s, wallOf()), set: (d, v) => { d.facing = (((v - WALLS.indexOf(wallOf()) * 90) % 360) + 360) % 360 }, key: 'facing' })
   fields.push(bearingNum)
-  const compassBtn = h('button', { class: 'btn block', type: 'button', onclick: () => compassPrompt(store, wallOf) }, t('room.useCompass'))
+  const compassBtn = h('button', { class: 'btn block', type: 'button', onclick: () => store.panelActions.openCompass(wallOf()) }, t('room.useCompass'))
   el.append(h('h2', {}, t('room.orient')), dialLabel, dial.el, bearingNum.el, 'DeviceOrientationEvent' in window ? compassBtn : null, h('p', { class: 'note' }, t('room.orientNote')))
 
   const winWrap = h('div')
@@ -151,28 +151,6 @@ function duplicateWindow(store, i) {
 function removeWindow(store, i) {
   store.update((d) => { d.windows.splice(i, 1) })
   store.setUi({ selectedWindow: 0, selected: null })
-}
-
-/** Point the phone away from the window and read the heading: the wall faces that way. */
-function compassPrompt(store, wallOf) {
-  const handler = (e) => {
-    let heading = null
-    if (typeof e.webkitCompassHeading === 'number') heading = e.webkitCompassHeading
-    else if (e.absolute && typeof e.alpha === 'number') heading = (360 - e.alpha) % 360
-    if (heading == null) return
-    window.removeEventListener('deviceorientationabsolute', handler, true)
-    window.removeEventListener('deviceorientation', handler, true)
-    store.update((d) => { d.facing = (((heading - WALLS.indexOf(wallOf()) * 90) % 360) + 360) % 360 }, { key: 'facing' })
-    toast(t('room.compassSet', { dir: bearingText(heading) }))
-  }
-  const start = () => {
-    window.addEventListener('deviceorientationabsolute', handler, true)
-    window.addEventListener('deviceorientation', handler, true)
-    toast(t('room.compassHint'))
-  }
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    DeviceOrientationEvent.requestPermission().then((r) => (r === 'granted' ? start() : toast(t('room.compassDenied')))).catch(() => toast(t('room.compassDenied')))
-  } else start()
 }
 
 export function toast(message) {
@@ -529,7 +507,7 @@ function shareTab({ store, actions }) {
     importer,
   )
   const refreshLink = () => {
-      link.value = location.origin === 'null' ? '' : `${location.origin}${location.pathname}#${encodeScene(hide.checked ? { ...store.scene, place: blurPlace(store.scene.place) } : store.scene)}`
+      link.value = location.origin === 'null' ? '' : `${location.origin}${location.pathname}#${encodeScene(hide.checked ? blurScene(store.scene) : store.scene)}`
   }
   hide.addEventListener('change', refreshLink)
   return { el, sync: refreshLink }

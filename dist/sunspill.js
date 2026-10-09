@@ -150,15 +150,25 @@ function dayTrack(year, month, day, lat, lon, zone, stepMinutes = 5) {
 
 // src/core/room.js
 var WALLS = ["top", "right", "bottom", "left"];
-var ITEM_KINDS = ["bed", "desk", "sofa", "table", "plant", "box"];
+var ITEM_KINDS = ["bed", "desk", "sofa", "table", "plant", "box", "shelf"];
+var OBSTACLE_TYPES = ["building", "tree"];
 var MAX_WINDOWS = 4;
-var MAX_ITEMS = 12;
+var MAX_DOORS = 3;
+var MAX_ITEMS = 16;
+var MAX_OBSTACLES = 60;
+var MAX_RING = 40;
+var MAX_CHECKS = 6;
 var YEAR = 2026;
 var LIMITS = {
   room: { w: [1.5, 20], d: [1.5, 20], h: [2, 6], wall: [0, 0.6] },
   window: { w: [0.3, 12], h: [0.3, 4], sill: [0, 4] },
   eave: { depth: [0, 4], gap: [0, 1.5], ext: [0, 3] },
-  across: { height: [0, 400], distance: [2, 300] }
+  across: { height: [0, 400], distance: [2, 300] },
+  balcony: { depth: [0.3, 4], rail: [0, 2], ext: [0, 3] },
+  floor: { n: [1, 99], storey: [2.4, 6] },
+  door: { w: [0.5, 3] },
+  building: { h: [1, 600], base: [0, 599], coord: [-1500, 1500] },
+  tree: { r: [0.4, 15], h: [1, 45], base: [0, 44] }
 };
 var ITEM_SIZES = {
   bed: { w: 1.5, d: 2, h: 0.5 },
@@ -166,7 +176,8 @@ var ITEM_SIZES = {
   sofa: { w: 2, d: 0.9, h: 0.8 },
   table: { w: 1.2, d: 0.8, h: 0.75 },
   plant: { w: 0.3, d: 0.3, h: 0.8 },
-  box: { w: 0.6, d: 0.6, h: 0.6 }
+  box: { w: 0.6, d: 0.6, h: 0.6 },
+  shelf: { w: 0.8, d: 0.3, h: 1.8 }
 };
 var DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 var daysInMonth = (month) => DAYS_IN_MONTH[month - 1];
@@ -201,19 +212,28 @@ function sunInRoom(scene, azimuth, elevation) {
 }
 function defaultScene() {
   return {
-    v: 1,
+    v: 2,
     room: { w: 3.6, d: 4.4, h: 2.6, wall: 0.15 },
     facing: 270,
-    windows: [{ wall: "top", pos: 0.9, w: 1.8, h: 1.4, sill: 0.9, eave: { depth: 0, gap: 0.15, ext: 0.3 }, across: null }],
+    floor: { n: 1, storey: 3 },
+    windows: [{ wall: "top", pos: 0.9, w: 1.8, h: 1.4, sill: 0.9, eave: { depth: 0, gap: 0.15, ext: 0.3 }, across: null, balcony: null }],
+    doors: [],
     place: { name: "Taipei", lat: 25.033, lon: 121.565, zone: "Asia/Taipei" },
+    obstacles: [],
     date: { month: 7, day: 15 },
     minutes: 990,
     items: [
-      { kind: "bed", x: 0.25, y: 1.5, w: 1.5, d: 2, h: 0.5 },
-      { kind: "desk", x: 2.2, y: 3.5, w: 1.2, d: 0.6, h: 0.75 }
-    ]
+      { kind: "bed", x: 0.25, y: 1.5, w: 1.5, d: 2, h: 0.5, rot: 0 },
+      { kind: "desk", x: 2.2, y: 3.5, w: 1.2, d: 0.6, h: 0.75, rot: 0 }
+    ],
+    checks: []
   };
 }
+function localToRoom(scene, east, north) {
+  const f = scene.facing * Math.PI / 180;
+  return [east * Math.cos(f) - north * Math.sin(f) + scene.room.w / 2, east * Math.sin(f) + north * Math.cos(f) + scene.room.d / 2];
+}
+var floorLift = (scene) => (scene.floor.n - 1) * scene.floor.storey;
 function normalizeWindow(raw, room) {
   const win = raw && typeof raw === "object" ? raw : {};
   const wall = WALLS.includes(win.wall) ? win.wall : "top";
@@ -224,6 +244,7 @@ function normalizeWindow(raw, room) {
   const pos = num(win.pos, [0, Math.max(0, length - w)], Math.max(0, (length - w) / 2));
   const e = win.eave && typeof win.eave === "object" ? win.eave : {};
   const across = win.across && typeof win.across === "object" ? { height: num(win.across.height, LIMITS.across.height, 30), distance: num(win.across.distance, LIMITS.across.distance, 15) } : null;
+  const b = win.balcony && typeof win.balcony === "object" ? win.balcony : null;
   return {
     wall,
     pos: round(pos),
@@ -235,8 +256,26 @@ function normalizeWindow(raw, room) {
       gap: round(num(e.gap, LIMITS.eave.gap, 0.15)),
       ext: round(num(e.ext, LIMITS.eave.ext, 0.3))
     },
-    across: across && { height: round(across.height, 1), distance: round(across.distance, 1) }
+    across: across && { height: round(across.height, 1), distance: round(across.distance, 1) },
+    balcony: b && {
+      depth: round(num(b.depth, LIMITS.balcony.depth, 1.2)),
+      rail: round(num(b.rail, LIMITS.balcony.rail, 1)),
+      ext: round(num(b.ext, LIMITS.balcony.ext, 0.3))
+    }
   };
+}
+function normalizeDoor(raw, room) {
+  const door = raw && typeof raw === "object" ? raw : {};
+  const wall = WALLS.includes(door.wall) ? door.wall : "bottom";
+  const length = wallLength(room, wall);
+  const w = num(door.w, [LIMITS.door.w[0], Math.min(LIMITS.door.w[1], length)], Math.min(0.9, length));
+  return { wall, pos: round(num(door.pos, [0, Math.max(0, length - w)], 0.2)), w: round(w) };
+}
+function turnedExtent(w, d, rot) {
+  const r = rot * Math.PI / 180;
+  const c = Math.abs(Math.cos(r));
+  const s = Math.abs(Math.sin(r));
+  return [(c * w + s * d) / 2, (s * w + c * d) / 2];
 }
 function normalizeItem(raw, room) {
   if (!raw || typeof raw !== "object" || !ITEM_KINDS.includes(raw.kind)) return null;
@@ -244,14 +283,49 @@ function normalizeItem(raw, room) {
   const w = num(raw.w, [0.1, Math.min(4, room.w)], base.w);
   const d = num(raw.d, [0.1, Math.min(4, room.d)], base.d);
   const h = num(raw.h, [0.05, room.h], base.h);
-  return {
-    kind: raw.kind,
-    x: round(num(raw.x, [0, room.w - w], 0)),
-    y: round(num(raw.y, [0, room.d - d], 0)),
-    w: round(w),
-    d: round(d),
-    h: round(h)
+  const rot = round((num(raw.rot, [-1e6, 1e6], 0) % 360 + 360) % 360, 1);
+  const [ex, ey] = turnedExtent(w, d, rot);
+  const cx = room.w >= 2 * ex ? Math.min(room.w - ex, Math.max(ex, num(raw.x, [-1e6, 1e6], 0) + w / 2)) : room.w / 2;
+  const cy = room.d >= 2 * ey ? Math.min(room.d - ey, Math.max(ey, num(raw.y, [-1e6, 1e6], 0) + d / 2)) : room.d / 2;
+  return { kind: raw.kind, x: round(cx - w / 2), y: round(cy - d / 2), w: round(w), d: round(d), h: round(h), rot };
+}
+var coord = (v) => round(num(v, LIMITS.building.coord, 0), 2);
+function normalizeObstacle(raw) {
+  if (!raw || typeof raw !== "object" || !OBSTACLE_TYPES.includes(raw.type)) return null;
+  const common = {
+    on: raw.on !== false,
+    est: raw.est === true,
+    src: raw.src === "osm" ? "osm" : "manual",
+    own: raw.own === true,
+    name: typeof raw.name === "string" ? raw.name.slice(0, 40) : ""
   };
+  if (raw.type === "tree") {
+    const h2 = num(raw.h, LIMITS.tree.h, 8);
+    return {
+      type: "tree",
+      ...common,
+      x: coord(raw.x),
+      y: coord(raw.y),
+      r: round(num(raw.r, LIMITS.tree.r, 2), 2),
+      h: round(h2, 1),
+      base: round(num(raw.base, [0, Math.max(0, h2 - 0.5)], Math.min(h2 * 0.3, 3)), 1)
+    };
+  }
+  if (!Array.isArray(raw.ring)) return null;
+  const ring = raw.ring.slice(0, MAX_RING).filter((p) => Array.isArray(p) && p.length >= 2).map((p) => [coord(p[0]), coord(p[1])]);
+  while (ring.length > 1 && ring[0][0] === ring[ring.length - 1][0] && ring[0][1] === ring[ring.length - 1][1]) ring.pop();
+  if (ring.length < 3) return null;
+  const h = num(raw.h, LIMITS.building.h, 9);
+  const out = { type: "building", ...common, ring, h: round(h, 1), base: round(num(raw.base, [0, Math.max(0, h - 1)], 0), 1) };
+  if (Number.isFinite(raw.id)) out.id = Math.round(raw.id);
+  return out;
+}
+function normalizeCheck(raw, room, baseDate) {
+  if (!raw || typeof raw !== "object" || !Array.isArray(raw.poly)) return null;
+  const poly = raw.poly.slice(0, 12).filter((p) => Array.isArray(p) && p.length >= 2).map((p) => [round(num(p[0], [0, room.w], 0), 2), round(num(p[1], [0, room.d], 0), 2)]);
+  if (poly.length < 3) return null;
+  const month = Math.round(num(raw.month, [1, 12], baseDate.month));
+  return { month, day: Math.round(num(raw.day, [1, daysInMonth(month)], baseDate.day)), minutes: Math.round(num(raw.minutes, [0, 1439], 720)), poly };
 }
 function normalizeScene(raw) {
   const base = defaultScene();
@@ -264,26 +338,36 @@ function normalizeScene(raw) {
     wall: round(num(r.wall, LIMITS.room.wall, base.room.wall))
   };
   const windows = (Array.isArray(input.windows) ? input.windows : base.windows).slice(0, MAX_WINDOWS).map((w) => normalizeWindow(w, room));
+  const doors = (Array.isArray(input.doors) ? input.doors : []).slice(0, MAX_DOORS).map((d) => normalizeDoor(d, room));
   const p = input.place && typeof input.place === "object" ? input.place : {};
   const place = {
     name: typeof p.name === "string" ? p.name.slice(0, 60) : base.place.name,
-    lat: round(num(p.lat, [-80, 80], base.place.lat), 3),
-    lon: round(num(p.lon, [-180, 180], base.place.lon), 3),
+    lat: round(num(p.lat, [-80, 80], base.place.lat), 5),
+    lon: round(num(p.lon, [-180, 180], base.place.lon), 5),
     zone: isZone(p.zone) ? p.zone : base.place.zone
   };
+  const f = input.floor && typeof input.floor === "object" ? input.floor : {};
+  const floor = { n: Math.round(num(f.n, LIMITS.floor.n, 1)), storey: round(num(f.storey, LIMITS.floor.storey, 3), 2) };
   const dt = input.date && typeof input.date === "object" ? input.date : {};
   const month = Math.round(num(dt.month, [1, 12], base.date.month));
   const day = Math.round(num(dt.day, [1, daysInMonth(month)], base.date.day));
   const items = (Array.isArray(input.items) ? input.items : base.items).slice(0, MAX_ITEMS).map((i) => normalizeItem(i, room)).filter(Boolean);
+  const obstacles = (Array.isArray(input.obstacles) ? input.obstacles : []).slice(0, MAX_OBSTACLES).map(normalizeObstacle).filter(Boolean);
+  const date = { month, day };
+  const checks = (Array.isArray(input.checks) ? input.checks : []).slice(0, MAX_CHECKS).map((c) => normalizeCheck(c, room, date)).filter(Boolean);
   return {
-    v: 1,
+    v: 2,
     room,
     facing: round((num(input.facing, [-1e6, 1e6], base.facing) % 360 + 360) % 360, 1),
+    floor,
     windows,
+    doors,
     place,
-    date: { month, day },
+    obstacles,
+    date,
     minutes: Math.round(num(input.minutes, [0, 1439], base.minutes)),
-    items
+    items,
+    checks
   };
 }
 
@@ -377,6 +461,148 @@ function insideConvex(poly, x, y) {
   return true;
 }
 
+// src/core/obstacles.js
+var FRONT = 1e-6;
+var cross = (a, b, p) => (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+function hullOf(points) {
+  const pts = points.slice().sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+  const keep = (list, p) => {
+    while (list.length >= 2 && cross(list[list.length - 2], list[list.length - 1], p) <= 0) list.pop();
+    list.push(p);
+  };
+  const lower = [];
+  for (const p of pts) keep(lower, p);
+  const upper = [];
+  for (let i = pts.length - 1; i >= 0; i--) keep(upper, pts[i]);
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+var isConvex = (poly) => {
+  for (let i = 0; i < poly.length; i++) if (cross(poly[i], poly[(i + 1) % poly.length], poly[(i + 2) % poly.length]) < -1e-9) return false;
+  return true;
+};
+var inTriangle = (a, b, c, p) => cross(a, b, p) >= -1e-12 && cross(b, c, p) >= -1e-12 && cross(c, a, p) >= -1e-12;
+function triangulate(ring) {
+  const idx = ring.map((_, i) => i);
+  const tris = [];
+  let guard = ring.length * ring.length;
+  while (idx.length > 3 && guard-- > 0) {
+    let clipped = false;
+    for (let k = 0; k < idx.length; k++) {
+      const i0 = idx[(k + idx.length - 1) % idx.length];
+      const i1 = idx[k];
+      const i2 = idx[(k + 1) % idx.length];
+      const [a, b, c] = [ring[i0], ring[i1], ring[i2]];
+      const turn = cross(a, b, c);
+      if (Math.abs(turn) < 1e-12) {
+        idx.splice(k, 1);
+        clipped = true;
+        break;
+      }
+      if (turn < 0) continue;
+      if (idx.some((j) => j !== i0 && j !== i1 && j !== i2 && inTriangle(a, b, c, ring[j]))) continue;
+      tris.push([i0, i1, i2]);
+      idx.splice(k, 1);
+      clipped = true;
+      break;
+    }
+    if (!clipped) return null;
+  }
+  if (idx.length === 3) tris.push(idx.slice());
+  return tris;
+}
+function convexParts(ring) {
+  let poly = dedupe(ring);
+  if (poly.length < 3) return [];
+  if (signedArea(poly) < 0) poly = poly.slice().reverse();
+  if (area(poly) < 1e-9) return [];
+  if (isConvex(poly)) return [poly];
+  const tris = triangulate(poly);
+  if (!tris) return [hullOf(poly)];
+  let parts = tris.map((t) => t.slice());
+  let merged = true;
+  while (merged) {
+    merged = false;
+    outer: for (let a = 0; a < parts.length; a++) {
+      for (let b = a + 1; b < parts.length; b++) {
+        const union = tryMerge(parts[a], parts[b], poly);
+        if (union) {
+          parts[a] = union;
+          parts.splice(b, 1);
+          merged = true;
+          break outer;
+        }
+      }
+    }
+  }
+  return parts.map((p) => p.map((i) => poly[i])).filter((p) => p.length >= 3 && area(p) > 1e-9);
+}
+function tryMerge(pa, pb, ring) {
+  for (let i = 0; i < pa.length; i++) {
+    const u = pa[i];
+    const v = pa[(i + 1) % pa.length];
+    const j = pb.findIndex((x, k) => x === v && pb[(k + 1) % pb.length] === u);
+    if (j < 0) continue;
+    const out = [];
+    for (let k = 1; k <= pa.length; k++) out.push(pa[(i + k) % pa.length]);
+    for (let k = 2; k < pb.length; k++) out.push(pb[(j + k) % pb.length]);
+    const pts = out.map((x) => ring[x]);
+    const trimmed = out.filter((x, k) => Math.abs(cross(pts[(k + pts.length - 1) % pts.length], pts[k], pts[(k + 1) % pts.length])) > 1e-12);
+    return isConvex(trimmed.map((x) => ring[x])) ? trimmed : null;
+  }
+  return null;
+}
+function crownRing(x, y, r) {
+  const R = r * 1.02;
+  return Array.from({ length: 12 }, (_, i) => [x + R * Math.cos(i * Math.PI / 6), y + R * Math.sin(i * Math.PI / 6)]);
+}
+var memo = /* @__PURE__ */ new WeakMap();
+function sceneObstacles(scene) {
+  let hit = memo.get(scene);
+  if (hit) return hit;
+  const lift = floorLift(scene);
+  hit = [];
+  for (const o of scene.obstacles || []) {
+    if (!o.on) continue;
+    if (o.type === "tree") {
+      hit.push({ footprint: crownRing(o.x, o.y, o.r).map(([e, n]) => localToRoom(scene, e, n)), z0: o.base - lift, z1: o.h - lift });
+      continue;
+    }
+    const ring = o.ring.map(([e, n]) => localToRoom(scene, e, n));
+    for (const part of convexParts(ring)) hit.push({ footprint: part, z0: o.base - lift, z1: o.h - lift });
+  }
+  memo.set(scene, hit);
+  return hit;
+}
+function balconyPrism(room, win) {
+  const b = win.balcony;
+  if (!b || b.rail < 0.05) return null;
+  const f = wallFrame(room, win.wall);
+  const at = (u, v) => [f.o[0] + f.t[0] * u + f.n[0] * v, f.o[1] + f.t[1] * u + f.n[1] * v];
+  const u0 = win.pos - b.ext;
+  const u1 = win.pos + win.w + b.ext;
+  const v0 = room.wall + b.depth;
+  const v1 = v0 + 0.1;
+  return { footprint: [at(u0, v0), at(u1, v0), at(u1, v1), at(u0, v1)], z0: -0.3, z1: b.rail };
+}
+function prismShadow(room, win, frame, s, prism) {
+  const off = frame.n[0] * frame.o[0] + frame.n[1] * frame.o[1] + room.wall;
+  const front = clipHalf(prism.footprint, frame.n[0], frame.n[1], -(off + FRONT));
+  if (front.length < 3) return null;
+  const sn = s[0] * frame.n[0] + s[1] * frame.n[1];
+  const st = s[0] * frame.t[0] + s[1] * frame.t[1];
+  const pts = [];
+  for (const q of front) {
+    const dist = frame.n[0] * q[0] + frame.n[1] * q[1] - off;
+    const tau = dist / sn;
+    const a = frame.t[0] * (q[0] - frame.o[0]) + frame.t[1] * (q[1] - frame.o[1]) - tau * st - win.pos;
+    pts.push([a, prism.z0 - tau * s[2]], [a, prism.z1 - tau * s[2]]);
+  }
+  const poly = hullOf(pts);
+  return poly.length >= 3 ? poly : null;
+}
+
 // src/core/light.js
 var MIN_NORMAL = 0.02;
 var MIN_UP = 3e-3;
@@ -387,7 +613,20 @@ var SIDE_PLANES = {
   right: { axis: 0, side: "max" },
   left: { axis: 0, side: "min" }
 };
-function litOpening(room, win, s, minHeight = 0) {
+var overlaps = (poly, [a0, b0, a1, b1]) => {
+  let lo0 = Infinity;
+  let lo1 = Infinity;
+  let hi0 = -Infinity;
+  let hi1 = -Infinity;
+  for (const [x, y] of poly) {
+    lo0 = Math.min(lo0, x);
+    hi0 = Math.max(hi0, x);
+    lo1 = Math.min(lo1, y);
+    hi1 = Math.max(hi1, y);
+  }
+  return hi0 > a0 && lo0 < a1 && hi1 > b0 && lo1 < b1;
+};
+function litOpening(room, win, s, minHeight = 0, prisms = []) {
   const frame = wallFrame(room, win.wall);
   const sn = s[0] * frame.n[0] + s[1] * frame.n[1];
   const st = s[0] * frame.t[0] + s[1] * frame.t[1];
@@ -406,15 +645,22 @@ function litOpening(room, win, s, minHeight = 0) {
   const { eave, across } = win;
   if (eave.depth > 0) {
     const zE = top + eave.gap;
-    const reach = zE - eave.depth * sz / sn;
+    const reach2 = zE - eave.depth * sz / sn;
     const k = st / sz;
     const lo = (b) => -eave.ext - (zE - b) * k;
     const hi = (b) => win.w + eave.ext - (zE - b) * k;
-    shadows.push([[lo(reach), reach], [hi(reach), reach], [hi(zE), zE], [lo(zE), zE]]);
+    shadows.push([[lo(reach2), reach2], [hi(reach2), reach2], [hi(zE), zE], [lo(zE), zE]]);
   }
   if (across) {
     const limit = across.height - across.distance * sz / sn;
     shadows.push(rect(-BIG, -BIG, BIG, limit));
+  }
+  const rail = balconyPrism(room, win);
+  const casters = rail ? [rail, ...prisms] : prisms;
+  const box = [a0, b0, a1, b1];
+  for (const prism of casters) {
+    const shadow = prismShadow(room, win, frame, s, prism);
+    if (shadow && overlaps(shadow, box)) shadows.push(shadow);
   }
   for (const shadow of shadows) pieces = pieces.flatMap((p) => subtractConvex(p, shadow));
   return { pieces, frame, sn, st, sz };
@@ -424,13 +670,13 @@ function outerPoint(room, win, frame, a, b) {
   return [frame.o[0] + frame.t[0] * along2 + frame.n[0] * room.wall, frame.o[1] + frame.t[1] * along2 + frame.n[1] * room.wall, b];
 }
 var along = (p, s, tau) => [p[0] - tau * s[0], p[1] - tau * s[1], p[2] - tau * s[2]];
-function windowPatches(room, win, s, { planeZ = 0, walls = true } = {}) {
-  const whole = litOpening(room, win, s, 0);
+function windowPatches(room, win, s, { planeZ = 0, walls = true, obstacles = [] } = {}) {
+  const whole = litOpening(room, win, s, 0, obstacles);
   const { frame, sz } = whole;
   const out = { floor: [], walls: [], opening: whole.pieces };
   if (!whole.pieces.length) return out;
   const clipRoom = rect(0, 0, room.w, room.d);
-  const above = planeZ > 0 ? litOpening(room, win, s, planeZ).pieces : whole.pieces;
+  const above = planeZ > 0 ? litOpening(room, win, s, planeZ, obstacles).pieces : whole.pieces;
   const outer = (piece) => piece.map(([a, b]) => outerPoint(room, win, frame, a, b));
   for (const piece of above) {
     const onPlane = outer(piece).map((p) => along(p, s, (p[2] - planeZ) / sz));
@@ -459,7 +705,8 @@ function windowPatches(room, win, s, { planeZ = 0, walls = true } = {}) {
 function scenePatches(scene, sun, options) {
   if (!(sun.elevation > 0)) return { floor: [], walls: [], windows: scene.windows.map(() => ({ floor: [], walls: [], opening: [] })) };
   const s = sunInRoom(scene, sun.azimuth, sun.elevation);
-  const windows = scene.windows.map((win) => windowPatches(scene.room, win, s, options));
+  const opts = { ...options, obstacles: sceneObstacles(scene) };
+  const windows = scene.windows.map((win) => windowPatches(scene.room, win, s, opts));
   return {
     floor: windows.flatMap((w) => w.floor),
     walls: windows.flatMap((w) => w.walls),
@@ -641,7 +888,8 @@ function sunPath(place, month, day, stepMinutes = 15) {
 
 // src/core/codec.js
 var PREFIX = "r1=";
-var MAX_LENGTH = 6e3;
+var PREFIX2 = "r2=";
+var MAX_LENGTH = 16e3;
 function toBase64Url(bytes) {
   let bin = "";
   for (const b of bytes) bin += String.fromCharCode(b);
@@ -650,22 +898,6 @@ function toBase64Url(bytes) {
 function fromBase64Url(text) {
   const bin = atob(text.replace(/-/g, "+").replace(/_/g, "/"));
   return Uint8Array.from(bin, (c) => c.charCodeAt(0));
-}
-function packScene(scene) {
-  const s = normalizeScene(scene);
-  return [
-    s.room.w,
-    s.room.d,
-    s.room.h,
-    s.room.wall,
-    s.facing,
-    [s.place.name, s.place.lat, s.place.lon, s.place.zone],
-    s.date.month,
-    s.date.day,
-    s.minutes,
-    s.windows.map((w) => [WALLS.indexOf(w.wall), w.pos, w.w, w.h, w.sill, w.eave.depth, w.eave.gap, w.eave.ext, w.across ? [w.across.height, w.across.distance] : 0]),
-    s.items.map((i) => [ITEM_KINDS.indexOf(i.kind), i.x, i.y, i.w, i.d, i.h])
-  ];
 }
 function unpackScene(a) {
   const [w, d, h, wall, facing, place, month, day, minutes, windows, items] = a;
@@ -679,15 +911,91 @@ function unpackScene(a) {
     items: items.map((x) => ({ kind: ITEM_KINDS[x[0]], x: x[1], y: x[2], w: x[3], d: x[4], h: x[5] }))
   });
 }
+var dm = (v) => Math.round(v * 10);
+var cm = (v) => Math.round(v * 100);
+var FLAGS = { on: 1, est: 2, own: 4, osm: 8 };
+function packObstacle(o) {
+  const flags = (o.on ? FLAGS.on : 0) | (o.est ? FLAGS.est : 0) | (o.own ? FLAGS.own : 0) | (o.src === "osm" ? FLAGS.osm : 0);
+  if (o.type === "tree") return [1, flags, dm(o.h), dm(o.base), o.name, 0, dm(o.x), dm(o.y), dm(o.r)];
+  const flat = [];
+  let px = 0;
+  let py = 0;
+  for (const [x, y] of o.ring) {
+    flat.push(dm(x) - px, dm(y) - py);
+    px = dm(x);
+    py = dm(y);
+  }
+  return [0, flags, dm(o.h), dm(o.base), o.name, o.id ?? 0, ...flat];
+}
+function unpackObstacle(a) {
+  const [kind, flags, h, base, name, id] = a;
+  const common = { on: Boolean(flags & FLAGS.on), est: Boolean(flags & FLAGS.est), own: Boolean(flags & FLAGS.own), src: flags & FLAGS.osm ? "osm" : "manual", name, h: h / 10, base: base / 10 };
+  if (kind === 1) return { type: "tree", ...common, x: a[6] / 10, y: a[7] / 10, r: a[8] / 10 };
+  const ring = [];
+  let px = 0;
+  let py = 0;
+  for (let i = 6; i + 1 < a.length; i += 2) {
+    px += a[i];
+    py += a[i + 1];
+    ring.push([px / 10, py / 10]);
+  }
+  return { type: "building", ...common, ring, ...id ? { id } : {} };
+}
+function packScene2(scene, { obstacles = true, checks = true } = {}) {
+  const s = normalizeScene(scene);
+  return [
+    [s.room.w, s.room.d, s.room.h, s.room.wall],
+    s.facing,
+    [s.place.name, s.place.lat, s.place.lon, s.place.zone],
+    [s.floor.n, s.floor.storey],
+    [s.date.month, s.date.day, s.minutes],
+    s.windows.map((w) => [WALLS.indexOf(w.wall), w.pos, w.w, w.h, w.sill, w.eave.depth, w.eave.gap, w.eave.ext, w.across ? [w.across.height, w.across.distance] : 0, w.balcony ? [w.balcony.depth, w.balcony.rail, w.balcony.ext] : 0]),
+    s.doors.map((d) => [WALLS.indexOf(d.wall), d.pos, d.w]),
+    s.items.map((i) => [ITEM_KINDS.indexOf(i.kind), i.x, i.y, i.w, i.d, i.h, i.rot]),
+    obstacles ? s.obstacles.map(packObstacle) : [],
+    checks ? s.checks.map((c) => [c.month, c.day, c.minutes, ...c.poly.flatMap(([x, y]) => [cm(x), cm(y)])]) : []
+  ];
+}
+function unpackScene2(a) {
+  const [room, facing, place, floor, when, windows, doors, items, obstacles, checks] = a;
+  return normalizeScene({
+    room: { w: room[0], d: room[1], h: room[2], wall: room[3] },
+    facing,
+    place: { name: place[0], lat: place[1], lon: place[2], zone: place[3] },
+    floor: { n: floor[0], storey: floor[1] },
+    date: { month: when[0], day: when[1] },
+    minutes: when[2],
+    windows: windows.map((x) => ({ wall: WALLS[x[0]], pos: x[1], w: x[2], h: x[3], sill: x[4], eave: { depth: x[5], gap: x[6], ext: x[7] }, across: x[8] ? { height: x[8][0], distance: x[8][1] } : null, balcony: x[9] ? { depth: x[9][0], rail: x[9][1], ext: x[9][2] } : null })),
+    doors: doors.map((x) => ({ wall: WALLS[x[0]], pos: x[1], w: x[2] })),
+    items: items.map((x) => ({ kind: ITEM_KINDS[x[0]], x: x[1], y: x[2], w: x[3], d: x[4], h: x[5], rot: x[6] })),
+    obstacles: obstacles.map(unpackObstacle),
+    checks: checks.map((x) => ({ month: x[0], day: x[1], minutes: x[2], poly: Array.from({ length: Math.floor((x.length - 3) / 2) }, (_, i) => [x[3 + 2 * i] / 100, x[4 + 2 * i] / 100]) }))
+  });
+}
+var reach = (o) => o.type === "tree" ? Math.hypot(o.x, o.y) : Math.min(...o.ring.map(([x, y]) => Math.hypot(x, y)));
 function encodeScene(scene) {
-  return PREFIX + toBase64Url(new TextEncoder().encode(JSON.stringify(packScene(scene))));
+  const s = normalizeScene(scene);
+  const write = (value) => PREFIX2 + toBase64Url(new TextEncoder().encode(JSON.stringify(packScene2(value))));
+  let text = write(s);
+  if (text.length <= MAX_LENGTH) return text;
+  let trimmed = { ...s, checks: [] };
+  text = write(trimmed);
+  const byReach = s.obstacles.slice().sort((a, b) => reach(a) - reach(b));
+  while (text.length > MAX_LENGTH && byReach.length) {
+    byReach.pop();
+    trimmed = { ...trimmed, obstacles: s.obstacles.filter((o) => byReach.includes(o)) };
+    text = write(trimmed);
+  }
+  return text;
 }
 function decodeScene(hash) {
   const text = String(hash || "").replace(/^#/, "");
-  if (!text.startsWith(PREFIX) || text.length > MAX_LENGTH) return null;
+  const second = text.startsWith(PREFIX2);
+  if (!(second || text.startsWith(PREFIX)) || text.length > MAX_LENGTH) return null;
   try {
     const packed = JSON.parse(new TextDecoder().decode(fromBase64Url(text.slice(PREFIX.length))));
-    return Array.isArray(packed) ? unpackScene(packed) : null;
+    if (!Array.isArray(packed)) return null;
+    return second ? unpackScene2(packed) : unpackScene(packed);
   } catch {
     return null;
   }

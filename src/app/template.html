@@ -19,6 +19,7 @@
   <header class="top">
     <h1 class="brand-h1"><a class="brand" href="https://github.com/Arthur031221/Sunspill" aria-label="Sunspill on GitHub">__LOGO__<span class="brand-name">Sunspill</span></a></h1>
     <span class="brand-tag" id="tagline"></span>
+    <button class="btn primary setup" id="setup" type="button"></button>
     <div class="top-tools">
       <button class="icon-btn" id="undo" type="button"></button>
       <button class="icon-btn" id="redo" type="button"></button>
@@ -39,6 +40,8 @@
         <div class="tip" id="tip" hidden></div>
         <p class="hint" id="hint"></p>
         <div class="busy" id="busy" hidden><span class="bar"><i></i></span><span id="busy-text"></span></div>
+        <div class="mapview" id="mapview" hidden></div>
+        <div class="tracepane" id="tracepane" hidden></div>
       </div>
       <div class="dock" id="dock"></div>
     </section>
@@ -47,8 +50,10 @@
       <div class="tab-body" id="tab-body"></div>
       <footer class="foot" id="foot"></footer>
     </aside>
+    <aside class="wizard" id="wizard" hidden></aside>
   </main>
 </div>
+<div class="modal-root" id="modal" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="live" id="live" aria-live="polite" role="status"></div>
 <script>__JS__</script>

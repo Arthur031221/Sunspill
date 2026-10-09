@@ -1,0 +1,90 @@
+// The only code that talks to other servers. Each service is switched on
+// separately by the person using the page, and a call to a service that is off
+// fails before any request is made.
+
+import { buildingQuery, parseBuildings, parsePlaces } from '../core/osm.js'
+import { zoneAt } from '../core/zone.js'
+
+export const SERVICES = {
+  search: { name: 'Nominatim', hosts: ['https://nominatim.openstreetmap.org'], sends: 'the address you type' },
+  tiles: { name: 'OpenStreetMap tiles', hosts: ['https://tile.openstreetmap.org'], sends: 'the part of the map you look at' },
+  buildings: { name: 'Overpass', hosts: ['https://overpass-api.de', 'https://overpass.openstreetmap.fr', 'https://overpass.private.coffee'], sends: 'the position of the room' },
+}
+
+/** Every origin the page may contact, for the content security policy and for tests. */
+export const ORIGINS = {
+  connect: [...SERVICES.search.hosts, ...SERVICES.buildings.hosts],
+  images: SERVICES.tiles.hosts,
+}
+
+const OVERPASS_PATH = '/api/interpreter'
+const NOMINATIM_GAP = 1100
+
+export class Refused extends Error {
+  constructor(service) {
+    super(`${service} is switched off`)
+    this.service = service
+  }
+}
+
+/**
+ * @param options.allowed (service) => boolean, whether the person switched the service on
+ * @param options.fetch   fetch, replaceable for tests
+ * @param options.wait    (ms) => Promise, replaceable for tests
+ */
+export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), wait = (ms) => new Promise((r) => setTimeout(r, ms)), now = () => Date.now(), timeout = 15000 } = {}) {
+  let lastSearch = 0
+
+  async function request(url, init, signal) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeout)
+    const abort = () => controller.abort()
+    signal?.addEventListener('abort', abort)
+    try {
+      const res = await fetchImpl(url, { ...init, signal: controller.signal, credentials: 'omit' })
+      if (!res.ok) throw new Error(`${new URL(url).host} answered ${res.status}`)
+      return await res.json()
+    } finally {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', abort)
+    }
+  }
+
+  return {
+    /** Places matching an address or a name. At most one request a second, as the Nominatim usage policy asks. */
+    async search(query, lang = 'en', signal) {
+      if (!allowed('search')) throw new Refused('search')
+      const q = String(query).trim().slice(0, 200)
+      if (q.length < 2) return []
+      const gap = lastSearch + NOMINATIM_GAP - now()
+      if (gap > 0) await wait(gap)
+      lastSearch = now()
+      const url = `${SERVICES.search.hosts[0]}/search?format=jsonv2&addressdetails=1&limit=6&accept-language=${encodeURIComponent(lang)}&q=${encodeURIComponent(q)}`
+      const places = parsePlaces(await request(url, {}, signal))
+      return places.map((p) => ({ ...p, zone: zoneAt(p.lat, p.lon) }))
+    },
+
+    /** Building outlines around a point, trying each Overpass server in turn. */
+    async buildings(center, radius = 200, signal) {
+      if (!allowed('buildings')) throw new Refused('buildings')
+      const body = new URLSearchParams({ data: buildingQuery(center.lat, center.lon, radius) })
+      const failures = []
+      for (const host of SERVICES.buildings.hosts) {
+        try {
+          const json = await request(host + OVERPASS_PATH, { method: 'POST', body }, signal)
+          if (!Array.isArray(json?.elements)) throw new Error('no elements in the answer')
+          return parseBuildings(json, center)
+        } catch (err) {
+          if (signal?.aborted) throw err
+          failures.push(`${new URL(host).host}: ${err.message}`)
+        }
+      }
+      throw new Error(failures.join('; '))
+    },
+
+    tileUrl(z, x, y) {
+      if (!allowed('tiles')) throw new Refused('tiles')
+      return `${SERVICES.tiles.hosts[0]}/${z}/${x}/${y}.png`
+    },
+  }
+}

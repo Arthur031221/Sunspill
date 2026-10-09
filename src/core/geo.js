@@ -90,6 +90,32 @@ export function ownBuilding(scene) {
   return scene.obstacles.findIndex((o) => o.type === 'building' && insideRing(o.ring, [0, 0]))
 }
 
+/**
+ * After the room moves, a building loaded from OpenStreetMap that now holds
+ * the room is the room's own and stops casting shade, and one that no longer
+ * does casts it again. Buildings added by hand are left as they are.
+ */
+export function refreshOwn(scene) {
+  for (const o of scene.obstacles) {
+    if (o.type !== 'building' || o.src !== 'osm') continue
+    const own = insideRing(o.ring, [0, 0])
+    if (own !== o.own) {
+      o.own = own
+      o.on = !own
+    }
+  }
+  return scene
+}
+
+/** A rectangle of buildings' kind: its outline in metres east and north of the room, `bearing` degrees from north and `distance` metres away, `width` across the view and `depth` along it. */
+export function blockRing(bearing, distance, width, depth) {
+  const b = (bearing * Math.PI) / 180
+  const c = [distance * Math.sin(b), distance * Math.cos(b)]
+  const u = [Math.cos(b), -Math.sin(b)]
+  const v = [Math.sin(b), Math.cos(b)]
+  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, d]) => [c[0] + (a * width * u[0]) / 2 + (d * depth * v[0]) / 2, c[1] + (a * width * u[1]) / 2 + (d * depth * v[1]) / 2])
+}
+
 /** The corners of the room on the ground in metres east and north of its centre. */
 export function roomCorners(scene) {
   const { w, d } = scene.room

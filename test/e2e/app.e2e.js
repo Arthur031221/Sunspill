@@ -99,7 +99,7 @@ test('typing a room width updates the scene, the link and the undo trail', async
   await input.press('Enter')
   assert.equal((await scene(page)).room.w, 5)
   await page.waitForTimeout(450)
-  assert.match(await page.evaluate(() => location.hash), /^#r1=/)
+  assert.match(await page.evaluate(() => location.hash), /^#r2=/)
   await page.click('#undo')
   assert.equal((await scene(page)).room.w, 3.6)
   await page.click('#redo')
@@ -335,14 +335,29 @@ test('the library example runs in a bare page', async () => {
   await context.close()
 })
 
-test('the phone compass button turns the window to the heading the phone reports', async () => {
+test('the phone compass reads a steady heading, adds the declination and turns the window', async () => {
   const { page, context } = await open()
   // desktop browsers refuse the permission, so stand in for a phone that grants it
   await page.evaluate(() => { DeviceOrientationEvent.requestPermission = async () => 'granted' })
   await page.click('text=Read the phone compass')
-  // the phone is pointed at 90 degrees east of north: alpha 270 when absolute
-  await page.evaluate(() => window.dispatchEvent(Object.assign(new Event('deviceorientationabsolute'), { absolute: true, alpha: 270 })))
-  assert.equal((await scene(page)).facing, 90)
+  await page.waitForSelector('.modal .compass-reading')
+  // the phone stands upright against the window with its back toward 290 degrees on the magnetic compass:
+  // beta 90 and gamma 0 stand it up, and alpha grows counter clockwise, so alpha is 360 - 290
+  const alpha = 360 - 290
+  const send = (a) => page.evaluate((angle) => window.dispatchEvent(Object.assign(new Event('deviceorientationabsolute'), { absolute: true, alpha: angle, beta: 90, gamma: 0 })), a)
+  const use = page.locator('.modal button.primary')
+  assert.equal(await use.isDisabled(), true, 'one reading is not a steady one')
+  for (let i = 0; i < 70 && (await use.isDisabled()); i++) {
+    await send(alpha + (i % 2 ? 0.8 : -0.8))
+    await page.waitForTimeout(30)
+  }
+  assert.equal(await use.isDisabled(), false)
+  await use.click()
+  // Taipei is 5.1 degrees west of true north in 2026, so true north is 5.1 degrees clockwise from magnetic
+  const declination = await page.evaluate(() => window.__sunspill.declination(25.033, 121.565))
+  assert.ok(declination < -4 && declination > -6, `declination ${declination}`)
+  const facing = (await scene(page)).facing
+  assert.ok(Math.abs(facing - (((290 + declination) % 360 + 360) % 360)) < 1.5, `facing ${facing}`)
   await context.close()
 })
 

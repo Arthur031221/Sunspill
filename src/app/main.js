@@ -9,10 +9,17 @@ import { frameFor, itemSunHours, floorArea } from './frame.js'
 import { renderCard, renderGif } from './export.js'
 import { clock, dateText, duration, bearingText, areaText, lengthText } from './format.js'
 import { defaultScene } from '../core/room.js'
-import { encodeScene, decodeScene, blurPlace } from '../core/codec.js'
+import { encodeScene, decodeScene, blurScene } from '../core/codec.js'
 import { hoursAt } from '../core/hours.js'
 import { legendGradient } from '../render/heat.js'
 import { PALETTES } from '../render/palette.js'
+import { createNet } from './net.js'
+import { createConsent } from './consent.js'
+import { createModal } from './modal.js'
+import { MapView } from './mapview.js'
+import { createWizard } from './wizard.js'
+import { openCompass } from './compass-ui.js'
+import { declination, decimalYear } from '../core/declination.js'
 
 const PREFS_KEY = 'sunspill.prefs'
 const loadPrefs = () => {
@@ -24,7 +31,7 @@ const loadPrefs = () => {
 }
 const savePrefs = (ui) => {
   try {
-    localStorage.setItem(PREFS_KEY, JSON.stringify({ theme: ui.theme, lang: ui.lang, units: ui.units, arc: ui.showArc }))
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ theme: ui.theme, lang: ui.lang, units: ui.units, arc: ui.showArc, net: ui.net, setup: ui.setupDone }))
   } catch {
     // private mode: the settings simply do not persist
   }
@@ -45,6 +52,11 @@ const store = createStore(initial, {
   lang,
   units: prefs.units === 'ft' || prefs.units === 'm' ? prefs.units : imperial ? 'ft' : 'm',
   tab: 'room',
+  net: { search: prefs.net?.search === true, tiles: prefs.net?.tiles === true, buildings: prefs.net?.buildings === true },
+  dims: false,
+  arcOff: false,
+  setupDone: prefs.setup === true,
+  obstacle: null,
   selected: null,
   selectedWindow: 0,
   showArc: prefs.arc !== false,
@@ -56,6 +68,10 @@ const store = createStore(initial, {
   gifRange: 'lit',
 })
 setLocale(lang)
+
+const modal = createModal($('#modal'))
+const consent = createConsent({ store, modal })
+const net = createNet({ allowed: (service) => consent.allowed(service) })
 
 const el = {
   canvas: $('#canvas'),
@@ -86,6 +102,7 @@ const analysis = createAnalysis(store, {
   },
 })
 
+const overlay = { marks: null, underlay: null }
 const stage = new Stage({
   canvas: el.canvas,
   store,
@@ -97,6 +114,7 @@ const stage = new Stage({
     return img && { ...img, alpha: heatShown }
   },
   getMarkers: () => (store.ui.tab === 'results' && analysis.spots?.list) || null,
+  getOverlay: () => ({ ...overlay, dimensions: store.ui.dims, fmt: (m) => lengthText(m, store.ui.units) }),
   onSelect: (sel) => store.setUi({ selected: sel, selectedWindow: sel?.type === 'window' ? sel.index : store.ui.selectedWindow }),
   onHover: (p, cam) => showTip(p, cam),
 })
@@ -122,7 +140,7 @@ const actions = {
     store.setUi({ west: { ...store.ui.west, from: north ? 6 : 12, to: north ? 9 : 3 } })
   },
   async copyLink(hide) {
-    const scene = hide ? { ...store.scene, place: blurPlace(store.scene.place) } : store.scene
+    const scene = hide ? blurScene(store.scene) : store.scene
     const url = `${location.origin}${location.pathname}#${encodeScene(scene)}`
     try {
       await navigator.clipboard.writeText(url)
@@ -146,7 +164,7 @@ const actions = {
     actions.gifController?.abort()
   },
   exportJson(hide) {
-    const scene = hide ? { ...store.scene, place: blurPlace(store.scene.place) } : store.scene
+    const scene = hide ? blurScene(store.scene) : store.scene
     download(new Blob([JSON.stringify(scene, null, 2)], { type: 'application/json' }), `sunspill-room-${stamp()}.json`)
   },
   async importJson(file) {
@@ -185,6 +203,21 @@ const actions = {
     analysis.ensureSpots()
     panels.refresh()
   },
+  /** The phone compass in a sheet, for the window on `wall`. */
+  openCompass(wall) {
+    const card = h('div')
+    modal.show(t('compass.title'), [card], [], { onClose: () => reader?.close() })
+    const reader = openCompass({
+      card,
+      place: store.scene.place,
+      done: (bearing) => {
+        modal.close(true)
+        if (bearing == null) return
+        store.update((d) => { d.facing = (((bearing - ['top', 'right', 'bottom', 'left'].indexOf(wall) * 90) % 360) + 360) % 360 }, { key: 'facing' })
+        toast(t('room.compassSet', { dir: bearingText(bearing) }))
+      },
+    })
+  },
   resultsOpened() {
     analysis.ensureWest()
     analysis.ensureSpots()
@@ -192,6 +225,55 @@ const actions = {
   },
 }
 const panels = createPanels({ store, tabsEl: $('#tabs'), bodyEl: $('#tab-body'), stage, analysis, actions })
+
+const map = new MapView({
+  root: $('#mapview'),
+  store,
+  net,
+  tilesOn: () => consent.allowed('tiles'),
+  askTiles: async () => {
+    if (await consent.ask('tiles')) map.paintChrome()
+  },
+  on: {},
+})
+let wizardView = null
+const wizard = createWizard({
+  store, stage, map, net, consent, modal, actions, toast, overlay,
+  root: $('#wizard'),
+  tracepane: $('#tracepane'),
+  showTrace: (on) => { $('#tracepane').hidden = !on },
+  setView(view) {
+    wizardView = view
+    const mapView = view === 'pin' || view === 'facing' || view === 'surround'
+    el.stage.classList.toggle('map-on', mapView)
+    $('#mapview').hidden = !mapView
+    // the sun path across the plan hides the numbers on it, so the planning steps draw without it
+    store.setUi({ arcOff: view === 'plan' })
+    if (mapView) map.setMode(view, { select: store.ui.obstacle ?? null, target: Math.max(0, store.ui.selectedWindow ?? 0) })
+    else {
+      store.setUi({ mode: view === '3d' ? '3d' : view === 'plan' ? 'plan' : store.ui.mode })
+      stage.setMode(store.ui.mode)
+      chrome()
+    }
+  },
+  onClose: (finished) => {
+    el.stage.classList.remove('map-on')
+    $('#mapview').hidden = true
+    store.setUi({ arcOff: false })
+    if (finished) {
+      store.setUi({ setupDone: true })
+      toast(t('wiz.finished'))
+    }
+    store.setUi({ tab: 'results' })
+    panels.show('results')
+    setMode('3d')
+    $('#setup').focus()
+  },
+})
+$('#setup').addEventListener('click', () => {
+  store.setUi({ playing: false })
+  wizard.open(0)
+})
 
 function stamp() {
   const s = store.scene
@@ -288,7 +370,12 @@ function chrome() {
   arc.textContent = t('stage.arc')
   arc.setAttribute('aria-pressed', String(store.ui.showArc))
   el.hint.textContent = t('stage.hint')
-  $('#foot').replaceChildren(h('span', {}, t('foot.privacy')), h('a', { href: 'https://github.com/Arthur031221/Sunspill', rel: 'noopener' }, t('foot.source')), h('span', {}, t('foot.model')))
+  $('#setup').textContent = t('wiz.start')
+  $('#foot').replaceChildren(
+    h('span', {}, t('foot.privacy')),
+    h('button', { class: 'linkbtn', type: 'button', id: 'online', onclick: () => consent.settings() }, t('net.footer', { n: consent.count() })),
+    h('a', { href: 'https://github.com/Arthur031221/Sunspill', rel: 'noopener' }, t('foot.source')),
+    h('span', {}, t('foot.model')))
   $('a.skip').textContent = t('app.skip')
   undo.disabled = !store.canUndo()
   redo.disabled = !store.canRedo()
@@ -343,6 +430,7 @@ const afterScene = frameThrottle(() => {
   $('#undo').disabled = !store.canUndo()
   $('#redo').disabled = !store.canRedo()
   announce()
+  wizard.sync()
   clearTimeout(analysisTimer)
   analysisTimer = setTimeout(() => {
     if (store.ui.heat.on) analysis.ensureHeat()
@@ -378,6 +466,7 @@ store.subscribe((state, what) => {
     lastLocaleBuild = key
     dock.rebuild()
     panels.build()
+    wizard.rebuild()
     updateLegend()
     afterScene()
   }
@@ -436,8 +525,9 @@ document.documentElement.dataset.ready = '1'
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {})
 // a read only handle for the browser tests
 window.__sunspill = {
-  store, stage, analysis,
+  store, stage, analysis, wizard, map, consent, net,
   frame: () => frameFor(store.scene),
   floorArea: () => floorArea(frameFor(store.scene).patches),
   decode: (hash) => decodeScene(hash.slice(1)),
+  declination: (lat, lon) => declination(lat, lon, decimalYear(Date.now())),
 }

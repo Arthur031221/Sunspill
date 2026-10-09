@@ -63,3 +63,14 @@ export function itemSunHours(scene) {
 
 /** Sunlit floor area in square metres, where windows overlap counted once. */
 export const floorArea = (patches) => totalArea(patches.floor)
+
+/** Hours of direct sun that reach the floor on the day shown, from the sun's own steps through the day. */
+export function sunHoursInside(scene) {
+  const { steps } = daySteps(scene.place, scene.date.month, scene.date.day, 10)
+  let hours = 0
+  for (const step of steps) {
+    const p = scenePatches(scene, step)
+    if (p.floor.length || p.walls.length) hours += step.w
+  }
+  return hours
+}

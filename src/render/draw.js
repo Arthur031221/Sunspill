@@ -2,8 +2,11 @@
 // sun on its arc and the compass. Everything is orthographic, so a room point
 // maps to the screen with one affine transform and the patches stay exact.
 
-import { WALLS, wallFrame, sunInRoom } from '../core/room.js'
+import { WALLS, wallFrame, sunInRoom, itemFootprint } from '../core/room.js'
+import { hullOf } from '../core/obstacles.js'
 import { hull, pathOf, mix } from './geometry.js'
+
+const DOOR_HEIGHT = 2.05
 
 const WALL_NORMALS = { top: [0, 1], right: [1, 0], bottom: [0, -1], left: [-1, 0] }
 const QUAD = (x0, y0, x1, y1, z) => [[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]]
@@ -93,6 +96,137 @@ function drawFloor(ctx, cam, room, pal, frame) {
   return corners
 }
 
+/** A picture laid on the floor, such as a photo flattened to a plan. */
+function drawUnderlay(ctx, cam, room, underlay) {
+  if (!underlay) return
+  const o = cam.project(0, room.d, 0)
+  const ex = cam.project(room.w, room.d, 0)
+  const ey = cam.project(0, 0, 0)
+  const { canvas } = underlay
+  ctx.save()
+  pathOf(ctx, QUAD(0, 0, room.w, room.d, 0).map((p) => cam.project(...p)))
+  ctx.clip()
+  ctx.transform((ex[0] - o[0]) / canvas.width, (ex[1] - o[1]) / canvas.width, (ey[0] - o[0]) / canvas.height, (ey[1] - o[1]) / canvas.height, o[0], o[1])
+  ctx.globalAlpha = underlay.alpha ?? 0.8
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(canvas, 0, 0)
+  ctx.restore()
+}
+
+/** Lines the dragged piece snapped to. */
+function drawGuides(ctx, cam, room, guides, pal) {
+  if (!guides?.length) return
+  ctx.save()
+  ctx.strokeStyle = pal.selection
+  ctx.lineWidth = 1.4
+  ctx.setLineDash([6, 4])
+  for (const g of guides) {
+    const a = g.axis === 'x' ? cam.project(g.at, 0, 0) : cam.project(0, g.at, 0)
+    const b = g.axis === 'x' ? cam.project(g.at, room.d, 0) : cam.project(room.w, g.at, 0)
+    ctx.beginPath()
+    ctx.moveTo(a[0], a[1])
+    ctx.lineTo(b[0], b[1])
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
+/** The patches a person marked on the floor, saved ones dashed and the one in progress with its points. */
+function drawMarks(ctx, cam, marks, pal) {
+  if (!marks) return
+  const outline = (pts) => pts.map(([x, y]) => cam.project(x, y, 0))
+  ctx.save()
+  ctx.lineJoin = 'round'
+  for (const poly of marks.saved || []) {
+    ctx.strokeStyle = pal.mark
+    ctx.fillStyle = pal.name === 'dark' ? 'rgba(94, 234, 212, 0.14)' : 'rgba(15, 118, 110, 0.12)'
+    ctx.lineWidth = 2
+    ctx.setLineDash([7, 4])
+    pathOf(ctx, outline(poly))
+    ctx.fill()
+    ctx.stroke()
+  }
+  const pts = marks.points || []
+  if (pts.length >= 3) {
+    ctx.strokeStyle = pal.mark
+    ctx.fillStyle = pal.name === 'dark' ? 'rgba(94, 234, 212, 0.2)' : 'rgba(15, 118, 110, 0.18)'
+    ctx.lineWidth = 2.4
+    ctx.setLineDash([])
+    pathOf(ctx, outline(hullOf(pts)))
+    ctx.fill()
+    ctx.stroke()
+  }
+  pts.forEach(([x, y], i) => {
+    const [px, py] = cam.project(x, y, 0)
+    ctx.setLineDash([])
+    ctx.beginPath()
+    ctx.arc(px, py, 9, 0, Math.PI * 2)
+    ctx.fillStyle = pal.mark
+    ctx.fill()
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 2
+    ctx.stroke()
+    ctx.fillStyle = '#fff'
+    ctx.font = `700 11px ${pal.ui}`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(String(i + 1), px, py + 0.5)
+  })
+  ctx.restore()
+}
+
+/** Real lengths along the walls of the plan: each window, door and the wall between them. */
+function drawDimensions(ctx, cam, scene, pal, fmt) {
+  const { room } = scene
+  ctx.save()
+  ctx.font = `600 11.5px ${pal.ui}`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.strokeStyle = pal.muted
+  ctx.fillStyle = pal.ink
+  ctx.lineWidth = 1
+  for (const wall of WALLS) {
+    const f = wallFrame(room, wall)
+    const spans = [
+      ...scene.windows.filter((w) => w.wall === wall).map((w) => [w.pos, w.pos + w.w, true]),
+      ...(scene.doors || []).filter((d) => d.wall === wall).map((d) => [d.pos, d.pos + d.w, true]),
+    ].sort((a, b) => a[0] - b[0])
+    const cuts = []
+    let at = 0
+    for (const [a, b, open] of spans) {
+      cuts.push([at, a, false], [a, b, open])
+      at = Math.max(at, b)
+    }
+    cuts.push([at, f.length, false])
+    const lift = room.wall + 0.42
+    const point = (u, v) => cam.project(f.o[0] + f.t[0] * u + f.n[0] * v, f.o[1] + f.t[1] * u + f.n[1] * v, 0)
+    for (const [a, b, open] of cuts) {
+      if (b - a < 0.12) continue
+      const p = point(a, lift)
+      const q = point(b, lift)
+      ctx.globalAlpha = open ? 1 : 0.75
+      ctx.beginPath()
+      ctx.moveTo(p[0], p[1])
+      ctx.lineTo(q[0], q[1])
+      for (const u of [a, b]) {
+        const t0 = point(u, lift - 0.1)
+        const t1 = point(u, lift + 0.1)
+        ctx.moveTo(t0[0], t0[1])
+        ctx.lineTo(t1[0], t1[1])
+      }
+      ctx.stroke()
+      const mid = point((a + b) / 2, lift + 0.32)
+      ctx.lineWidth = 3
+      ctx.strokeStyle = pal.name === 'dark' ? 'rgba(11, 15, 28, 0.85)' : 'rgba(255, 250, 240, 0.9)'
+      ctx.strokeText(fmt(b - a), mid[0], mid[1])
+      ctx.fillText(fmt(b - a), mid[0], mid[1])
+      ctx.lineWidth = 1
+      ctx.strokeStyle = pal.muted
+    }
+  }
+  ctx.restore()
+}
+
 function drawHeat(ctx, cam, room, heat, dpr) {
   if (!heat) return
   const o = cam.project(0, 0, 0)
@@ -177,6 +311,23 @@ function drawWalls(ctx, cam, scene, pal, frame, hits) {
         ctx.stroke()
       }
     })
+    ;(scene.doors || []).forEach((door) => {
+      if (door.wall !== wall) return
+      const quad = [wallPoint(room, wall, door.pos, 0), wallPoint(room, wall, door.pos + door.w, 0), wallPoint(room, wall, door.pos + door.w, Math.min(room.h - 0.05, DOOR_HEIGHT)), wallPoint(room, wall, door.pos, Math.min(room.h - 0.05, DOOR_HEIGHT))].map((p) => cam.project(...p))
+      ctx.fillStyle = pal.door
+      pathOf(ctx, quad)
+      ctx.fill()
+      ctx.strokeStyle = pal.frame
+      ctx.lineWidth = back ? 2 : 1.2
+      ctx.stroke()
+      if (back) {
+        const knob = [quad[1][0] * 0.82 + quad[0][0] * 0.18, quad[1][1] * 0.82 + quad[0][1] * 0.18 + (quad[3][1] - quad[0][1]) * 0.45]
+        ctx.fillStyle = pal.frame
+        ctx.beginPath()
+        ctx.arc(knob[0], knob[1], 2.6, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    })
   })
   ctx.restore()
 }
@@ -223,28 +374,84 @@ function drawPlanWalls(ctx, cam, scene, pal, frame, hits, alpha) {
       ctx.restore()
       hits.windows.push({ index, quad: [qa, qb], back: true, plan: true })
     })
+    for (const door of scene.doors || []) {
+      if (door.wall !== wall) continue
+      const d0 = wallPoint(room, wall, door.pos, 0)
+      const d1 = wallPoint(room, wall, door.pos + door.w, 0)
+      const qa = cam.project(d0[0] + nx * off, d0[1] + ny * off, 0)
+      const qb = cam.project(d1[0] + nx * off, d1[1] + ny * off, 0)
+      // the wall is open here: paint the floor over it, then the leaf swung half open and the arc it sweeps
+      ctx.save()
+      ctx.strokeStyle = pal.floor
+      ctx.lineWidth = thick + 1
+      ctx.beginPath()
+      ctx.moveTo(qa[0], qa[1])
+      ctx.lineTo(qb[0], qb[1])
+      ctx.stroke()
+      const hinge = cam.project(d0[0], d0[1], 0)
+      const free = cam.project(d1[0], d1[1], 0)
+      const into = cam.project(d0[0] - nx * door.w, d0[1] - ny * door.w, 0)
+      ctx.strokeStyle = pal.frame
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(hinge[0], hinge[1])
+      ctx.lineTo(into[0], into[1])
+      ctx.stroke()
+      ctx.setLineDash([3, 3])
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(into[0], into[1])
+      ctx.quadraticCurveTo(into[0] + (free[0] - hinge[0]), into[1] + (free[1] - hinge[1]), free[0], free[1])
+      ctx.stroke()
+      ctx.restore()
+    }
+    scene.windows.forEach((win) => {
+      if (win.wall !== wall || !win.balcony) return
+      const b = win.balcony
+      const f = wallFrame(room, wall)
+      const at = (u, v) => cam.project(f.o[0] + f.t[0] * u + f.n[0] * v, f.o[1] + f.t[1] * u + f.n[1] * v, 0)
+      const quad = [at(win.pos - b.ext, room.wall), at(win.pos + win.w + b.ext, room.wall), at(win.pos + win.w + b.ext, room.wall + b.depth), at(win.pos - b.ext, room.wall + b.depth)]
+      ctx.save()
+      ctx.fillStyle = pal.name === 'dark' ? 'rgba(150, 170, 230, 0.12)' : 'rgba(120, 100, 70, 0.1)'
+      pathOf(ctx, quad)
+      ctx.fill()
+      ctx.strokeStyle = pal.frame
+      ctx.lineWidth = 1
+      ctx.setLineDash([5, 4])
+      ctx.stroke()
+      if (b.rail >= 0.05) {
+        ctx.setLineDash([])
+        ctx.lineWidth = 3
+        ctx.beginPath()
+        ctx.moveTo(quad[3][0], quad[3][1])
+        ctx.lineTo(quad[2][0], quad[2][1])
+        ctx.stroke()
+      }
+      ctx.restore()
+    })
   }
   ctx.restore()
 }
 
 function boxFaces(cam, item) {
-  const x0 = item.x
-  const x1 = item.x + item.w
-  const y0 = item.y
-  const y1 = item.y + item.d
-  const top = QUAD(x0, y0, x1, y1, item.h).map((p) => cam.project(...p))
+  const base = itemFootprint(item)
+  const top = base.map(([x, y]) => cam.project(x, y, item.h))
+  const r = ((item.rot || 0) * Math.PI) / 180
+  const cs = Math.cos(r)
+  const sn = Math.sin(r)
   const sides = []
   const defs = [
-    ['bottom', [[x0, y0], [x1, y0]], [0, -1]],
-    ['top', [[x1, y1], [x0, y1]], [0, 1]],
-    ['left', [[x0, y1], [x0, y0]], [-1, 0]],
-    ['right', [[x1, y0], [x1, y1]], [1, 0]],
+    ['bottom', [base[0], base[1]], [0, -1]],
+    ['right', [base[1], base[2]], [1, 0]],
+    ['top', [base[2], base[3]], [0, 1]],
+    ['left', [base[3], base[0]], [-1, 0]],
   ]
-  for (const [name, [a, b], n] of defs) {
+  for (const [name, [a, b], n0] of defs) {
+    const n = [n0[0] * cs - n0[1] * sn, n0[0] * sn + n0[1] * cs]
     if (cam.isBackWall(n[0], n[1])) continue // facing away from the viewer
     sides.push({ name, n, poly: [cam.project(a[0], a[1], 0), cam.project(b[0], b[1], 0), cam.project(b[0], b[1], item.h), cam.project(a[0], a[1], item.h)] })
   }
-  const all = [...top, ...sides.flatMap((s) => s.poly), ...QUAD(x0, y0, x1, y1, 0).map((p) => cam.project(...p))]
+  const all = [...top, ...sides.flatMap((s) => s.poly), ...base.map(([x, y]) => cam.project(x, y, 0))]
   return { top, sides, silhouette: hull(all) }
 }
 
@@ -272,6 +479,26 @@ function drawItems(ctx, cam, scene, pal, frame, hits) {
     ctx.restore()
     const selected = frame.selection?.type === 'item' && frame.selection.index === index
     const hovered = frame.hover?.type === 'item' && frame.hover.index === index
+    if (selected) {
+      // a round handle just beyond the front edge: drag it to turn the piece
+      const r = ((item.rot || 0) * Math.PI) / 180
+      const reach = item.d / 2 + 0.34
+      const at = cam.project(item.x + item.w / 2 - reach * Math.sin(r), item.y + item.d / 2 + reach * Math.cos(r), 0)
+      hits.handle = { index, at }
+      ctx.save()
+      ctx.beginPath()
+      ctx.arc(at[0], at[1], 12, 0, Math.PI * 2)
+      ctx.fillStyle = pal.selection
+      ctx.fill()
+      ctx.strokeStyle = '#fff'
+      ctx.lineWidth = 2
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.arc(at[0], at[1], 5, -2.4, 1.2)
+      ctx.lineWidth = 2
+      ctx.stroke()
+      ctx.restore()
+    }
     if (selected || hovered) {
       ctx.save()
       pathOf(ctx, faces.silhouette)
@@ -290,7 +517,7 @@ function drawItems(ctx, cam, scene, pal, frame, hits) {
 
 function sidesOf(ctx, faces, colors) {
   faces.sides.forEach((s) => {
-    ctx.fillStyle = Math.abs(s.n[0]) > 0 ? colors[2] : colors[1]
+    ctx.fillStyle = Math.abs(s.n[0]) > Math.abs(s.n[1]) ? colors[2] : colors[1]
     pathOf(ctx, s.poly)
     ctx.fill()
   })
@@ -496,11 +723,12 @@ function drawCompass(ctx, cam, scene, pal, at) {
  */
 export function drawStage(ctx, frame) {
   const { scene, camera: cam, palette: pal } = frame
-  const hits = { windows: [], items: [] }
+  const hits = { windows: [], items: [], handle: null }
   const { room } = scene
   if (frame.clear !== false) ctx.clearRect(0, 0, cam.width, cam.height)
   if (frame.showArc) drawArc(ctx, cam, scene, frame, pal, true)
   const floor = drawFloor(ctx, cam, room, pal, frame)
+  drawUnderlay(ctx, cam, room, frame.underlay)
   drawHeat(ctx, cam, room, frame.heat, frame.dpr)
   drawWalls(ctx, cam, scene, pal, frame, hits)
   // light on the floor, and on the walls the sun reaches
@@ -532,7 +760,10 @@ export function drawStage(ctx, frame) {
   }
   drawMarkers(ctx, cam, frame.markers, pal)
   drawBeams(ctx, cam, scene, frame, pal)
+  drawMarks(ctx, cam, frame.marks, pal)
   drawItems(ctx, cam, scene, pal, frame, hits)
+  drawGuides(ctx, cam, room, frame.guides, pal)
+  if (frame.dimensions && cam.pitch > 84 && frame.fmt) drawDimensions(ctx, cam, scene, pal, frame.fmt)
   if (frame.showArc) {
     drawArc(ctx, cam, scene, frame, pal, false)
     drawSun(ctx, cam, scene, frame, pal)

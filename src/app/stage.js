@@ -4,15 +4,26 @@
 import { makeCamera } from '../render/camera.js'
 import { drawStage, arcRadius, sunPoint } from '../render/draw.js'
 import { PALETTES } from '../render/palette.js'
-import { wallFrame } from '../core/room.js'
+import { wallFrame, itemFootprint } from '../core/room.js'
 import { insideConvex } from '../core/poly.js'
+import { snapItem, snapWindow } from '../core/snap.js'
 import { clamp } from './dom.js'
 
 const VIEWS = { '3d': { yaw: -32, pitch: 33 }, plan: { yaw: 0, pitch: 90 } }
 const ease = (t) => 1 - (1 - t) ** 3
 
-export function makeFrameCamera(scene, view, width, height, frame, showArc) {
+export function makeFrameCamera(scene, view, width, height, frame, showArc, { dims = false } = {}) {
   const extra = []
+  if (view.pitch > 80) {
+    // balconies hang outside the wall and the dimension labels sit beside it, so leave them room
+    for (const win of scene.windows) {
+      if (!win.balcony) continue
+      const f = wallFrame(scene.room, win.wall)
+      const v = scene.room.wall + win.balcony.depth
+      for (const u of [win.pos - win.balcony.ext, win.pos + win.w + win.balcony.ext]) extra.push([f.o[0] + f.t[0] * u + f.n[0] * v, f.o[1] + f.t[1] * u + f.n[1] * v, 0])
+    }
+    if (dims) for (const [x, y] of [[-1, -1], [scene.room.w + 1, -1], [scene.room.w + 1, scene.room.d + 1], [-1, scene.room.d + 1]]) extra.push([x, y, 0])
+  }
   if (showArc && frame.path?.samples?.length) {
     const radius = arcRadius(scene.room, view.pitch)
     for (const s of frame.path.samples) extra.push(sunPoint(scene, { azimuth: s.azimuth, elevation: s.elevation }, radius))
@@ -21,13 +32,16 @@ export function makeFrameCamera(scene, view, width, height, frame, showArc) {
 }
 
 export class Stage {
-  constructor({ canvas, store, getFrame, getHeat, getMarkers, onSelect, onHover, reducedMotion }) {
+  constructor({ canvas, store, getFrame, getHeat, getMarkers, getOverlay, onSelect, onHover, reducedMotion }) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')
     this.store = store
     this.getFrame = getFrame
     this.getHeat = getHeat
     this.getMarkers = getMarkers
+    this.getOverlay = getOverlay
+    this.tool = null
+    this.guides = []
     this.onSelect = onSelect
     this.onHover = onHover
     this.reducedMotion = reducedMotion
@@ -106,7 +120,9 @@ export class Stage {
   paint() {
     const scene = this.store.scene
     const frame = this.getFrame()
-    const cam = makeFrameCamera(scene, this.view, this.width, this.height, frame, this.store.ui.showArc)
+    const overlay = this.getOverlay?.() ?? {}
+    const arc = this.store.ui.showArc && !this.store.ui.arcOff
+    const cam = makeFrameCamera(scene, this.view, this.width, this.height, frame, arc, { dims: Boolean(overlay.dimensions) })
     this.camera = cam
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0)
     this.hits = drawStage(this.ctx, {
@@ -122,7 +138,12 @@ export class Stage {
       markers: this.getMarkers?.(),
       selection: this.selection,
       hover: this.hover,
-      showArc: this.store.ui.showArc,
+      showArc: arc,
+      guides: this.guides,
+      underlay: overlay.underlay,
+      marks: overlay.marks,
+      dimensions: overlay.dimensions,
+      fmt: overlay.fmt,
     })
   }
 
@@ -166,11 +187,27 @@ export class Stage {
     if (!same) this.invalidate()
   }
 
+  /** While a tool is set, a tap on the floor goes to it instead of selecting anything. */
+  setTool(tool) {
+    this.tool = tool
+    this.canvas.style.cursor = tool ? 'crosshair' : this.mode === '3d' ? 'ew-resize' : 'default'
+    this.invalidate()
+  }
+
   down(e) {
     this.canvas.focus({ preventScroll: true })
     const p = this.pointer(e)
-    const hit = this.pick(p)
     this.canvas.setPointerCapture(e.pointerId)
+    if (this.tool) {
+      this.drag = { type: 'tool', x: p[0], y: p[1], moved: 0 }
+      return
+    }
+    const handle = this.hits.handle
+    if (handle && Math.hypot(p[0] - handle.at[0], p[1] - handle.at[1]) < 20) {
+      this.drag = { type: 'rotate', index: handle.index }
+      return
+    }
+    const hit = this.pick(p)
     this.onSelect(hit)
     this.select(hit)
     const scene = this.store.scene
@@ -199,15 +236,36 @@ export class Stage {
       return
     }
     const scene = this.store.scene
+    if (d.type === 'tool') {
+      d.moved += Math.abs(p[0] - d.x) + Math.abs(p[1] - d.y)
+      d.x = p[0]
+      d.y = p[1]
+      return
+    }
+    if (d.type === 'rotate') {
+      const item = scene.items[d.index]
+      const at = this.camera.planeAt(p[0], p[1], 0)
+      if (!item || !at) return
+      const cx = item.x + item.w / 2
+      const cy = item.y + item.d / 2
+      let deg = (Math.atan2(-(at[0] - cx), at[1] - cy) * 180) / Math.PI
+      deg = ((deg % 360) + 360) % 360
+      const near = Math.round(deg / 15) * 15
+      if (!e.shiftKey && Math.abs(deg - near) < 5) deg = near % 360
+      this.store.update((s) => { s.items[d.index].rot = Math.round(deg) }, { key: `rot${d.index}` })
+      return
+    }
     if (d.type === 'item') {
       const at = this.camera.planeAt(p[0], p[1], 0)
       if (!at) return
-      const snap = (v) => Math.round(v * 20) / 20
       this.store.update((s) => {
         const it = s.items[d.index]
-        it.x = clamp(snap(at[0] - d.dx), 0, s.room.w - it.w)
-        it.y = clamp(snap(at[1] - d.dy), 0, s.room.d - it.d)
+        const snapped = snapItem(s, d.index, at[0] - d.dx, at[1] - d.dy)
+        it.x = snapped.x
+        it.y = snapped.y
+        this.guides = snapped.guides
       }, { key: `item${d.index}` })
+      this.invalidate()
     } else if (d.type === 'window') {
       const win = scene.windows[d.index]
       const at = this.camera.wallAt(win.wall, p[0], p[1])
@@ -215,6 +273,7 @@ export class Stage {
       this.store.update((s) => {
         const w = s.windows[d.index]
         w.pos = posFromLow(s.room, w, at[0] - d.du)
+        w.pos = snapWindow(s, d.index, w.pos).pos
         w.sill = clamp(Math.round((at[1] - d.dz) * 20) / 20, 0, s.room.h - w.h)
       }, { key: `window${d.index}` })
     } else if (d.type === 'orbit' && this.mode === '3d') {
@@ -230,11 +289,43 @@ export class Stage {
 
   up(e) {
     if (this.canvas.hasPointerCapture(e.pointerId)) this.canvas.releasePointerCapture(e.pointerId)
+    const d = this.drag
     this.drag = null
+    if (this.guides.length) {
+      this.guides = []
+      this.invalidate()
+    }
+    if (d?.type === 'tool' && d.moved < 8 && this.camera) {
+      const at = this.camera.planeAt(d.x, d.y, 0)
+      const { room } = this.store.scene
+      if (at && at[0] >= 0 && at[1] >= 0 && at[0] <= room.w && at[1] <= room.d) this.tool.onPoint(at[0], at[1])
+      return
+    }
     this.setHover(this.pick(this.pointer(e)))
   }
 
   key(e) {
+    const sel = this.selection
+    if (sel?.type === 'item' && this.store.scene.items[sel.index]) {
+      const fine = e.shiftKey ? 0.25 : 0.05
+      const move = { ArrowLeft: [-fine, 0], ArrowRight: [fine, 0], ArrowUp: [0, fine], ArrowDown: [0, -fine] }[e.key]
+      if (move && (this.mode === 'plan' || e.altKey)) {
+        e.preventDefault()
+        this.store.update((s) => { s.items[sel.index].x += move[0]; s.items[sel.index].y += move[1] }, { key: `item${sel.index}` })
+        return
+      }
+      if (e.key === '[' || e.key === ']') {
+        e.preventDefault()
+        const turn = (e.key === ']' ? 15 : -15) * (e.shiftKey ? 6 : 1)
+        this.store.update((s) => { s.items[sel.index].rot = (s.items[sel.index].rot + turn + 360) % 360 }, { key: `rot${sel.index}` })
+        return
+      }
+    } else if (sel?.type === 'window' && this.store.scene.windows[sel.index] && (e.altKey || this.mode === 'plan') && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault()
+      const by = (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 0.25 : 0.05)
+      this.store.update((s) => { s.windows[sel.index].pos += by }, { key: `window${sel.index}` })
+      return
+    }
     const step = e.shiftKey ? 15 : 5
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       if (this.mode !== '3d') return
