@@ -8,6 +8,8 @@ Every geometry piece in Sunspill is compared with a reference that shares no cod
 | Light through a window | A ray tracer written separately, `test/helpers/raytrace.js`, which borrows only the wall frame helper | 3,767,000 probes, 0 disagreements |
 | Shadows of buildings, trees, balcony rails and eaves | The same ray tracer, which uses the real outline of each building | 987,660 probes, 0 disagreements |
 | Shadows of buildings, trees, balcony rails and eaves | pvlib for the sun, then shapely rays against extruded polygons in a world frame | 54,000 probes, 0 disagreements |
+| Overlap, difference and union of convex polygons, centroids, a point inside, edges that cross, the convex parts of a concave outline | shapely (GEOS), `scripts/make-polygon-reference.py` | 300 pairs, 150 sets, 400 outlines and 160 footprints (142 of them concave), worst area difference 2e-14 m2 |
+| Outline of a building drawn as several ways (a multipolygon) | shapely `linemerge` and `polygonize`, areas in a pyproj azimuthal projection | 4 real Overpass relations, within 0.5 % before thinning to 40 corners and 3 % after |
 | East and north offsets from latitude and longitude | pyproj, WGS84 topocentric frame | 80 points within 400 m, worst 3.8 cm |
 | Map tile positions | The slippy map formula from the OpenStreetMap wiki | 40 points, worst 2e-16 of the world width |
 | Magnetic declination | pygeomag with the World Magnetic Model 2025 coefficients | 105 points, worst 0.0003 degrees |
