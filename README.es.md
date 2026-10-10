@@ -113,3 +113,5 @@ La documentación está en inglés. [Usage](docs/USAGE.md) | [Privacy](docs/PRIV
 ## Licencia y datos
 
 MIT. La fuente Fraunces incrustada va con la licencia SIL Open Font License. Las imágenes del mapa, los contornos de edificios y la búsqueda de direcciones vienen de los colaboradores de OpenStreetMap y están bajo la Open Database License. La tabla de zonas horarias es `@photostructure/tz-lookup` (CC0) y el modelo del campo magnético es el World Magnetic Model 2025 (dominio público). Ver [THIRD_PARTY.md](THIRD_PARTY.md).
+
+Assisted by Claude/Codex.

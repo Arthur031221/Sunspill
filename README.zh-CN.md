@@ -113,3 +113,5 @@ npx --yes serve dist
 ## 许可与数据
 
 MIT。内嵌的 Fraunces 字体采用 SIL Open Font License。地图图片、建筑轮廓和地址搜索来自 OpenStreetMap 贡献者，采用 Open Database License。时区表是 `@photostructure/tz-lookup`（CC0），磁场模型是 World Magnetic Model 2025（公有领域）。见 [THIRD_PARTY.md](THIRD_PARTY.md)。
+
+Assisted by Claude/Codex.

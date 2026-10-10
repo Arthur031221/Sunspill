@@ -113,3 +113,5 @@ Die Dokumentation ist auf Englisch. [Usage](docs/USAGE.md) | [Privacy](docs/PRIV
 ## Lizenz und Daten
 
 MIT. Die eingebettete Schrift Fraunces steht unter der SIL Open Font License. Kartenbilder, Gebäudeumrisse und Adresssuche stammen von den OpenStreetMap-Mitwirkenden und stehen unter der Open Database License. Die Zeitzonentabelle ist `@photostructure/tz-lookup` (CC0), das Magnetfeldmodell ist das World Magnetic Model 2025 (gemeinfrei). Siehe [THIRD_PARTY.md](THIRD_PARTY.md).
+
+Assisted by Claude/Codex.

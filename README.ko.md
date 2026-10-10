@@ -113,3 +113,5 @@ npx --yes serve dist
 ## 라이선스와 데이터
 
 MIT. 내장된 Fraunces 글꼴은 SIL Open Font License를 따릅니다. 지도 이미지, 건물 윤곽, 주소 검색은 OpenStreetMap 기여자의 것이며 Open Database License를 따릅니다. 시간대 표는 `@photostructure/tz-lookup`(CC0), 지자기 모델은 World Magnetic Model 2025(퍼블릭 도메인)입니다. [THIRD_PARTY.md](THIRD_PARTY.md) 참조.
+
+Assisted by Claude/Codex.

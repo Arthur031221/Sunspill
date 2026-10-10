@@ -190,3 +190,5 @@ L shaped rooms. Vertical fins and blinds. Shadows from furniture. A comparison w
 ## License and data
 
 MIT. The Fraunces font is embedded under the SIL Open Font License. Map pictures, building outlines and address search come from OpenStreetMap contributors and are under the Open Database License. The time zone table is `@photostructure/tz-lookup` (CC0) and the magnetic field model is the World Magnetic Model 2025 (public domain). See [THIRD_PARTY.md](THIRD_PARTY.md).
+
+Assisted by Claude/Codex.

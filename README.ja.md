@@ -113,3 +113,5 @@ npx --yes serve dist
 ## ライセンスとデータ
 
 MIT。埋め込みの Fraunces フォントは SIL Open Font License です。地図の画像、建物の輪郭、住所検索は OpenStreetMap の貢献者によるもので、Open Database License の下にあります。タイムゾーン表は `@photostructure/tz-lookup`（CC0）、地磁気モデルは World Magnetic Model 2025（パブリックドメイン）です。[THIRD_PARTY.md](THIRD_PARTY.md) を参照。
+
+Assisted by Claude/Codex.

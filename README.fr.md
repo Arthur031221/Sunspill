@@ -113,3 +113,5 @@ La documentation est en anglais. [Usage](docs/USAGE.md) | [Privacy](docs/PRIVACY
 ## Licence et données
 
 MIT. La police Fraunces intégrée est sous SIL Open Font License. Les images de la carte, les contours de bâtiments et la recherche d'adresse viennent des contributeurs d'OpenStreetMap et sont sous Open Database License. La table des fuseaux horaires est `@photostructure/tz-lookup` (CC0) et le modèle du champ magnétique est le World Magnetic Model 2025 (domaine public). Voir [THIRD_PARTY.md](THIRD_PARTY.md).
+
+Assisted by Claude/Codex.
