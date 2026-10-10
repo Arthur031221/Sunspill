@@ -7,6 +7,8 @@ import es from '../locales/es.json' with { type: 'json' }
 import fr from '../locales/fr.json' with { type: 'json' }
 import de from '../locales/de.json' with { type: 'json' }
 import ptBR from '../locales/pt-BR.json' with { type: 'json' }
+import quickEn from '../locales/quick.en.json' with { type: 'json' }
+import quickZhTW from '../locales/quick.zh-TW.json' with { type: 'json' }
 
 export const LOCALES = {
   en: { name: 'English', messages: en },
@@ -47,9 +49,15 @@ export const onLocale = (fn) => {
   return () => listeners.delete(fn)
 }
 
+const fill = (text, vars) => (vars ? text.replace(/\{(\w+)\}/g, (_, name) => (name in vars ? String(vars[name]) : `{${name}}`)) : text)
+
 /** Look up a message, fill {name} placeholders, fall back to English and then to the key. */
 export function t(key, vars) {
-  let text = LOCALES[current].messages[key] ?? en[key] ?? key
-  if (vars) text = text.replace(/\{(\w+)\}/g, (_, name) => (name in vars ? String(vars[name]) : `{${name}}`))
-  return text
+  return fill(LOCALES[current].messages[key] ?? en[key] ?? key, vars)
+}
+
+/** The quick check is written in English and Traditional Chinese. Every other language shows the English. */
+const QUICK = { en: quickEn, 'zh-TW': quickZhTW }
+export function tq(key, vars) {
+  return fill(QUICK[current]?.[key] ?? quickEn[key] ?? key, vars)
 }

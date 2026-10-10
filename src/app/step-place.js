@@ -108,11 +108,19 @@ export function placeStep(ctx) {
     form, status, results, locate, where, details,
     h('p', { class: 'note' }, t('wiz.place.privacy')))
 
+  // the scene that the last pin made, so a double tap, which zooms, can take that pin back
+  let lastPin = null
   map.on.pin = (lat, lon) => {
     const old = store.scene.place
+    const before = store.scene
     const close = haversine(old, { lat, lon }) < 150
     choose({ name: close ? old.name : t('wiz.place.pin'), lat: Math.round(lat * 1e5) / 1e5, lon: Math.round(lon * 1e5) / 1e5 }, { recentre: false })
+    lastPin = store.scene !== before ? store.scene : null
     toast(t('wiz.place.pinned'))
+  }
+  map.on.undoPin = () => {
+    if (lastPin && store.scene === lastPin && store.canUndo()) store.undo()
+    lastPin = null
   }
 
   return {
@@ -129,6 +137,7 @@ export function placeStep(ctx) {
       generation++
       abort?.abort()
       map.on.pin = null
+      map.on.undoPin = null
     },
   }
 }

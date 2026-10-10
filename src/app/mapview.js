@@ -4,9 +4,12 @@
 // the room in the facing step, and picks buildings in the surroundings step.
 
 import { h } from './dom.js'
-import { t } from './i18n.js'
+import { t, tq } from './i18n.js'
 import { bearingText, lengthText } from './format.js'
-import { lonLatToTile, tileToLonLat, fromLocal, toLocal, roomCorners, metresPerPixel } from '../core/geo.js'
+import { lonLatToTile, tileToLonLat, fromLocal, toLocal, roomCorners, metresPerPixel, insideRing } from '../core/geo.js'
+import { planTiles } from '../core/tilemap.js'
+import { TileCache } from './tilecache.js'
+import { createTapper } from './taps.js'
 import { wallBearing, wallFrame, roomToLocal, sunInRoom } from '../core/room.js'
 import { sunAt } from '../core/hours.js'
 import { shadingObstacles } from '../core/obstacles.js'
@@ -15,6 +18,24 @@ import { PALETTES } from '../render/palette.js'
 const TILE = 256
 const MAX_TILE_ZOOM = 19
 const RAD = Math.PI / 180
+
+/** A picture for the tile cache: the load is stopped by clearing its address, so a tile that left the screen costs nothing more. */
+function loadImage(url, ok, bad) {
+  const img = new Image()
+  img.decoding = 'async'
+  img.onload = () => ok(img)
+  img.onerror = () => bad()
+  img.src = url
+  return () => {
+    img.onload = img.onerror = null
+    img.src = ''
+  }
+}
+
+/** The colours of the side arrows, from strong afternoon sun to none. */
+const VERDICT_COLOURS = { strong: '#d9480f', medium: '#e8890c', weak: '#b79b1a', none: '#5b6b8c' }
+
+const motionReduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
 
 const nice = (metres) => {
   for (const v of [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]) if (v >= metres) return v
@@ -40,7 +61,18 @@ export class MapView {
     this.cam = { lat: store.scene.place.lat, lon: store.scene.place.lon, zoom: 15 }
     this.pointers = new Map()
     this.gesture = null
-    this.tiles = new Map()
+    this.cache = new TileCache({ url: (z, x, y) => this.net.tileUrl(z, x, y), load: loadImage, onChange: () => this.invalidate() })
+    // what the last painted frame showed of the tiles: the share of the screen no picture covered
+    this.tileStats = { blank: 1, total: 0, z: 0 }
+    // the view the person left in each mode, which comes back when they return to it
+    this.saved = {}
+    this.touched = false
+    this.fitted = false
+    this.tapper = createTapper({ onTap: (x, y) => this.tapped(x, y), onDouble: (x, y) => this.doubleTapped(x, y) })
+    this.flight = 0
+    this.arrows = []
+    // the quick check's state: {origin, buildings, selected, sides, pin, point}, set by the page that owns it
+    this.quick = null
     this.selected = null
     this.target = 0
     this.queued = false
@@ -95,16 +127,21 @@ export class MapView {
     return tileToLonLat((c[0] + x - this.width / 2) / TILE, (c[1] + y - this.height / 2) / TILE, this.cam.zoom)
   }
 
+  /** The point that local metres are counted from: the room, or in the quick check the place that was searched. */
+  get origin() {
+    return this.mode === 'quick' && this.quick?.origin ? this.quick.origin : this.scene.place
+  }
+
   /** Screen position of a point metres east and north of the room centre. */
   local(e, n) {
-    const p = fromLocal(this.scene.place, e, n)
+    const p = fromLocal(this.origin, e, n)
     return this.toScreen(p.lat, p.lon)
   }
 
   /** Metres east and north of the room centre under a screen position. */
   unlocal(x, y) {
     const ll = this.fromScreen(x, y)
-    return toLocal(this.scene.place, ll.lat, ll.lon)
+    return toLocal(this.origin, ll.lat, ll.lon)
   }
 
   get pixelsPerMetre() {
@@ -117,6 +154,9 @@ export class MapView {
 
   zoomTo(zoom, at = [this.width / 2, this.height / 2]) {
     const next = Math.min(22, Math.max(3, zoom))
+    this.touched = true
+    // the zoom of the pin view is the person's own, so it comes back when the pin is placed again
+    if (this.mode === 'pin') this.pinZoom = next
     const before = this.fromScreen(at[0], at[1])
     this.cam.zoom = next
     const after = this.fromScreen(at[0], at[1])
@@ -127,6 +167,7 @@ export class MapView {
   }
 
   panBy(dx, dy) {
+    this.touched = true
     const c = this.world(this.cam.lat, this.cam.lon)
     const ll = tileToLonLat((c[0] - dx) / TILE, (c[1] - dy) / TILE, this.cam.zoom)
     this.cam.lat = Math.max(-84, Math.min(84, ll.lat))
@@ -134,7 +175,10 @@ export class MapView {
     this.invalidate()
   }
 
-  /** Centre on the room and choose a sensible zoom for the mode. */
+  /**
+   * Centre on the room and choose a sensible zoom for the mode. The picture is never closer than the
+   * level 19 tiles, which a closer view only blurs; the person can still pinch in past it.
+   */
   fit(mode = this.mode) {
     const { place } = this.scene
     this.cam.lat = place.lat
@@ -143,17 +187,42 @@ export class MapView {
     else {
       // show about sixty metres across, so the room and the buildings round it are both visible
       const ppm = Math.min(this.width, this.height) / (mode === 'surround' ? 140 : 45)
-      this.cam.zoom = Math.log2(ppm * 40075016.686 * Math.cos(place.lat * RAD) / TILE)
+      this.cam.zoom = Math.min(MAX_TILE_ZOOM, Math.log2(ppm * 40075016.686 * Math.cos(place.lat * RAD) / TILE))
     }
+    this.fitted = true
+    this.touched = false
+    delete this.saved[mode]
     this.invalidate()
   }
 
+  /** True when the room is on the screen with a margin, so a view the person left can come back. */
+  roomInView() {
+    const [x, y] = this.toScreen(this.scene.place.lat, this.scene.place.lon)
+    return x > 30 && y > 30 && x < this.width - 30 && y < this.height - 30
+  }
+
+  /**
+   * Switch what the map is for. The view the person set in this mode last time comes back as they left it,
+   * so Back and Next do not undo a zoom, unless the room is out of that view now. Otherwise the map is fitted.
+   */
   setMode(mode, { select = null, target = 0 } = {}) {
     this.resize() // the map may have been hidden, and its size is read before it is fitted
+    if (this.fitted && this.touched) this.saved[this.mode] = { ...this.cam }
     this.mode = mode
     this.selected = select
     this.target = target
-    this.fit(mode)
+    this.tapper.cancel()
+    // the quick check moves the view itself, to the place that was found
+    if (mode === 'quick') {
+      this.paintChrome()
+      return
+    }
+    const back = this.saved[mode]
+    if (back) {
+      Object.assign(this.cam, back)
+      if (this.roomInView()) this.invalidate()
+      else this.fit(mode)
+    } else this.fit(mode)
     this.paintChrome()
   }
 
@@ -166,7 +235,7 @@ export class MapView {
     }
     this.zoomIn.setAttribute('aria-label', t('map.zoomIn'))
     this.zoomOut.setAttribute('aria-label', t('map.zoomOut'))
-    this.canvas.setAttribute('aria-label', t(`map.aria.${this.mode}`))
+    this.canvas.setAttribute('aria-label', this.mode === 'quick' ? tq('quick.map.aria') : t(`map.aria.${this.mode}`))
     this.invalidate()
   }
 
@@ -181,48 +250,16 @@ export class MapView {
 
   // ---------------------------------------------------------------- tiles
 
-  tile(z, x, y) {
-    const key = `${z}/${x}/${y}`
-    let tile = this.tiles.get(key)
-    if (!tile) {
-      tile = { img: new Image(), ready: false, at: 0 }
-      tile.img.decoding = 'async'
-      tile.img.onload = () => {
-        tile.ready = true
-        this.invalidate()
-      }
-      tile.img.src = this.net.tileUrl(z, x, y)
-      this.tiles.set(key, tile)
-      if (this.tiles.size > 220) {
-        const oldest = [...this.tiles.entries()].sort((a, b) => a[1].at - b[1].at)[0]
-        this.tiles.delete(oldest[0])
-      }
-    }
-    tile.at = performance.now()
-    return tile
-  }
-
   drawTiles(ctx) {
-    const z = Math.min(MAX_TILE_ZOOM, Math.max(0, Math.round(this.cam.zoom)))
-    const k = 2 ** (this.cam.zoom - z)
-    const size = TILE * k
     const c = this.world(this.cam.lat, this.cam.lon)
-    const left = c[0] - this.width / 2
-    const top = c[1] - this.height / 2
-    const scale = 2 ** (z - this.cam.zoom) // world pixels at this zoom to pixels at the tile zoom
-    const n = 2 ** z
-    const x0 = Math.floor((left * scale) / TILE)
-    const x1 = Math.floor(((left + this.width) * scale) / TILE)
-    const y0 = Math.max(0, Math.floor((top * scale) / TILE))
-    const y1 = Math.min(n - 1, Math.floor(((top + this.height) * scale) / TILE))
-    for (let ty = y0; ty <= y1; ty++) {
-      for (let tx = x0; tx <= x1; tx++) {
-        const wrapped = ((tx % n) + n) % n
-        const tile = this.tile(z, wrapped, ty)
-        if (!tile.ready) continue
-        ctx.drawImage(tile.img, tx * size - left, ty * size - top, size + 0.5, size + 0.5)
-      }
+    const plan = planTiles({ zoom: this.cam.zoom, cx: c[0], cy: c[1], width: this.width, height: this.height, ready: (z, x, y) => this.cache.ready(z, x, y) !== null, maxZoom: MAX_TILE_ZOOM })
+    // only what is on the screen is asked for, and a picture still missing is stood in for by a nearby level
+    this.cache.want(plan.wanted)
+    for (const op of plan.ops) {
+      const img = this.cache.ready(op.z, op.x, op.y)
+      if (img) ctx.drawImage(img, op.sx, op.sy, op.sw, op.sh, op.dx, op.dy, op.dw + 0.5, op.dh + 0.5)
     }
+    this.tileStats = { blank: plan.blank, total: plan.total, z: plan.z }
   }
 
   drawGrid(ctx, pal) {
@@ -264,7 +301,9 @@ export class MapView {
       ctx.fillStyle = 'rgba(8, 12, 28, 0.35)'
       ctx.fillRect(0, 0, this.width, this.height)
     }
-    if (this.mode !== 'pin') {
+    if (this.mode === 'quick') {
+      this.drawQuick(ctx, pal)
+    } else if (this.mode !== 'pin') {
       this.drawObstacles(ctx, pal)
       this.drawRoom(ctx, pal)
     } else {
@@ -488,8 +527,8 @@ export class MapView {
     ctx.restore()
   }
 
-  drawPin(ctx, pal) {
-    const [x, y] = this.toScreen(this.scene.place.lat, this.scene.place.lon)
+  drawPin(ctx, pal, at = this.scene.place) {
+    const [x, y] = this.toScreen(at.lat, at.lon)
     ctx.save()
     ctx.translate(x, y)
     ctx.fillStyle = pal.accent
@@ -506,6 +545,163 @@ export class MapView {
     ctx.arc(0, -26, 5, 0, Math.PI * 2)
     ctx.fill()
     ctx.restore()
+  }
+
+  /** Move the view to a point and zoom, gliding when the move is short and the person has not asked for less motion. */
+  flyTo(lat, lon, zoom, { animate = true } = {}) {
+    this.stopFlight()
+    const from = { ...this.cam }
+    const far = Math.abs(lat - from.lat) + Math.abs(lon - from.lon) > 0.05
+    if (!animate || far || motionReduced()) {
+      Object.assign(this.cam, { lat, lon, zoom })
+      this.invalidate()
+      return
+    }
+    const t0 = performance.now()
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / 550)
+      const e = 1 - (1 - k) ** 3
+      this.cam.lat = from.lat + (lat - from.lat) * e
+      this.cam.lon = from.lon + (lon - from.lon) * e
+      this.cam.zoom = from.zoom + (zoom - from.zoom) * e
+      this.invalidate()
+      this.flight = k < 1 ? requestAnimationFrame(step) : 0
+    }
+    this.flight = requestAnimationFrame(step)
+  }
+
+  stopFlight() {
+    if (this.flight) cancelAnimationFrame(this.flight)
+    this.flight = 0
+  }
+
+  /** Buildings, the side arrows and the searched place, in the quick check. */
+  drawQuick(ctx, pal) {
+    const q = this.quick
+    this.arrows = []
+    if (!q) return
+    const dark = pal.name === 'dark'
+    const ppm = this.pixelsPerMetre
+    q.buildings.forEach((o, i) => {
+      const pts = o.ring.map(([e, n]) => this.local(e, n))
+      let x0 = Infinity
+      let x1 = -Infinity
+      let y0 = Infinity
+      let y1 = -Infinity
+      for (const [x, y] of pts) {
+        x0 = Math.min(x0, x)
+        x1 = Math.max(x1, x)
+        y0 = Math.min(y0, y)
+        y1 = Math.max(y1, y)
+      }
+      if (x1 < -20 || y1 < -20 || x0 > this.width + 20 || y0 > this.height + 20) return
+      const picked = q.selected === i
+      ctx.save()
+      this.path(ctx, pts)
+      if (picked) {
+        ctx.fillStyle = dark ? 'rgba(255, 190, 80, 0.5)' : 'rgba(245, 165, 36, 0.5)'
+        ctx.strokeStyle = pal.accent
+        ctx.lineWidth = 3.5
+      } else {
+        const alpha = Math.min(0.55, 0.16 + o.h / 120)
+        ctx.fillStyle = dark ? `rgba(150, 165, 205, ${alpha})` : `rgba(96, 104, 130, ${alpha})`
+        ctx.strokeStyle = dark ? 'rgba(200, 212, 245, 0.8)' : 'rgba(60, 66, 92, 0.85)'
+        ctx.lineWidth = 1.4
+      }
+      if (o.synthetic) ctx.setLineDash([6, 4])
+      ctx.fill()
+      ctx.stroke()
+      ctx.restore()
+    })
+    if (q.pin) this.drawPin(ctx, pal, q.pin)
+    const halo = dark ? 'rgba(11, 15, 28, 0.9)' : 'rgba(255, 250, 240, 0.95)'
+    for (const side of q.sides ?? []) {
+      const [x, y] = this.local(side.point[0], side.point[1])
+      const b = side.bearing * RAD
+      const dir = [Math.sin(b), -Math.cos(b)]
+      const start = [x + dir[0] * 3, y + dir[1] * 3]
+      const len = Math.max(34, Math.min(58, 5 * ppm))
+      const tip = [start[0] + dir[0] * len, start[1] + dir[1] * len]
+      const colour = VERDICT_COLOURS[side.verdict] ?? VERDICT_COLOURS.none
+      const wide = side.chosen ? 5.5 : 3.5
+      ctx.save()
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      const shape = () => {
+        ctx.beginPath()
+        ctx.moveTo(start[0], start[1])
+        ctx.lineTo(tip[0], tip[1])
+      }
+      const head = () => {
+        const across = [-dir[1], dir[0]]
+        ctx.beginPath()
+        ctx.moveTo(tip[0] + dir[0] * 10, tip[1] + dir[1] * 10)
+        ctx.lineTo(tip[0] + across[0] * 7, tip[1] + across[1] * 7)
+        ctx.lineTo(tip[0] - across[0] * 7, tip[1] - across[1] * 7)
+        ctx.closePath()
+      }
+      ctx.strokeStyle = halo
+      ctx.lineWidth = wide + 3.5
+      shape()
+      ctx.stroke()
+      head()
+      ctx.fillStyle = halo
+      ctx.fill()
+      ctx.stroke()
+      ctx.strokeStyle = colour
+      ctx.lineWidth = wide
+      shape()
+      ctx.stroke()
+      head()
+      ctx.fillStyle = colour
+      ctx.fill()
+      // the name of the side in a small disc at the tip, ringed when the person said the window faces here
+      const label = [tip[0] + dir[0] * 24, tip[1] + dir[1] * 24]
+      ctx.beginPath()
+      ctx.arc(label[0], label[1], 13, 0, Math.PI * 2)
+      ctx.fillStyle = side.chosen ? colour : halo
+      ctx.fill()
+      ctx.lineWidth = side.chosen ? 3 : 2
+      ctx.strokeStyle = colour
+      ctx.stroke()
+      ctx.font = `700 13px ${pal.ui}`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = side.chosen ? '#fff' : pal.ink
+      ctx.fillText(side.label ?? side.id, label[0], label[1] + 0.5)
+      ctx.restore()
+      this.arrows.push({ id: side.id, start, tip, label })
+    }
+    if (q.point) {
+      const [x, y] = this.local(q.point[0], q.point[1])
+      ctx.save()
+      ctx.strokeStyle = pal.accent
+      ctx.lineWidth = 2.5
+      ctx.setLineDash([4, 3])
+      ctx.beginPath()
+      ctx.arc(x, y, 10, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.restore()
+    }
+  }
+
+  /** What is under a tap in the quick check: a side arrow, a building (the tallest where outlines overlap), or bare ground. */
+  quickHit(x, y) {
+    for (const a of this.arrows) {
+      const dx = a.tip[0] - a.start[0]
+      const dy = a.tip[1] - a.start[1]
+      const k = Math.max(0, Math.min(1, ((x - a.start[0]) * dx + (y - a.start[1]) * dy) / (dx * dx + dy * dy || 1)))
+      const near = Math.min(Math.hypot(x - (a.start[0] + dx * k), y - (a.start[1] + dy * k)), Math.hypot(x - a.label[0], y - a.label[1]) - 8)
+      if (near <= 18) return { kind: 'side', id: a.id }
+    }
+    const [e, n] = this.unlocal(x, y)
+    let found = null
+    ;(this.quick?.buildings ?? []).forEach((o, i) => {
+      if (insideRing(o.ring, [e, n]) && (found === null || o.h > this.quick.buildings[found].h)) found = i
+    })
+    if (found !== null) return { kind: 'building', index: found }
+    const ll = this.fromScreen(x, y)
+    return { kind: 'ground', lat: ll.lat, lon: ll.lon, east: e, north: n, x, y }
   }
 
   drawNorth(ctx, pal) {
@@ -616,12 +812,9 @@ export class MapView {
     c.addEventListener('wheel', (e) => {
       e.preventDefault()
       const r = c.getBoundingClientRect()
+      this.stopFlight()
       this.zoomBy(-Math.sign(e.deltaY) * 0.5, [e.clientX - r.left, e.clientY - r.top])
     }, { passive: false })
-    c.addEventListener('dblclick', (e) => {
-      const r = c.getBoundingClientRect()
-      this.zoomBy(1, [e.clientX - r.left, e.clientY - r.top])
-    })
     c.addEventListener('keydown', (e) => this.key(e))
   }
 
@@ -631,6 +824,7 @@ export class MapView {
   }
 
   down(e) {
+    this.stopFlight()
     this.canvas.focus({ preventScroll: true })
     try {
       this.canvas.setPointerCapture(e.pointerId)
@@ -710,9 +904,18 @@ export class MapView {
     if (this.pointers.size === 0) this.gesture = null
     else if (this.pointers.size === 1 && g?.kind === 'pinch') this.gesture = { kind: 'pan', moved: 99 }
     if (cancelled || !known || !g || g.kind === 'pinch' || g.moved > 6 || performance.now() - known.at > 1000) return
-    // a tap
-    const x = known.x
-    const y = known.y
+    // a tap, which may be the first of a double tap that zooms
+    this.tapper.tap(known.x, known.y)
+  }
+
+  /** A double tap zooms. The pin that its first tap placed is taken back, so zooming in never moves the pin. */
+  doubleTapped(x, y) {
+    if (this.mode === 'pin') this.on.undoPin?.()
+    this.zoomBy(1, [x, y])
+  }
+
+  /** What a tap does in each mode. The quick check never places a pin: a tap picks a side or a building, or offers the point. */
+  tapped(x, y) {
     if (this.mode === 'pin') {
       const ll = this.fromScreen(x, y)
       this.on.pin?.(ll.lat, ll.lon)
@@ -721,6 +924,8 @@ export class MapView {
       this.selected = hit
       this.on.select?.(hit)
       this.invalidate()
+    } else if (this.mode === 'quick') {
+      this.on.quickTap?.(this.quickHit(x, y))
     }
   }
 
