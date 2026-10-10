@@ -80,6 +80,7 @@ export function planTiles({ zoom, cx, cy, width, height, ready, maxZoom = 19, ma
     ops,
     wanted: wanted.map(({ z: wz, x, y }) => ({ z: wz, x, y })),
     total: wanted.length,
-    blank: Math.max(0, 1 - covered / (width * height)),
+    // the pieces add up to the screen only to within rounding, which is not a blank
+    blank: Math.max(0, 1 - covered / (width * height)) < 1e-9 ? 0 : 1 - covered / (width * height),
   }
 }

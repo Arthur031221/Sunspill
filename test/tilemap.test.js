@@ -133,3 +133,13 @@ test('tiles wrap round the date line and stop at the poles', () => {
   const north = planTiles({ zoom: 3, cx: 4 * TILE, cy: 10, width: 400, height: 400, ready: () => false })
   assert.ok(north.wanted.every((w) => w.y >= 0))
 })
+
+test('a view covered by tiles of any mix of levels is blank 0 exactly, and not a rounding error', () => {
+  // every view of a walk across two zoom levels, with the tiles above loaded, adds up to the screen to within rounding
+  for (let zoom = 16.2; zoom < 18.9; zoom += 0.137) {
+    const p0 = plan(zoom)
+    const up = new Set()
+    for (const w of p0.wanted) up.add(tileKey(w.z - 1, Math.floor(w.x / 2), Math.floor(w.y / 2)))
+    assert.equal(plan(zoom, up).blank, 0, `zoom ${zoom}`)
+  }
+})
