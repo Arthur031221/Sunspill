@@ -5,6 +5,7 @@
 import { buildingQuery, parseBuildings, parsePlaces } from '../core/osm.js'
 import { zoneAt } from '../core/zone.js'
 import { addressVariants } from '../core/address.js'
+import { extractAddress } from '../core/twaddress.js'
 
 export const SERVICES = {
   search: { name: 'Nominatim', hosts: ['https://nominatim.openstreetmap.org'], sends: 'the address you type' },
@@ -19,6 +20,8 @@ export const ORIGINS = {
 }
 
 const OVERPASS_PATH = '/api/interpreter'
+// what a busy Overpass server answers, and so worth asking again
+const BUSY = [429, 500, 502, 503, 504]
 const NOMINATIM_GAP = 1100
 
 export class Refused extends Error {
@@ -50,7 +53,7 @@ export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), w
     signal?.addEventListener('abort', abort)
     try {
       const res = await fetchImpl(url, { ...init, signal: controller.signal, credentials: 'omit' })
-      if (!res.ok) throw new Error(`${new URL(url).host} answered ${res.status}`)
+      if (!res.ok) throw Object.assign(new Error(`${new URL(url).host} answered ${res.status}`), { status: res.status })
       return await res.json()
     } finally {
       clearTimeout(timer)
@@ -58,24 +61,43 @@ export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), w
     }
   }
 
-  /** Places matching an address or a name. At most one request a second, as the Nominatim usage policy asks. */
-  async function search(query, lang = 'en', signal) {
-    if (!allowed('search')) throw new Refused('search')
-    const q = String(query).trim().slice(0, 200)
-    if (q.length < 2) return []
-    // one at a time, a second apart, and a search that was cancelled while it waited is never sent
+  /** A Nominatim request, one at a time, a second apart, and a search that was cancelled while it waited is never sent. */
+  function throttled(url, signal) {
     const run = async () => {
       if (signal?.aborted) throw Object.assign(new Error('cancelled'), { name: 'AbortError' })
       const gap = lastSearch + NOMINATIM_GAP - now()
       if (gap > 0) await wait(gap)
       lastSearch = now()
-      const url = `${SERVICES.search.hosts[0]}/search?format=jsonv2&addressdetails=1&limit=6&accept-language=${encodeURIComponent(lang)}&q=${encodeURIComponent(q)}`
-      const places = parsePlaces(await request(url, {}, signal, 'search'))
-      return places.map((p) => ({ ...p, zone: zoneAt(p.lat, p.lon) }))
+      return request(url, {}, signal, 'search')
     }
     const mine = queue.then(run, run)
     queue = mine.catch(() => {})
     return mine
+  }
+  const withZone = (places) => places.map((p) => ({ ...p, zone: zoneAt(p.lat, p.lon) }))
+
+  /** Places matching an address or a name. At most one request a second, as the Nominatim usage policy asks. */
+  async function search(query, lang = 'en', signal) {
+    if (!allowed('search')) throw new Refused('search')
+    const q = String(query).trim().slice(0, 200)
+    if (q.length < 2) return []
+    const url = `${SERVICES.search.hosts[0]}/search?format=jsonv2&addressdetails=1&limit=6&accept-language=${encodeURIComponent(lang)}&q=${encodeURIComponent(q)}`
+    return withZone(parsePlaces(await throttled(url, signal)))
+  }
+
+  /**
+   * A search by the fields Nominatim keeps an address in, a street (with the house number before it) and a city,
+   * which finds a Taiwanese address that the same words as free text do not. `exact` is true when a result has a
+   * house number, and then only those are kept.
+   */
+  async function searchFields({ street, city }, lang = 'en', signal) {
+    if (!allowed('search')) throw new Refused('search')
+    const params = new URLSearchParams({ format: 'jsonv2', addressdetails: '1', limit: '6', 'accept-language': lang, countrycodes: 'tw', street: String(street).slice(0, 120) })
+    if (city) params.set('city', String(city).slice(0, 40))
+    const raw = await throttled(`${SERVICES.search.hosts[0]}/search?${params}`, signal)
+    const rows = Array.isArray(raw) ? raw : []
+    const houses = rows.filter((r) => r?.address?.house_number)
+    return { places: withZone(parsePlaces(houses.length ? houses : rows)), exact: houses.length > 0 }
   }
 
   /**
@@ -92,36 +114,71 @@ export function createNet({ allowed, fetch: fetchImpl = (...a) => fetch(...a), w
     return { places: [], query: null, exact: true }
   }
 
+  /**
+   * The address in some typed or pasted text, found by its fields first (see searchFields), then without the
+   * house number, then in the plainer forms of `lookup`: four requests at most. Text with no Taiwanese address
+   * in it goes to `lookup` as it is. `found` is what extractAddress read, with the floor, or null.
+   * `exact` is false when the house number had to go.
+   */
+  async function lookupAddress(text, lang = 'en', signal) {
+    const found = extractAddress(text)
+    if (!found) return { ...(await lookup(text, lang, signal)), found: null }
+    const first = await searchFields(found.query, lang, signal)
+    if (first.places.length) return { places: first.places, query: found.query.street, exact: first.exact, found }
+    if (found.number) {
+      const street = await searchFields({ street: found.street, city: found.city }, lang, signal)
+      if (street.places.length) return { places: street.places, query: found.street, exact: false, found }
+    }
+    for (const v of addressVariants(found.address).slice(0, 2)) {
+      const places = await search(v.query, lang, signal)
+      if (places.length) return { places, query: v.query, exact: v.exact, found }
+    }
+    return { places: [], query: null, exact: true, found }
+  }
+
   return {
     search,
     lookup,
+    lookupAddress,
 
     /**
      * Building outlines around a point, trying each Overpass server in turn. `options` goes to parseBuildings,
-     * except `onNext(host)`, which is called before each server after the first so the page can say it is still trying.
+     * except `onNext(host)`, which is called before each server after the first so the page can say it is still trying,
+     * and `rounds`, how many times to go through the servers (one by default). A second round waits a little first and
+     * asks only the servers that were busy or slow, since one that answered 403 or sent no CORS header will not change its mind.
      */
     async buildings(center, radius = 200, signal, options) {
       if (!allowed('buildings')) throw new Refused('buildings')
-      const { onNext, ...parse } = options ?? {}
+      const { onNext, rounds = 1, backoff = 1500, ...parse } = options ?? {}
       const body = new URLSearchParams({ data: buildingQuery(center.lat, center.lon, radius) })
       const failures = []
       const hosts = SERVICES.buildings.hosts
       // taken once: another request may change `preferred` while this one waits, and this one must still try every server
       const first = preferred
-      for (let n = 0; n < hosts.length; n++) {
-        const at = (first + n) % hosts.length
-        const host = hosts[at]
-        if (n > 0) onNext?.(new URL(host).host)
-        try {
-          const json = await request(host + OVERPASS_PATH, { method: 'POST', body }, signal, 'buildings')
-          if (!Array.isArray(json?.elements)) throw new Error('no elements in the answer')
-          const parsed = parseBuildings(json, center, parse)
-          preferred = at
-          return parsed
-        } catch (err) {
-          if (signal?.aborted || err instanceof Refused) throw err
-          failures.push(`${new URL(host).host}: ${err.message}`)
+      let todo = hosts.map((_, n) => (first + n) % hosts.length)
+      for (let round = 0; round < rounds && todo.length; round++) {
+        if (round > 0) {
+          await wait(backoff * round)
+          if (signal?.aborted) throw Object.assign(new Error('cancelled'), { name: 'AbortError' })
         }
+        const again = []
+        for (let n = 0; n < todo.length; n++) {
+          const at = todo[n]
+          const host = hosts[at]
+          if (n > 0 || round > 0) onNext?.(new URL(host).host)
+          try {
+            const json = await request(host + OVERPASS_PATH, { method: 'POST', body }, signal, 'buildings')
+            if (!Array.isArray(json?.elements)) throw Object.assign(new Error('no elements in the answer'), { busy: true })
+            const parsed = parseBuildings(json, center, parse)
+            preferred = at
+            return parsed
+          } catch (err) {
+            if (signal?.aborted || err instanceof Refused) throw err
+            failures.push(`${new URL(host).host}: ${err.message}`)
+            if (BUSY.includes(err.status) || err.busy || err.name === 'AbortError') again.push(at)
+          }
+        }
+        todo = again
       }
       throw new Error(failures.join('; '))
     },

@@ -36,7 +36,8 @@ const usable = (n) => (Number.isInteger(n) && n >= 1 && n <= 99 ? n : null)
  * The first address in the text that has a house number, or else the first with a city or a district.
  * A bare road name is not an address, since it could be any road in the country.
  * @returns {null|{address:string, city:string|null, district:string|null, road:string, lane:string|null, alley:string|null,
- *   number:string|null, floor:number|null, levels:number|null, query:{street:string, city:string|null}}}
+ *   number:string|null, street:string, floor:number|null, levels:number|null, query:{street:string, city:string|null}}}
+ *   `street` is the road with its lane and alley, and `query` the same with the house number before it
  */
 export function extractAddress(text) {
   const clean = String(text ?? '').normalize('NFKC').slice(0, MAX_TEXT)
@@ -82,6 +83,7 @@ export function extractAddress(text) {
     lane,
     alley,
     number,
+    street,
     floor,
     levels,
     query: { street: number ? `${number} ${street}` : street, city },
