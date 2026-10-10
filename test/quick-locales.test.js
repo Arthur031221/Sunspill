@@ -43,7 +43,8 @@ test('every quick message used in the code exists, and every one is used', () =>
 test('tq speaks Traditional Chinese on the zh-TW page and English everywhere else', () => {
   globalThis.document ??= { documentElement: {} }
   setLocale('zh-TW')
-  assert.equal(tq('quick.verdict.strong'), '西曬強')
+  assert.equal(tq('quick.verdict.strong'), '下午日曬強')
+  assert.equal(tq('quick.verdict.west.strong'), '西曬強')
   assert.equal(tq('quick.floor.value', { n: 5 }), '5 樓')
   for (const code of Object.keys(LOCALES).filter((c) => c !== 'zh-TW')) {
     setLocale(code)

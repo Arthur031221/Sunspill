@@ -81,5 +81,9 @@
   "quick.full": "Full editor",
   "quick.link": "Quick check",
   "quick.sheet.toggle": "Show or hide the results",
-  "quick.nearest": "Use the building nearest the address"
+  "quick.nearest": "Use the building nearest the address",
+  "quick.verdict.west.strong": "Strong west sun",
+  "quick.verdict.west.medium": "Some west sun",
+  "quick.verdict.west.weak": "Little west sun",
+  "quick.verdict.west.none": "Almost no west sun"
 }

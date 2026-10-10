@@ -204,7 +204,7 @@ test('no result is shown for a side the person did not pick, and picking is a ta
   assert.equal((await scene(page)).facing, 270, 'the quick check does not touch the room, and uses no facing of its own')
   // a card
   await page.tap('.side-card[data-side=N]')
-  assert.match(await page.locator('#quick-summary').innerText(), /你的窗戶朝北面[\s\S]*西曬中[\s\S]*夏天下午直曬 1 小時 3 分[\s\S]*冬天照不到太陽/)
+  assert.match(await page.locator('#quick-summary').innerText(), /你的窗戶朝北面[\s\S]*下午日曬中[\s\S]*夏天下午直曬 1 小時 3 分[\s\S]*冬天照不到太陽/)
   assert.equal(await page.locator('.side-card[data-side=N]').getAttribute('aria-pressed'), 'true')
   // an arrow on the map: the west one, picked as well
   const at = await page.evaluate(() => {

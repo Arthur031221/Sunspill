@@ -426,6 +426,9 @@ export function createQuick(ctx) {
       over ? h('p', { class: 'note warn' }, over) : null)
   }
 
+  // only a side that looks west is called 西曬, any other side gets plain afternoon sun
+  const verdictText = (verdict, ids) => tq(`quick.verdict.${ids.some((id) => /W$/.test(id)) ? 'west.' : ''}${verdict}`)
+
   function summary() {
     const picked = state.sides.filter((s) => state.chosen.has(s.id))
     if (!picked.length) return h('p', { class: 'quick-summary pick', id: 'quick-summary' }, tq('quick.summary.pick'))
@@ -434,15 +437,15 @@ export function createQuick(ctx) {
     const verdict = verdictOf(afternoon)
     return h('div', { class: `quick-summary v-${verdict}`, id: 'quick-summary', 'aria-live': 'polite' },
       h('small', {}, tq('quick.summary.head', { sides: picked.map((s) => sideName(s.id)).join(tq('quick.join')) })),
-      h('b', { class: 'big' }, tq(`quick.verdict.${verdict}`)),
+      h('b', { class: 'big' }, verdictText(verdict, picked.map((s) => s.id))),
       h('p', {}, summerLine(afternoon)),
       h('p', {}, winterLine(winter)))
   }
 
   function card(side) {
     const on = state.chosen.has(side.id)
-    return h('button', { class: `side-card v-${side.verdict}${on ? ' on' : ''}`, type: 'button', 'aria-pressed': String(on), 'aria-label': `${tq('quick.card.pick', { side: sideName(side.id) })}. ${tq(`quick.verdict.${side.verdict}`)}. ${summerLine(side.afternoon)}. ${winterLine(side.winter)}`, dataset: { side: side.id, k: `side-${side.id}` }, onclick: () => toggleSide(side.id) },
-      h('span', { class: 'sc-head' }, h('b', {}, sideName(side.id)), h('span', { class: 'verdict' }, tq(`quick.verdict.${side.verdict}`))),
+    return h('button', { class: `side-card v-${side.verdict}${on ? ' on' : ''}`, type: 'button', 'aria-pressed': String(on), 'aria-label': `${tq('quick.card.pick', { side: sideName(side.id) })}. ${verdictText(side.verdict, [side.id])}. ${summerLine(side.afternoon)}. ${winterLine(side.winter)}`, dataset: { side: side.id, k: `side-${side.id}` }, onclick: () => toggleSide(side.id) },
+      h('span', { class: 'sc-head' }, h('b', {}, sideName(side.id)), h('span', { class: 'verdict' }, verdictText(side.verdict, [side.id]))),
       h('span', { class: 'sc-text' }, h('span', {}, summerLine(side.afternoon)), h('span', {}, winterLine(side.winter))),
       bars(side.year))
   }
@@ -574,7 +577,7 @@ export function createQuick(ctx) {
         h('p', { class: 'note' }, [f.address, tq('quick.floor.value', { n: f.floor })].filter(Boolean).join(' · ')),
         ...(picked.length ? picked.map((s) => h('div', { class: `cmp-side v-${verdictOf(s.afternoon)}` },
           h('b', {}, sideName(s.id)),
-          h('span', { class: 'verdict' }, tq(`quick.verdict.${verdictOf(s.afternoon)}`)),
+          h('span', { class: 'verdict' }, verdictText(verdictOf(s.afternoon), [s.id])),
           h('p', {}, summerLine(s.afternoon)),
           h('p', {}, winterLine(s.winter)),
           bars(s.year))) : [h('p', { class: 'note' }, tq('quick.compare.none')), ...f.sides.map((s) => h('p', { class: 'cmp-line' }, `${sideName(s.id)} ${duration(s.afternoon / 60)}`))]),

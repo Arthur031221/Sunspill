@@ -44,10 +44,10 @@
   "quick.side.SW": "西南面",
   "quick.side.W": "西面",
   "quick.side.NW": "西北面",
-  "quick.verdict.strong": "西曬強",
-  "quick.verdict.medium": "西曬中",
-  "quick.verdict.weak": "西曬弱",
-  "quick.verdict.none": "幾乎沒有西曬",
+  "quick.verdict.strong": "下午日曬強",
+  "quick.verdict.medium": "下午日曬中",
+  "quick.verdict.weak": "下午日曬弱",
+  "quick.verdict.none": "下午幾乎曬不到",
   "quick.card.summer": "夏天下午直曬 {time}",
   "quick.card.summerNone": "夏天下午幾乎照不到",
   "quick.card.winter": "冬天每天日照 {time}",
@@ -81,5 +81,9 @@
   "quick.full": "完整編輯器",
   "quick.link": "快速查看",
   "quick.sheet.toggle": "展開或收合結果",
-  "quick.nearest": "用離地址最近的那一棟"
+  "quick.nearest": "用離地址最近的那一棟",
+  "quick.verdict.west.strong": "西曬強",
+  "quick.verdict.west.medium": "西曬中",
+  "quick.verdict.west.weak": "西曬弱",
+  "quick.verdict.west.none": "幾乎沒有西曬"
 }
