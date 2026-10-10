@@ -507,6 +507,11 @@ p.note.warn, .note.warn { color: var(--accent); font-weight: 600; }
 html[data-quick] .toast { top: calc(70px + env(safe-area-inset-top)); bottom: auto; transform: translate(-50%, -16px); }
 html[data-quick] .toast.show { transform: translate(-50%, 0); }
 @media (max-width: 380px) { .quick-foot { flex-wrap: wrap; } }
+/* on a short or a narrow screen the links under the sheet scroll with it, so that the answer has the room */
+@media (max-height: 700px), (max-width: 380px) {
+  .quick-sheet { overflow: auto; overscroll-behavior: contain; }
+  .quick-body { overflow: visible; flex: none; }
+}
 @media (min-width: 900px) {
   .quick { grid-template-columns: minmax(0, 1fr) 440px; grid-template-rows: auto minmax(0, 1fr); }
   .quick-search { grid-column: 1 / -1; max-width: 760px; width: 100%; margin: 0 auto; }
