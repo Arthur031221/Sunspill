@@ -1,8 +1,16 @@
 # Using Sunspill
 
-## The first minute
+## The first minute: the quick check
 
-The page opens on a sample bedroom in Taipei with a west window and the sun already moving across the floor. Press space to pause, then drag the time bar to scrub the day. The amber curve behind the bar shows how much floor is in sun at each hour, so you can see when the sun comes in before you play it.
+A first visit opens a search box over a map. Paste an address, or all the text of a listing, and press Search. The page asks once whether it may connect to OpenStreetMap for the map, the address search and the building outlines, and says what it sends, see [PRIVACY.md](PRIVACY.md). Then tap your building on the map. A floor in the text (5樓, 5F) is taken for the floor, and a stepper changes it. The sheet under the map has a card for each side of the building, most afternoon sun first: the side, a verdict (西曬強, 西曬中, 西曬弱, 幾乎沒有西曬), the minutes of direct sun on summer afternoons, the hours a day in winter and a chart of the hours on the 15th of each month. The same sides are arrows on the map. Tap the card or the arrow of the side your windows face, and the summary at the top speaks for that side. It does not guess a side for you. If you do not know which way the windows face, look at which street the listing photos show outside the window.
+
+Each side is judged at a window that is not there, 1.8 by 1.5 metres with the sill 0.9 metres up on the floor you picked, so it is the side that is rated and not your room. Walls you share with a neighbour have no card. "How it is worked out" at the bottom of the sheet gives the rules. When the servers are busy the page says the buildings did not load and that nothing in front of the window is counted, and offers a retry. When OpenStreetMap has no outline for your building, tap the spot and choose "Use this point", and the sides are those of a square 10 metres across facing north, east, south and west.
+
+The "More" row opens the room editor with the place, the floor, the facing of the side you chose and the neighbours already in, at the room step, and adds the flat to a list of up to four, kept in this browser, that "Compare" shows side by side. "Full editor" at the bottom opens the page as it was before the quick check, with a sample bedroom in Taipei with a west window and the sun already moving across the floor, and "Quick check" at the bottom of the full editor comes back. The page remembers which you used last. A friend's link, and a room you edited before, open the full editor.
+
+## The full editor
+
+The full editor opens on a sample bedroom in Taipei with a west window and the sun already moving across the floor. Press space to pause, then drag the time bar to scrub the day. The amber curve behind the bar shows how much floor is in sun at each hour, so you can see when the sun comes in before you play it.
 
 ## Set up your own room
 

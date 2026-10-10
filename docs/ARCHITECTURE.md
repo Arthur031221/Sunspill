@@ -10,6 +10,10 @@ src/core     pure code, no DOM, runs in Node and the browser
   hours.js     day steps, sun hours grids, afternoon check, plant spots
   geo.js       latitude and longitude to metres, map tiles, moving the room on the ground
   address.js   plainer forms of an address for a second search (house number after a space, no floor), built from the typed words only
+  twaddress.js a Taiwanese address and its floor taken out of typed or pasted text, as the street and city of a structured search
+  sides.js     a footprint cut into compass sides, party walls left out, and the scene of the virtual window of a side
+  sidesun.js   the sun on that window: afternoon minutes in the hot season, winter hours, the year, and a verdict
+  tilemap.js   which map tiles a view needs, and what to draw for one that has not come
   osm.js       OpenStreetMap answers (buildings, address matches) turned into scene parts: relation ways joined into rings, heights guessed from neighbours
   zone.js      the time zone at a point, from a bundled table
   declination.js, wmm2025.js   magnetic declination from the World Magnetic Model
@@ -33,14 +37,17 @@ src/app      the interface
   panels.js    the five tabs      fields.js  number fields and the compass dial
   wizard.js    the seven step setup shell
   step-place.js, step-room.js, step-map.js, step-check.js   the steps
-  mapview.js   map canvas: tiles, outlines, the room, pan, pinch, move and turn
+  mapview.js   map canvas: tiles, outlines, the room, pan, pinch, move and turn, and the quick check's buildings and arrows
+  tilecache.js the map pictures: asked for when on the screen, cancelled when not, asked again when they fail
+  taps.js      tap and double tap
+  quick.js     the quick check, the first screen   compare.js   the flats kept for comparing
   picture.js   a picture canvas for tracing a plan and flattening a photo
   trace-ui.js, compass-ui.js   the tracing and compass flows
   net.js       the only code that makes a request, with the three services and their hosts
   consent.js, modal.js   the sheets that ask before anything is sent
   analysis.js  long jobs run in slices and cancelled on change
   export.js    PNG card and GIF   i18n.js format.js dom.js frame.js
-src/locales  one JSON file per language
+src/locales  one JSON file per language, and quick.en.json and quick.zh-TW.json for the quick check
 scripts      build, reference data, validation, sensitivity, demo recording
 test         unit tests, test/e2e browser tests, test/helpers, test/fixtures
 ```
@@ -65,9 +72,23 @@ Room axes are x to the right and y up the plan, with the top wall facing `facing
 
 An observation is the day, the time and the convex outline of the patch the person marked on the floor. The model predicts the same patch with `scenePatches`. `compareCheck` gives the intersection over union of the two areas, and the offset between their centres. `fitScene` sweeps the facing in one degree steps, refines it to a tenth, and, when two observations are 15 degrees or more apart in sun azimuth, searches the facing, the position and the sill height of the window that lights the marks together by coordinate descent with a small pull toward the measured values. The extra freedom is used only if it raises the mean overlap by 0.03.
 
+## The quick check
+
+`quick.js` is the first screen for a visit with no link and no room of its own. It does not touch the scene until the "More" row opens the room editor. The steps are plain functions of the core:
+
+1. `extractAddress` reads the address and the floor out of what was typed, and `net.lookupAddress` searches Nominatim by street and city.
+2. `net.buildings` loads every outline within 200 metres, up to 400, and a tap picks one (the tallest where outlines overlap).
+3. `footprintSides` splits that outline into walls, groups the walls by the nearest of eight compass sectors, drops a side shorter than 3 metres and a wall that touches a neighbour at least as tall as the window (a party wall has no window).
+4. `sideScene` lays a 3.6 by 4.4 metre room behind the longest wall of a side so that a window of 1.8 by 1.5 metres at 0.9 metres is on that wall, facing out, with every neighbour at its place on the ground. The building itself is left out. This is an ordinary scene, so `litOpening`, with the prisms of `obstacles.js`, gives the lit part of the window with no new light code.
+5. `measureSteps` counts a time step as sunlit when more than a quarter of the opening is lit, over the afternoons (after 14:00) of 1 June to 30 September, over December, and on the 15th of each month. It is a generator that stops after each day, so the page hands the thread back every 12 ms.
+
+The "More" row's room is the same scene of one side with the building put in switched off as the room's own building, so the editor opens at the room step with place, floor, facing and neighbours set.
+
 ## The guided setup
 
 `wizard.js` holds seven steps, each a card built by a function that returns `{ el, sync, enter, leave }`. A step names its view: `pin`, `facing` and `surround` show the map, `3d` and `plan` show the room canvas, and the stage and the map share one box so the card sits under (or beside) the view it works on. Edits go through the same store as the rest of the page, so Undo, the link and the tabs all stay in step with the wizard.
+
+The map draws tiles through `tilemap.js` and `tilecache.js`. `planTiles` returns the tiles on the screen at the tile level (the zoom rounded, at most 19) and, for each that is missing, the part of a tile above or below it that stands in, with the share of the screen left blank. The cache starts pictures nearest the middle first, six at a time, cancels one that has been off the screen for 300 ms, asks again twice after a failure (0.4 s, then 1.2 s), and leaves a tile that failed for good alone for 20 seconds.
 
 `net.js` is the only file that calls `fetch` or builds a tile address. It checks a switch for the service before it does anything, and `consent.js` asks for it. The page's Content Security Policy, written by `scripts/build.mjs` from the same list of hosts, names those hosts and no others.
 

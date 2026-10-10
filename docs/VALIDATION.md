@@ -68,6 +68,21 @@ A building or a tree is a convex prism, which is a footprint lifted between two 
 
 Both sides of that test use the same model, so it shows that the search finds the right answer when the model is right. It does not show that a real room agrees with the model. That needs photographs, see the next section.
 
+## The quick check
+
+The sun on the window of a side is the same code as the sun on the window of a room, so what is checked here is the bookkeeping around it: where the window is put, which neighbours count, and the share of the opening that is lit. `test/sidesun.test.js` takes 1,500 random cases (60 sides, floors and neighbour sets, 25 sun positions each, 460 of them partly shaded) and compares the lit share of the opening with a ray tracer that shares no code with `light.js` (a grid of 40 by 30 points on the window, each followed through the wall and out, with `test/helpers/raytrace.js` deciding whether a building is in the way). No case is more than 0.05 apart, and the worst is 0.026, which is the grid. It then counts the minutes of afternoon sun with the tracer deciding each step and checks the totals agree to 4 minutes. `test/sides.test.js` checks the walls, the sectors and the place of the window on the wall.
+
+The choices made for a side:
+
+- Eight compass sectors of 45 degrees. A building turned off the compass faces the sector nearest each wall, and the window is put on the longest wall of the side and faces the way that wall does, so the sector is the name and not the facing.
+- A side shorter than 3 metres in all is left out. A wall is a party wall, and left out, when at least five of seven points spread along it and 0.6 metres outside it are inside a neighbour at least as tall as the top of the window, so a neighbour lower than the window leaves the wall open.
+- One window of 1.8 by 1.5 metres with the sill 0.9 metres up, in a wall 0.15 metres thick, with no eave, balcony or shade, on a floor of 3 metres, counted from the ground outside.
+- The building itself casts no shade on its own side. A courtyard or a wing of the same building that stands in front of a window is not counted.
+- A time step counts as sunlit when more than a quarter of the opening is lit. That is the share after the thickness of the wall has cut the opening for a slanting beam.
+- The afternoon is after 14:00 on the sample days (every third day) between 1 June and 30 September, and winter is the sample days of December, both in the northern half of the world. In the southern half the hot season is December to March and the cold one June. Steps are five minutes.
+- The verdict follows the minutes of afternoon sun: 120 or more is strong, 45 or more medium, 10 or more weak, and less than that almost none. These are the page's words and not measurements.
+- A height that OpenStreetMap lacks is guessed as in the rest of Sunspill, and the page says how many of the neighbours are guessed.
+
 ## The modelling choices
 
 The references make the same choices as Sunspill, so the comparisons check the geometry and the bookkeeping and not these choices:
