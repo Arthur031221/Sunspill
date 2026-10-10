@@ -518,3 +518,19 @@ test('the window wall can be lined up with the nearest long wall of the building
   assert.equal(snapToOutline(normalizeScene({}), 100), null)
   assert.equal(snapToOutline(normalizeScene({ obstacles: [{ type: 'tree', x: 5, y: 5, r: 2, h: 8 }] }), 100), null)
 })
+
+test('a building that says how many floors it has carries them, and one that does not has none', () => {
+  const at = (x) => [{ lat: 0, lon: x * 1e-5 }, { lat: 0, lon: (x + 10) * 1e-5 }, { lat: 1e-4, lon: (x + 10) * 1e-5 }, { lat: 1e-4, lon: x * 1e-5 }, { lat: 0, lon: x * 1e-5 }]
+  const json = { elements: [
+    { type: 'way', id: 1, tags: { building: 'apartments', 'building:levels': '7', height: '21' }, geometry: at(30) },
+    { type: 'way', id: 2, tags: { building: 'yes', 'building:levels': '4.5' }, geometry: at(60) },
+    { type: 'way', id: 3, tags: { building: 'yes' }, geometry: at(90) },
+    { type: 'way', id: 4, tags: { building: 'yes', 'building:levels': 'many' }, geometry: at(120) },
+  ] }
+  const { buildings } = parseBuildings(json, { lat: 0, lon: 0 })
+  const by = (id) => buildings.find((b) => b.id === id)
+  assert.equal(by(1).levels, 7)
+  assert.equal(by(2).levels, 5)
+  assert.equal('levels' in by(3), false)
+  assert.equal('levels' in by(4), false)
+})
