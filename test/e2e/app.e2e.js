@@ -26,6 +26,9 @@ const workers = engine === firefox ? 'block' : 'allow'
 
 async function open(options = {}, hash = '') {
   const context = await browser.newContext({ viewport: { width: 1360, height: 900 }, reducedMotion: 'reduce', acceptDownloads: true, locale: 'en-GB', serviceWorkers: workers, ...options })
+  // a first visit now opens the quick check, and these tests are about the full editor, so they start where a person
+  // who chose the full editor last time would (the quick check has its own tests in quick.e2e.js)
+  await context.addInitScript(() => { if (!localStorage.getItem('sunspill.prefs')) localStorage.setItem('sunspill.prefs', JSON.stringify({ view: 'classic' })) })
   const page = await context.newPage()
   const errors = []
   page.on('pageerror', (e) => errors.push(e.message))

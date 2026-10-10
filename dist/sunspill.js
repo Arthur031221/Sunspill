@@ -1297,7 +1297,8 @@ function parseBuildings(json, center, { limit = OSM_LIMIT, eye = 0 } = {}) {
     const { h, base, est } = buildingHeight(b.tags, prior);
     const own = insideRing(b.ring, [0, 0]);
     const name = typeof b.tags.name === "string" ? b.tags.name.slice(0, 40) : "";
-    return { type: "building", src: "osm", id: b.id, name, ring: fitRing(b.ring), h: Math.min(h, LIMITS.building.h[1]), base: Math.min(base, Math.max(0, h - 1)), est, own, on: !own };
+    const levels = Math.round(Number(b.tags["building:levels"]));
+    return { type: "building", src: "osm", id: b.id, name, ring: fitRing(b.ring), h: Math.min(h, LIMITS.building.h[1]), base: Math.min(base, Math.max(0, h - 1)), est, own, on: !own, ...levels > 0 ? { levels } : {} };
   });
   const rank = (o) => {
     const dist = Math.min(...o.ring.map(([x, y]) => Math.hypot(x, y)));

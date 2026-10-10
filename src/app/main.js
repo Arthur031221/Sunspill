@@ -1,6 +1,6 @@
 import { createStore } from './store.js'
 import { h, $, frameThrottle } from './dom.js'
-import { LOCALES, pickLocale, setLocale, locale, t, onLocale } from './i18n.js'
+import { LOCALES, pickLocale, setLocale, locale, t, tq, onLocale } from './i18n.js'
 import { Stage } from './stage.js'
 import { createDock } from './timeline.js'
 import { createPanels, toast } from './panels.js'
@@ -17,6 +17,7 @@ import { createNet } from './net.js'
 import { createConsent } from './consent.js'
 import { createModal } from './modal.js'
 import { MapView } from './mapview.js'
+import { createQuick } from './quick.js'
 import { createWizard } from './wizard.js'
 import { openCompass } from './compass-ui.js'
 import { declination, decimalYear } from '../core/declination.js'
@@ -35,7 +36,7 @@ const loadPrefs = () => {
 }
 const savePrefs = (ui) => {
   try {
-    localStorage.setItem(PREFS_KEY, JSON.stringify({ theme: ui.theme, lang: ui.lang, units: ui.units, arc: ui.showArc, net: ui.net, setup: ui.setupDone }))
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ theme: ui.theme, lang: ui.lang, units: ui.units, arc: ui.showArc, net: ui.net, setup: ui.setupDone, view: ui.view }))
   } catch {
     // private mode: the settings simply do not persist
   }
@@ -89,6 +90,10 @@ const restored = fromLink ? null : loadRoom()
 // a link opened over a room of your own: the first edit keeps yours aside
 let aside = fromLink && stored(ROOM_KEY) && stored(ROOM_KEY) !== location.hash.slice(1) ? stored(ROOM_KEY) : ''
 const initial = fromLink ?? restored ?? defaultScene()
+// the first screen is the quick check, unless somebody's link is being opened, or a room was edited here before and the
+// person did not ask for the quick check, or the person chose the full editor last time
+const view = prefs.view === 'quick' || prefs.view === 'classic' ? prefs.view : null
+const quickFirst = !fromLink && (view === 'quick' || (view === null && !restored))
 let edited = false
 const lang = LOCALES[prefs.lang] ? prefs.lang : pickLocale(navigator.languages)
 const imperial = /^en-(US|LR|MM)$/i.test(navigator.language || '')
@@ -108,7 +113,8 @@ const store = createStore(initial, {
   selected: null,
   selectedWindow: 0,
   showArc: prefs.arc !== false,
-  playing: !fromLink && !restored && !reduced,
+  playing: !fromLink && !restored && !reduced && !quickFirst,
+  view,
   mode: '3d',
   heat: { on: false, period: 'day', from: 6, to: 8, z: 0 },
   west: { from: northern ? 6 : 12, to: northern ? 9 : 3, after: 14 * 60 },
@@ -169,6 +175,25 @@ const stage = new Stage({
 })
 
 const dock = createDock({ root: $('#dock'), store, stage })
+
+/**
+ * Keep the room that is yours before another takes the page, as "Earlier: place", unless it is saved already.
+ * Returns null when nothing is in the way, else 'full' or 'failed', and then nothing was changed.
+ */
+function keepMine() {
+  const list = readSaved()
+  // yours is the room a friend's link pushed aside, or else the one on the page unless it is only the untouched sample
+  const mine = aside ? decodeScene(aside) : edited || restored || fromLink ? store.scene : null
+  // the same room is told by what a link holds of it, since the copy that came back from the browser's storage
+  // after a reload went through the link and was rounded, while a saved room keeps every digit
+  const sameRoom = (a, b) => encodeScene(a) === encodeScene(b)
+  if (mine && !list.some((r) => sameRoom(r.scene, mine))) {
+    if (list.length >= MAX_SAVED) return 'full'
+    list.unshift({ id: newId(), name: t('saved.earlierName', { place: mine.place.name || '-' }).slice(0, 60), at: Date.now(), scene: structuredClone(mine) })
+    if (!writeSaved(list)) return 'failed'
+  }
+  return null
+}
 
 const actions = {
   locate() {
@@ -258,16 +283,8 @@ const actions = {
     const room = list.find((r) => r.id === id)
     if (!room) return false
     flushSave()
-    // yours is the room a friend's link pushed aside, or else the one on the page unless it is only the untouched sample
-    const mine = aside ? decodeScene(aside) : edited || restored || fromLink ? store.scene : null
-    // the same room is told by what a link holds of it, since the copy that came back from the browser's storage
-    // after a reload went through the link and was rounded, while a saved room keeps every digit
-    const sameRoom = (a, b) => encodeScene(a) === encodeScene(b)
-    if (mine && !list.some((r) => sameRoom(r.scene, mine))) {
-      if (list.length >= MAX_SAVED) return 'full'
-      list.unshift({ id: newId(), name: t('saved.earlierName', { place: mine.place.name || '-' }).slice(0, 60), at: Date.now(), scene: structuredClone(mine) })
-      if (!writeSaved(list)) return 'failed'
-    }
+    const kept = keepMine()
+    if (kept) return kept
     store.replace(room.scene)
     edited = true
     aside = ''
@@ -277,6 +294,25 @@ const actions = {
       // the room is on the page either way
     }
     toast(t('saved.opened', { name: room.name }))
+    afterScene()
+    return 'opened'
+  },
+  /**
+   * Put a room that was made elsewhere on the page, the quick check's. The room that is yours is kept first, as for a
+   * saved room, and when that cannot be done nothing changes. Returns 'opened', 'full' or 'failed'.
+   */
+  openScene(scene) {
+    flushSave()
+    const kept = keepMine()
+    if (kept) return kept
+    store.replace(scene)
+    edited = true
+    aside = ''
+    try {
+      localStorage.setItem(ROOM_KEY, encodeScene(store.scene))
+    } catch {
+      // the room is on the page either way
+    }
     afterScene()
     return 'opened'
   },
@@ -427,6 +463,42 @@ $('#setup').addEventListener('click', () => {
   wizard.open(0)
 })
 
+/** Show the quick check or the full editor. `remember` keeps the choice for the next visit. */
+function showView(which, remember = false) {
+  const quickOn = which === 'quick'
+  if (quickOn) {
+    document.documentElement.dataset.quick = '1'
+    store.setUi({ playing: false })
+    ensureQuick().show()
+  } else {
+    delete document.documentElement.dataset.quick
+    quick?.hide()
+    stage.invalidate()
+    afterScene()
+  }
+  $('a.skip').setAttribute('href', quickOn ? '#quick-sheet' : '#panel')
+  if (remember) store.setUi({ view: which })
+}
+
+// built when it is first shown, so a page that opens in the full editor carries none of it
+let quick = null
+const ensureQuick = () => (quick ??= createQuick({
+  store, net, consent, modal, toast,
+  root: $('#quick'),
+  classic: () => showView('classic', true),
+  openRoom(scene) {
+    const result = actions.openScene(scene)
+    if (result !== 'opened') {
+      toast(t(result === 'full' ? 'saved.fullOpen' : 'saved.failed'))
+      return
+    }
+    showView('classic')
+    store.setUi({ playing: false })
+    wizard.open(1)
+  },
+}))
+if (quickFirst) showView('quick')
+
 function stamp() {
   const s = store.scene
   return `${s.date.month}-${s.date.day}`
@@ -529,6 +601,7 @@ function chrome() {
   $('#foot').replaceChildren(
     h('span', {}, t('foot.privacy')),
     h('button', { class: 'linkbtn', type: 'button', id: 'online', onclick: () => consent.settings() }, t('net.footer', { n: consent.count() })),
+    h('button', { class: 'linkbtn', type: 'button', id: 'to-quick', onclick: () => showView('quick', true) }, tq('quick.link')),
     h('a', { href: 'https://github.com/Arthur031221/Sunspill', rel: 'noopener' }, t('foot.source')),
     h('a', { href: `https://github.com/Arthur031221/Sunspill/releases/tag/v${VERSION}`, rel: 'noopener', title: 'Sunspill' }, `v${VERSION}`),
     h('span', {}, t('foot.model')))
@@ -708,6 +781,8 @@ addEventListener('hashchange', () => {
   aside = mine && mine !== location.hash.slice(1) ? mine : ''
   edited = false
   store.replace(next)
+  // a link pasted into the quick check's tab is somebody's room, which the quick check cannot show
+  if (document.documentElement.dataset.quick) showView('classic')
 })
 addEventListener('keydown', (e) => {
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable
@@ -717,7 +792,7 @@ addEventListener('keydown', (e) => {
   } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y' && !typing) {
     e.preventDefault()
     store.redo()
-  } else if (e.key === ' ' && !typing && e.target.tagName !== 'BUTTON') {
+  } else if (e.key === ' ' && !typing && e.target.tagName !== 'BUTTON' && !document.documentElement.dataset.quick) {
     e.preventDefault()
     dock.toggle()
   } else if ((e.key === 'Delete' || e.key === 'Backspace') && !typing && e.target === el.canvas && store.ui.selected) {
@@ -746,7 +821,7 @@ document.documentElement.dataset.ready = '1'
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {})
 // a read only handle for the browser tests
 window.__sunspill = {
-  store, stage, analysis, wizard, map, consent, net, panelActions: actions,
+  store, stage, analysis, wizard, map, consent, net, get quick() { return quick }, panelActions: actions,
   frame: () => frameFor(store.scene),
   floorArea: () => floorArea(frameFor(store.scene).patches),
   decode: (hash) => decodeScene(hash.slice(1)),

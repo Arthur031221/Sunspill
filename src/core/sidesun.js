@@ -91,7 +91,7 @@ export function* measureSteps(scene, plan) {
 
 export function measureSide(scene, plan) {
   const run = measureSteps(scene, plan)
-  for (;;) {
+  while (true) {
     const next = run.next()
     if (next.done) return next.value
   }
