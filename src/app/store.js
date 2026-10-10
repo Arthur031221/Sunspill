@@ -46,6 +46,21 @@ export function createStore(scene, ui) {
       emit('scene')
       return true
     },
+    /**
+     * Keep the changes made since `before` with `history: false` as one undo step. A drag or a turn on the map changes
+     * the scene on every frame without a step each, and calls this when the fingers come up. Nothing is kept when
+     * the scene is where it began. Returns whether a step was kept.
+     */
+    commit(before) {
+      if (!before || JSON.stringify(before) === JSON.stringify(state.scene)) return false
+      onEdit?.()
+      past.push(before)
+      if (past.length > LIMIT) past.shift()
+      future.length = 0
+      last = { key: null, at: 0 }
+      emit('scene')
+      return true
+    },
     setUi(patch) {
       state = { ...state, ui: { ...state.ui, ...patch } }
       emit('ui')

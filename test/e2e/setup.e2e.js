@@ -75,12 +75,13 @@ const centerOf = (page, selector) => page.evaluate((sel) => {
   return [r.left + r.width / 2, r.top + r.height / 2]
 }, selector)
 
-/** One finger down at the first point, along the rest and up again, through the browser's own touch input. */
-async function drag(page, context, points) {
+/** One finger down at the first point, held there for `hold` ms, along the rest and up again, through the browser's own touch input. */
+async function drag(page, context, points, { hold = 0 } = {}) {
   if (engine !== chromium) throw new Error('needs Chromium touch input')
   const cdp = await context.newCDPSession(page)
   const touch = (type, p) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: p[0], y: p[1] }] })
   await touch('touchStart', points[0])
+  if (hold) await page.waitForTimeout(hold)
   for (const p of points.slice(1)) await touch('touchMove', p)
   await touch('touchEnd', points.at(-1))
   await cdp.detach()
@@ -495,9 +496,9 @@ test('facing: the buildings load after a yes, the first server may fail, and dra
     return { lat: sc.place.lat + n / 111195, lon: sc.place.lon + e / (111320 * Math.cos((sc.place.lat * Math.PI) / 180)) }
   }
   const before = ground(s0, s0.obstacles[3])
-  // drag the room 30 px right and 20 px down on the map
+  // press the room for 400 ms, which lifts it, and drag it 30 px right and 20 px down on the map (a drag with no press pans the map)
   const [cx, cy] = await centerOf(page, '.map-canvas')
-  await drag(page, context, line([cx, cy], [cx + 30, cy + 20], 6))
+  await drag(page, context, line([cx, cy], [cx + 30, cy + 20], 6), { hold: 400 })
   const s1 = await scene(page)
   assert.ok(Math.abs(s1.place.lon - s0.place.lon) > 1e-5, 'the room moved')
   const after = ground(s1, s1.obstacles[3])

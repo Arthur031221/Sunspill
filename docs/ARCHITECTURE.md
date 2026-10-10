@@ -21,6 +21,7 @@ src/core     pure code, no DOM, runs in Node and the browser
   trace.js     scale, room and openings from taps on a plan, photo of the floor to a plan
   fit.js       overlap of a marked patch with the model, and the search for the best facing
   snap.js      snapping for windows along a wall and furniture over the floor
+  gestures.js  two fingers on the map: whether they are a pinch or a turn of the room, with an 8 degree threshold
   templates.js typical rooms
   codec.js     scene <-> link
   sharelink.js the quick check's answer <-> link, a format of its own (q1=) apart from the room links
@@ -92,6 +93,8 @@ The "More" row's room is the same scene of one side with the building put in swi
 `wizard.js` holds seven steps, each a card built by a function that returns `{ el, sync, enter, leave }`. A step names its view: `pin`, `facing` and `surround` show the map, `3d` and `plan` show the room canvas, and the stage and the map share one box so the card sits under (or beside) the view it works on. Edits go through the same store as the rest of the page, so Undo, the link and the tabs all stay in step with the wizard.
 
 The map draws tiles through `tilemap.js` and `tilecache.js`. `planTiles` returns the tiles on the screen at the tile level (the zoom rounded, at most 19) and, for each that is missing, the part of a tile above or below it that stands in, with the share of the screen left blank. The cache starts pictures nearest the middle first, six at a time, cancels one that has been off the screen for 300 ms, asks again twice after a failure (0.4 s, then 1.2 s), and leaves a tile that failed for good alone for 20 seconds.
+
+On the facing map a finger that goes down inside the room pans the map, so reaching for the map never moves the room. The room moves after a press of 350 ms (it is lifted, with a shadow) or by the handle on the far side of the room from the window arrow, and a mouse drags it at once. Two fingers zoom, and turn the room only when `pinchTracker` says the turn has passed 8 degrees and is larger than the change in the distance between the fingers. A gesture does not call `store.update` on every pointer move. `MapView` gathers what the gesture did to the room and hands it on once per animation frame with `history: false`, and when the fingers come up `store.commit` keeps the whole gesture as one undo step.
 
 `net.js` is the only file that calls `fetch` or builds a tile address. It checks a switch for the service before it does anything, and `consent.js` asks for it. The page's Content Security Policy, written by `scripts/build.mjs` from the same list of hosts, names those hosts and no others.
 

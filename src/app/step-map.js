@@ -91,7 +91,9 @@ export function facingStep(ctx) {
   const fields = []
   const target = () => Math.max(0, Math.min(store.scene.windows.length - 1, store.ui.selectedWindow ?? 0))
   const wallOf = () => store.scene.windows[target()]?.wall ?? 'top'
-  const setBearing = (b) => store.update((d) => { d.facing = (((b - WALLS.indexOf(wallOf()) * 90) % 360) + 360) % 360 }, { key: 'facing' })
+  // `live` is a change made on every frame of a gesture on the map: it keeps no undo step, and the map commits one at the end
+  const how = (live, key) => (live ? { history: false } : { key })
+  const setBearing = (b, live = false) => store.update((d) => { d.facing = (((b - WALLS.indexOf(wallOf()) * 90) % 360) + 360) % 360 }, how(live, 'facing'))
 
   const chips = h('div', { class: 'chips', role: 'group', 'aria-label': t('wiz.face.which') })
   const faceLine = h('p', { class: 'where', id: 'face-line' })
@@ -150,14 +152,14 @@ export function facingStep(ctx) {
     toast(t('wiz.face.aligned', { n: Math.abs(found.turn), dir: bearingText(found.bearing) }))
   }
 
-  map.on.turnBy = (delta) => store.update((d) => { d.facing = (((d.facing + delta) % 360) + 360) % 360 }, { key: 'facing' })
+  map.on.turnBy = (delta, live) => store.update((d) => { d.facing = (((d.facing + delta) % 360) + 360) % 360 }, how(live, 'facing'))
   map.on.turnTo = setBearing
-  map.on.moveRoom = (e, n) => store.update((d) => {
+  map.on.moveRoom = (e, n, live) => store.update((d) => {
     const next = moveRoom(d, e, n)
     d.place = next.place
     d.obstacles = next.obstacles
     refreshOwn(d)
-  }, { key: 'moveRoom' })
+  }, how(live, 'moveRoom'))
 
   function sync() {
     fields.forEach((f) => f.sync())
@@ -214,11 +216,11 @@ export function surroundStep(ctx) {
     }
     if (i != null) list.querySelector(`[data-obstacle="${i}"]`)?.scrollIntoView({ block: 'nearest' })
   }
-  map.on.moveObstacle = (i, e, n) => store.update((d) => {
+  map.on.moveObstacle = (i, e, n, live) => store.update((d) => {
     const o = d.obstacles[i]
     if (!o || o.src !== 'manual') return
     if (o.type === 'tree') { o.x += e; o.y += n } else o.ring = o.ring.map(([x, y]) => [x + e, y + n])
-  }, { key: `ob${i}` })
+  }, live ? { history: false } : { key: `ob${i}` })
 
   const label = (o) => (o.type === 'tree' ? t('wiz.sur.tree') : o.own ? t('map.own') : o.name || (o.src === 'osm' ? t('wiz.sur.osm') : t('wiz.sur.block')))
 

@@ -343,7 +343,7 @@ html[data-wizard] .stage-wrap { grid-template-rows: minmax(0, 1fr); }
 /* map and pictures over the stage */
 .mapview { position: absolute; inset: 0; z-index: 2; background: var(--stage); }
 .stage.map-on #canvas, .stage.map-on .stage-top, .stage.map-on .hint, .stage.map-on .legend, .stage.map-on .busy { visibility: hidden; }
-.map-canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.map-canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .map-canvas:focus-visible { outline-offset: -4px; }
 .map-zoom { position: absolute; left: 10px; top: 10px; display: flex; flex-direction: column; gap: 6px; }
 .map-btn { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 22px; line-height: 1; box-shadow: var(--shadow); }

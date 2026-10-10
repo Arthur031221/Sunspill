@@ -91,3 +91,52 @@ test('a scene that is out of range is clamped on the way in', () => {
   assert.equal(store.scene.room.w, 20)
   assert.equal(store.scene.facing, 5)
 })
+
+test('edits made live leave no undo step, and a commit keeps one for the whole gesture, however long it paused', async () => {
+  const store = make()
+  const before = store.scene
+  const x0 = before.items[0].x
+  for (let i = 0; i < 40; i++) store.update((d) => { d.items[0].x += 0.01 }, { history: false })
+  assert.equal(store.canUndo(), false, 'nothing is kept while the gesture goes on')
+  assert.ok(Math.abs(store.scene.items[0].x - x0 - 0.4) < 1e-9, 'but the scene follows it')
+  // a pause longer than the 700 ms that joins edits with one key makes no difference
+  await new Promise((resolve) => setTimeout(resolve, 760))
+  store.update((d) => { d.items[0].x += 0.01 }, { history: false })
+  assert.equal(store.commit(before), true)
+  assert.equal(store.canUndo(), true)
+  assert.equal(store.undo(), true)
+  assert.equal(store.scene, before, 'one step goes back to where the gesture began')
+  assert.equal(store.undo(), false)
+})
+
+test('a commit of a gesture that changed nothing, or came back to where it began, keeps no step', () => {
+  const store = make()
+  const before = store.scene
+  assert.equal(store.commit(before), false)
+  store.update((d) => { d.items[0].x += 0.3 }, { history: false })
+  store.update((d) => { d.items[0].x -= 0.3 }, { history: false })
+  assert.equal(store.commit(before), false)
+  assert.equal(store.canUndo(), false)
+  assert.equal(store.commit(null), false)
+})
+
+test('a commit counts as an edit, tells the page once and drops the redo trail', () => {
+  const store = make()
+  let edits = 0
+  store.onEdit = () => { edits++ }
+  nudge(store, 0.1)
+  store.undo()
+  assert.equal(store.canRedo(), true)
+  const before = store.scene
+  edits = 0
+  let seen = 0
+  store.subscribe((_, what) => { if (what === 'scene') seen++ })
+  store.update((d) => { d.items[0].x += 0.2 }, { history: false })
+  assert.equal(edits, 0, 'a live edit is not an edit yet')
+  assert.equal(store.canRedo(), true, 'and does not drop what can be redone yet')
+  seen = 0
+  store.commit(before)
+  assert.equal(edits, 1)
+  assert.equal(seen, 1, 'listeners hear it, so the room is saved after the last live edit')
+  assert.equal(store.canRedo(), false)
+})

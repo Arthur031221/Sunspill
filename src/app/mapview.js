@@ -2,12 +2,19 @@
 // allows them, a plain metre grid otherwise, with building outlines, trees and
 // the room drawn on top. It handles pan, pinch, wheel and keys, moves and turns
 // the room in the facing step, and picks buildings in the surroundings step.
+//
+// A finger that goes down inside the room and drags pans the map, so that reaching for the map never moves the
+// room by accident. The room moves when it is pressed for 350 ms and then dragged, or by the handle on the far
+// side of the room from the window arrow. A mouse has no finger to mistake, so it drags the room at once. Two fingers
+// turn the room only when the turn passes 8 degrees and is the main thing they do (see core/gestures.js). What a
+// gesture does to the room is handed on once a frame while it goes on, and kept as one undo step when it ends.
 
 import { h } from './dom.js'
 import { t, tq } from './i18n.js'
 import { bearingText, lengthText } from './format.js'
 import { lonLatToTile, tileToLonLat, fromLocal, toLocal, roomCorners, metresPerPixel, insideRing } from '../core/geo.js'
 import { planTiles } from '../core/tilemap.js'
+import { pinchTracker } from '../core/gestures.js'
 import { TileCache } from './tilecache.js'
 import { createTapper } from './taps.js'
 import { wallBearing, wallFrame, roomToLocal, sunInRoom } from '../core/room.js'
@@ -18,6 +25,12 @@ import { PALETTES } from '../render/palette.js'
 const TILE = 256
 const MAX_TILE_ZOOM = 19
 const RAD = Math.PI / 180
+/** How long a finger has to stay on the room before the room is lifted and the drag moves it (ms). */
+const HOLD_MS = 350
+/** How far a finger may drift during that time and still be holding (px). */
+const HOLD_SLOP = 8
+/** The reach of a handle for a finger (px). */
+const HANDLE_REACH = 22
 
 /** A picture for the tile cache: the load is stopped by clearing its address, so a tile that left the screen costs nothing more. */
 function loadImage(url, ok, bad) {
@@ -61,6 +74,10 @@ export class MapView {
     this.cam = { lat: store.scene.place.lat, lon: store.scene.place.lon, zoom: 15 }
     this.pointers = new Map()
     this.gesture = null
+    // what a gesture has done to the room and not yet handed on, and the scene it began with
+    this.edit = null
+    // true while the room is lifted by a long press
+    this.lifted = false
     this.cache = new TileCache({ url: (z, x, y) => this.net.tileUrl(z, x, y), load: loadImage, onChange: () => this.invalidate() })
     // what the last painted frame showed of the tiles: the share of the screen no picture covered
     this.tileStats = { blank: 1, total: 0, z: 0 }
@@ -424,12 +441,23 @@ export class MapView {
     const scene = this.scene
     const corners = roomCorners(scene).map(([e, n]) => this.local(e, n))
     const ppm = this.pixelsPerMetre
+    this.handle = null
+    this.moveHandle = null
     ctx.save()
     this.path(ctx, corners)
+    if (this.lifted) {
+      // picked up: a shadow under it and the selection colour round it, so the drag that follows is seen to move the room
+      ctx.shadowColor = 'rgba(30, 24, 10, 0.45)'
+      ctx.shadowBlur = 16
+      ctx.shadowOffsetY = 5
+    }
     ctx.fillStyle = pal.name === 'dark' ? 'rgba(255, 196, 80, 0.28)' : 'rgba(255, 190, 60, 0.38)'
+    if (this.lifted) ctx.fillStyle = pal.name === 'dark' ? 'rgba(255, 196, 80, 0.5)' : 'rgba(255, 190, 60, 0.62)'
     ctx.fill()
+    ctx.shadowColor = 'transparent'
     ctx.lineWidth = Math.max(2, scene.room.wall * ppm)
-    ctx.strokeStyle = pal.frame
+    ctx.strokeStyle = this.lifted ? pal.selection : pal.frame
+    if (this.lifted) ctx.lineWidth = Math.max(4, scene.room.wall * ppm)
     ctx.lineJoin = 'miter'
     ctx.stroke()
     const centre = this.local(0, 0)
@@ -493,7 +521,48 @@ export class MapView {
     ctx.fill()
     ctx.restore()
     this.roomHull = corners
+    if (this.mode === 'facing') this.drawMoveHandle(ctx, pal, corners, centre)
     this.drawSun(ctx, pal, centre)
+  }
+
+  /**
+   * The handle that moves the room: a ring with four arrows, on the far side of the room from the arrow of the window
+   * that is being set, so that it is never under the round handle that turns the room, and outside the outline, which
+   * is for panning.
+   */
+  drawMoveHandle(ctx, pal, corners, centre) {
+    const scene = this.scene
+    const win = scene.windows[this.target] ?? scene.windows[0]
+    const bearing = (win ? wallBearing(scene, win.wall) : scene.facing) * RAD
+    const back = [-Math.sin(bearing), Math.cos(bearing)]
+    // the room is a rectangle square to its walls, so the farthest corner along the way back is where the back wall is
+    const edge = Math.max(...corners.map(([x, y]) => (x - centre[0]) * back[0] + (y - centre[1]) * back[1]))
+    const at = [centre[0] + back[0] * (edge + 26), centre[1] + back[1] * (edge + 26)]
+    this.moveHandle = at
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(at[0], at[1], 12, 0, Math.PI * 2)
+    ctx.fillStyle = this.lifted ? pal.selection : pal.name === 'dark' ? 'rgba(138, 182, 255, 0.35)' : 'rgba(43, 95, 217, 0.2)'
+    ctx.fill()
+    ctx.strokeStyle = pal.selection
+    ctx.lineWidth = 2
+    ctx.stroke()
+    ctx.strokeStyle = this.lifted ? '#fff' : pal.selection
+    ctx.lineWidth = 1.8
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
+      // a short line out from the middle with a small head
+      const tip = [at[0] + dx * 7, at[1] + dy * 7]
+      ctx.beginPath()
+      ctx.moveTo(at[0] + dx * 1.5, at[1] + dy * 1.5)
+      ctx.lineTo(tip[0], tip[1])
+      ctx.moveTo(tip[0] - dx * 3 - dy * 2.4, tip[1] - dy * 3 - dx * 2.4)
+      ctx.lineTo(tip[0], tip[1])
+      ctx.lineTo(tip[0] - dx * 3 + dy * 2.4, tip[1] - dy * 3 + dx * 2.4)
+      ctx.stroke()
+    }
+    ctx.restore()
   }
 
   /** A line from the room toward where the sun is at the time on the clock, so a building on that line can be spotted by eye. */
@@ -816,6 +885,10 @@ export class MapView {
       this.zoomBy(-Math.sign(e.deltaY) * 0.5, [e.clientX - r.left, e.clientY - r.top])
     }, { passive: false })
     c.addEventListener('keydown', (e) => this.key(e))
+    // a finger held on the room is a long press for the map, so the phone's own menu for a long press stays away
+    c.addEventListener('contextmenu', (e) => {
+      if (this.lifted || this.gesture?.hold) e.preventDefault()
+    })
   }
 
   point(e) {
@@ -834,20 +907,125 @@ export class MapView {
     const p = this.point(e)
     this.pointers.set(e.pointerId, { x: p[0], y: p[1], sx: p[0], sy: p[1], at: performance.now() })
     if (this.pointers.size === 2) {
+      // a second finger ends whatever the first was doing, and the two of them zoom, and turn the room when they mean to
+      this.dropHold()
+      this.endEdit()
       const [a, b] = [...this.pointers.values()]
-      this.gesture = { kind: 'pinch', dist: Math.hypot(a.x - b.x, a.y - b.y), angle: this.angle(a, b) }
+      const dist = Math.hypot(a.x - b.x, a.y - b.y)
+      const angle = this.angle(a, b)
+      this.gesture = { kind: 'pinch', dist, tracker: pinchTracker(dist, angle) }
       return
     }
     if (this.pointers.size > 2) return
     this.gesture = { kind: 'pan', moved: 0 }
+    // a mouse is not a finger that might be reaching for the map, so it drags the room at once
+    const finger = e.pointerType !== 'mouse'
+    const near = (at) => at && Math.hypot(p[0] - at[0], p[1] - at[1]) < HANDLE_REACH
     if (this.mode === 'facing') {
-      if (this.handle && Math.hypot(p[0] - this.handle[0], p[1] - this.handle[1]) < 22) this.gesture = { kind: 'turn', moved: 0 }
-      else if (this.hitRoom(p[0], p[1])) this.gesture = { kind: 'room', moved: 0, last: this.unlocal(p[0], p[1]) }
+      if (near(this.handle)) {
+        this.beginEdit()
+        this.gesture = { kind: 'turn', moved: 0 }
+      } else if (near(this.moveHandle)) this.grabRoom(p)
+      else if (this.hitRoom(p[0], p[1])) {
+        if (finger) this.gesture = { kind: 'pan', moved: 0, hold: setTimeout(() => this.lift(), HOLD_MS) }
+        else this.grabRoom(p)
+      }
     } else if (this.mode === 'surround') {
       const hit = this.hitObstacle(p[0], p[1])
       const o = hit != null ? this.scene.obstacles[hit] : null
-      if (hit != null && hit === this.selected && o.src === 'manual') this.gesture = { kind: 'obstacle', index: hit, moved: 0, last: this.unlocal(p[0], p[1]) }
+      if (hit != null && hit === this.selected && o.src === 'manual') {
+        this.beginEdit()
+        this.gesture = { kind: 'obstacle', index: hit, moved: 0, from: this.fromScreen(p[0], p[1]) }
+      }
     }
+  }
+
+  /** The room is taken by the finger at `p`: the drag moves it by as far as the finger goes over the ground. */
+  grabRoom(p) {
+    this.beginEdit()
+    this.gesture = { kind: 'room', moved: 0, from: this.fromScreen(p[0], p[1]) }
+  }
+
+  /** The finger has stayed on the room for 350 ms: lift it, and the drag that follows moves it. */
+  lift() {
+    const g = this.gesture
+    if (!g || g.kind !== 'pan' || !g.hold) return
+    const [known] = this.pointers.values()
+    if (!known) return
+    g.hold = 0
+    this.grabRoom([known.x, known.y])
+    this.gesture.moved = g.moved
+    this.gesture.lifted = true
+    this.lifted = true
+    // a short buzz where the phone has one, so that the lift is felt as well as seen
+    if (typeof navigator.vibrate === 'function') navigator.vibrate(12)
+    this.invalidate()
+  }
+
+  /** Stop waiting to see whether a finger holds. */
+  dropHold() {
+    const g = this.gesture
+    if (g?.hold) {
+      clearTimeout(g.hold)
+      g.hold = 0
+    }
+  }
+
+  // What a gesture does to the room is gathered here and handed on once a frame, and kept as one undo step when the
+  // fingers come up. The store then sees one change a frame and not one for every pointer move.
+
+  beginEdit() {
+    this.edit ??= { before: this.store.scene, frame: 0, turn: null, turnSent: 0, bearing: null, move: null, moveSent: [0, 0], obstacle: null, obstacleSent: [0, 0] }
+  }
+
+  queueEdit() {
+    const e = this.edit
+    if (!e || e.frame) return
+    e.frame = requestAnimationFrame(() => {
+      e.frame = 0
+      this.flushEdit()
+    })
+  }
+
+  flushEdit() {
+    const e = this.edit
+    if (!e) return
+    if (e.frame) {
+      cancelAnimationFrame(e.frame)
+      e.frame = 0
+    }
+    if (e.bearing !== null) {
+      const b = e.bearing
+      e.bearing = null
+      this.on.turnTo?.(b, true)
+    }
+    if (e.turn !== null) {
+      const by = e.turn - e.turnSent
+      e.turnSent = e.turn
+      if (Math.abs(by) > 0.05) this.on.turnBy?.(by, true)
+    }
+    if (e.move) {
+      const by = [e.move[0] - e.moveSent[0], e.move[1] - e.moveSent[1]]
+      e.moveSent = e.move
+      e.move = null
+      if (by[0] || by[1]) this.on.moveRoom?.(by[0], by[1], true)
+    }
+    if (e.obstacle) {
+      const { index, to } = e.obstacle
+      const by = [to[0] - e.obstacleSent[0], to[1] - e.obstacleSent[1]]
+      e.obstacleSent = to
+      e.obstacle = null
+      if (by[0] || by[1]) this.on.moveObstacle?.(index, by[0], by[1], true)
+    }
+  }
+
+  /** The fingers are up: the last of the gesture goes through, and all of it is one undo step. */
+  endEdit() {
+    const e = this.edit
+    if (!e) return
+    this.flushEdit()
+    this.edit = null
+    this.store.commit(e.before)
   }
 
   angle(a, b) {
@@ -870,29 +1048,35 @@ export class MapView {
       const angle = this.angle(a, b)
       const mid = [(a.x + b.x) / 2, (a.y + b.y) / 2]
       if (g.dist > 8) this.zoomTo(this.cam.zoom + Math.log2(dist / g.dist), mid)
-      if (this.mode === 'facing') {
-        let delta = angle - g.angle
-        if (delta > 180) delta -= 360
-        if (delta < -180) delta += 360
-        if (Math.abs(delta) > 0.05) this.on.turnBy?.(delta)
+      const turning = g.tracker.move(dist, angle)
+      if (this.mode === 'facing' && turning.engaged) {
+        this.beginEdit()
+        this.edit.turn = turning.turn
+        this.queueEdit()
       }
       g.dist = dist
-      g.angle = angle
       return
     }
     g.moved += Math.abs(dx) + Math.abs(dy)
-    if (g.kind === 'pan') this.panBy(dx, dy)
-    else if (g.kind === 'room') {
-      const now = this.unlocal(p[0], p[1])
-      this.on.moveRoom?.(now[0] - g.last[0], now[1] - g.last[1])
-      g.last = this.unlocal(p[0], p[1])
+    if (g.kind === 'pan') {
+      if (g.hold) {
+        // still waiting to see whether the finger holds: a small drift is not a move
+        if (Math.hypot(p[0] - known.sx, p[1] - known.sy) <= HOLD_SLOP) return
+        this.dropHold()
+        this.panBy(p[0] - known.sx, p[1] - known.sy)
+      } else this.panBy(dx, dy)
+    } else if (g.kind === 'room') {
+      const ll = this.fromScreen(p[0], p[1])
+      this.edit.move = toLocal(g.from, ll.lat, ll.lon)
+      this.queueEdit()
     } else if (g.kind === 'obstacle') {
-      const now = this.unlocal(p[0], p[1])
-      this.on.moveObstacle?.(g.index, now[0] - g.last[0], now[1] - g.last[1])
-      g.last = this.unlocal(p[0], p[1])
+      const ll = this.fromScreen(p[0], p[1])
+      this.edit.obstacle = { index: g.index, to: toLocal(g.from, ll.lat, ll.lon) }
+      this.queueEdit()
     } else if (g.kind === 'turn') {
       const [e0, n0] = this.unlocal(p[0], p[1])
-      this.on.turnTo?.((((Math.atan2(e0, n0) / RAD) % 360) + 360) % 360)
+      this.edit.bearing = (((Math.atan2(e0, n0) / RAD) % 360) + 360) % 360
+      this.queueEdit()
     }
   }
 
@@ -901,9 +1085,19 @@ export class MapView {
     this.pointers.delete(e.pointerId)
     if (this.canvas.hasPointerCapture(e.pointerId)) this.canvas.releasePointerCapture(e.pointerId)
     const g = this.gesture
-    if (this.pointers.size === 0) this.gesture = null
-    else if (this.pointers.size === 1 && g?.kind === 'pinch') this.gesture = { kind: 'pan', moved: 99 }
-    if (cancelled || !known || !g || g.kind === 'pinch' || g.moved > 6 || performance.now() - known.at > 1000) return
+    this.dropHold()
+    if (this.pointers.size === 0) {
+      this.gesture = null
+      this.endEdit()
+      if (this.lifted) {
+        this.lifted = false
+        this.invalidate()
+      }
+    } else if (this.pointers.size === 1 && g?.kind === 'pinch') {
+      this.endEdit()
+      this.gesture = { kind: 'pan', moved: 99 }
+    }
+    if (cancelled || !known || !g || g.kind === 'pinch' || g.lifted || g.moved > 6 || performance.now() - known.at > 1000) return
     // a tap, which may be the first of a double tap that zooms
     this.tapper.tap(known.x, known.y)
   }
