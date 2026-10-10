@@ -34,6 +34,9 @@ jobs:
           cp dist/index.html dist/sw.js dist/manifest.webmanifest dist/icon-192.png dist/icon-512.png dist/icon-maskable-512.png site/
           cp dist/sunspill.js site/dist/
           cp examples/library.html examples/room.json site/examples/
+          # the past deals of the quick check, read from the page's own address
+          mkdir -p site/data
+          cp -r data/deals site/data/
           cp assets/social-card.png site/social-card.png
       - uses: actions/upload-pages-artifact@v3
         with:

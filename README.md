@@ -116,7 +116,7 @@ Your room, the pictures you trace and the marks you make never leave your browse
 | Map pictures (OpenStreetMap tiles) | the part of the map you look at |
 | Building outlines (Overpass) | the position of the room, to about one metre |
 
-You can switch each one off again under "Online services". The page's Content Security Policy names those five hosts and no others, and the browser tests check it. See [docs/PRIVACY.md](docs/PRIVACY.md).
+You can switch each one off again under "Online services". The page's Content Security Policy names those five hosts and the page's own address, and no others, and the browser tests check it. The quick check also reads static files of past deals (the Ministry of the Interior's 實價登錄) from the page's own address. See [docs/PRIVACY.md](docs/PRIVACY.md).
 
 ## Install
 
@@ -177,7 +177,7 @@ What it leaves out is listed on the page and on every picture it exports: clear 
 
 ## Docs
 
-[Usage](docs/USAGE.md) | [Privacy](docs/PRIVACY.md) | [Accuracy](docs/ACCURACY.md) | [Validation](docs/VALIDATION.md) | [Install](docs/INSTALL.md) | [Config and file format](docs/CONFIG.md) | [Library API](docs/API.md) | [Architecture](docs/ARCHITECTURE.md) | [Contributing](CONTRIBUTING.md) | [Changelog](CHANGELOG.md)
+[Usage](docs/USAGE.md) | [Privacy](docs/PRIVACY.md) | [Past deals data](docs/DEALS.md) | [Accuracy](docs/ACCURACY.md) | [Validation](docs/VALIDATION.md) | [Install](docs/INSTALL.md) | [Config and file format](docs/CONFIG.md) | [Library API](docs/API.md) | [Architecture](docs/ARCHITECTURE.md) | [Contributing](CONTRIBUTING.md) | [Changelog](CHANGELOG.md)
 
 ## Planned
 

@@ -11,9 +11,13 @@ import { createCompare, MAX_COMPARE } from './compare.js'
 import { extractAddress } from '../core/twaddress.js'
 import { footprintSides, sideScene, WINDOW } from '../core/sides.js'
 import { sunPlan, measureSteps, verdictOf } from '../core/sidesun.js'
-import { fromLocal, insideRing } from '../core/geo.js'
+import { fromLocal, insideRing, ringDistance } from '../core/geo.js'
 import { zoneAt } from '../core/zone.js'
 import { encodeQuick } from '../core/sharelink.js'
+import { addressKey } from '../core/addresskey.js'
+import { summarise } from '../core/deals.js'
+import { createDeals } from './deals.js'
+import { dealsSection } from './deals-view.js'
 
 const STOREY = 3
 const DEFAULT_FLOOR = 3
@@ -23,27 +27,13 @@ const BUILDING_LIMIT = 400
 const RADIUS = 200
 /** How far, in metres, the middle of a shared building may have moved on the map and still be the same building. */
 const SAME_BUILDING = 25
+/** How far round the building the past deals are looked for, in metres. The numbers use 300 of them, the nearest list all. */
+const DEALS_REACH = 450
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0))
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
 const sideName = (id) => tq(`quick.side.${id}`)
 const centroid = (ring) => [ring.reduce((s, p) => s + p[0], 0) / ring.length, ring.reduce((s, p) => s + p[1], 0) / ring.length]
-
-/** The metres that the nearest part of a ring is from a point, 0 when the point is inside. */
-function ringDistance(ring, [x, y]) {
-  let inside = false
-  let best = Infinity
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [xi, yi] = ring[i]
-    const [xj, yj] = ring[j]
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside
-    const dx = xj - xi
-    const dy = yj - yi
-    const k = clamp(((x - xi) * dx + (y - yi) * dy) / (dx * dx + dy * dy || 1), 0, 1)
-    best = Math.min(best, Math.hypot(x - (xi + dx * k), y - (yi + dy * k)))
-  }
-  return inside ? 0 : best
-}
 
 /**
  * @param ctx.store, ctx.net, ctx.consent, ctx.modal, ctx.toast  the page's own
@@ -83,7 +73,11 @@ export function createQuick(ctx) {
     added: false,
     // the answer of a link that is being opened: the building to find, the sides to pick, and whether they were picked yet
     link: null,
+    // the past deals round the selected building: which building they were asked for, how it went, and what they say
+    deals: { for: '', status: 'idle', summary: null, asof: '' },
   }
+  const dealsLoader = createDeals()
+  let dealsController = null
   let controller = null
   let floorTimer = 0
 
@@ -171,6 +165,9 @@ export function createQuick(ctx) {
     state.gen++
     state.analysisGen++
     state.link = null
+    dealsController?.abort()
+    dealsController = null
+    state.deals = { for: '', status: 'idle', summary: null, asof: '' }
     controller?.abort()
     controller = null
   }
@@ -468,6 +465,7 @@ export function createQuick(ctx) {
   async function analyse() {
     const b = building()
     if (!b) return
+    ensureDeals()
     const mine = ++state.analysisGen
     state.working = true
     // a new building has no sides until they are worked out, and a new floor keeps the old ones, dimmed, for the moment
@@ -512,6 +510,36 @@ export function createQuick(ctx) {
     pushMap()
     render()
   }
+
+  // ---------------------------------------------------------------- past deals nearby
+
+  /** Ask for the past deals round the selected building, unless they are here already or on their way. */
+  function ensureDeals(again = false) {
+    const b = building()
+    if (!b || !state.origin) return
+    const key = `${state.origin.lat},${state.origin.lon}|${state.selected}|${b.id}`
+    if (!again && state.deals.for === key && state.deals.status !== 'failed') return
+    dealsController?.abort()
+    dealsController = new AbortController()
+    const { signal } = dealsController
+    state.deals = { for: key, status: 'loading', summary: null, asof: '' }
+    render()
+    const [east, north] = centroid(b.ring)
+    const at = fromLocal(state.origin, east, north)
+    dealsLoader.around(at.lat, at.lon, DEALS_REACH, signal).then(
+      (found) => {
+        if (signal.aborted || state.deals.for !== key) return
+        if (found.status === 'ok') {
+          const address = addressKey(state.found?.address || state.place?.name || '')?.key ?? null
+          state.deals = { for: key, status: 'ok', asof: found.asof, summary: summarise(found.deals, { origin: state.origin, ring: b.ring, address, now: new Date(), reach: DEALS_REACH }) }
+        } else state.deals = { for: key, status: found.status, summary: null, asof: '' }
+        render()
+      },
+      () => {},
+    )
+  }
+
+  const dealsBlock = () => dealsSection(state.deals, () => ensureDeals(true))
 
   // ---------------------------------------------------------------- the sheet
 
@@ -618,6 +646,7 @@ export function createQuick(ctx) {
     if (!state.sides.length) {
       frag.push(h('p', { class: 'note', id: 'quick-nosides' }, tq('quick.nosides')))
       if (state.shared) frag.push(h('p', { class: 'note' }, tq('quick.party')))
+      frag.push(dealsBlock())
       return frag
     }
     // for the moment after the stepper moves the cards are those of the floor before, and are shown dimmed
@@ -625,6 +654,7 @@ export function createQuick(ctx) {
     frag.push(h('div', { class: stale ? 'quick-result stale' : 'quick-result', 'aria-busy': String(stale) }, summary(), h('p', { class: 'note sorted' }, tq('quick.sorted')), h('div', { class: 'quick-cards', id: 'quick-cards' }, ...state.sides.map(card))))
     frag.push(h('p', { class: 'note' }, tq('quick.help')))
     if (state.shared) frag.push(h('p', { class: 'note' }, tq('quick.party')))
+    frag.push(dealsBlock())
     frag.push(advanced())
     frag.push(h('details', { class: 'more quick-how' }, h('summary', {}, tq('quick.how.title')), h('p', { class: 'note' }, tq('quick.how.body', { est: state.plan?.est ?? 0, total: state.plan?.total ?? 0 }))))
     return frag

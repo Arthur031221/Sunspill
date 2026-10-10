@@ -7,6 +7,8 @@ import { chromium, firefox, webkit } from 'playwright'
 import { readFileSync } from 'node:fs'
 import { serve } from '../serve.js'
 import { encodeQuick, decodeQuick } from '../../src/core/sharelink.js'
+import { packDeal, tileName, tileOf } from '../../src/core/deals.js'
+import { fromLocal } from '../../src/core/geo.js'
 
 const engine = { firefox, webkit }[process.env.BROWSER] ?? chromium
 const overpass = readFileSync(new URL('../fixtures/overpass-taipei.json', import.meta.url), 'utf8')
@@ -34,8 +36,9 @@ after(async () => {
 
 /**
  * A phone on its first visit, with the three services answered by the test. `answers.nominatim` is a list or a
- * function of the query fields, `answers.overpassFail` is how many Overpass requests answer 504 first, and
- * `answers.tile(path)` can delay, fail or let through each tile.
+ * function of the query fields, `answers.overpassFail` is how many Overpass requests answer 504 first,
+ * `answers.tile(path)` can delay, fail or let through each tile, and `answers.deals` is the files of data/deals by name,
+ * each a string, or a function (name) returning a string or a status number.
  */
 async function open({ locale = 'zh-TW', answers = {}, viewport = { width: 390, height: 844 }, prefs = null, hash = '', context: existing = null } = {}) {
   const context = existing ?? await browser.newContext({ viewport, ...(engine === firefox ? { serviceWorkers: 'block' } : { isMobile: true }), hasTouch: true, deviceScaleFactor: 2, reducedMotion: 'reduce', locale })
@@ -64,13 +67,24 @@ async function open({ locale = 'zh-TW', answers = {}, viewport = { width: 390, h
       return route.abort()
     })
   }
+  const dealsAsked = []
+  if (answers.deals && !existing) {
+    await context.route((url) => url.pathname.includes('/data/deals/'), (route) => {
+      const name = new URL(route.request().url()).pathname.split('/').pop()
+      dealsAsked.push(name)
+      const found = typeof answers.deals === 'function' ? answers.deals(name) : answers.deals[name]
+      if (typeof found === 'number') return route.fulfill({ status: found, body: '' })
+      if (found === undefined) return route.fulfill({ status: 404, body: '' })
+      return route.fulfill({ status: 200, contentType: 'application/json', body: found })
+    })
+  }
   const page = await context.newPage()
   const errors = []
   page.on('pageerror', (e) => errors.push(e.message))
   page.on('console', (m) => m.type() === 'error' && !/Failed to load resource/.test(m.text()) && errors.push(m.text()))
   await page.goto(site.url + hash)
   await page.waitForSelector('html[data-ready]')
-  return { page, context, errors, outside }
+  return { page, context, errors, outside, dealsAsked }
 }
 
 const quickState = (page) => page.evaluate(() => {
@@ -832,5 +846,223 @@ test('Share: when no server sends the outlines the link still brings its own bui
   await page.waitForFunction(() => !window.__sunspill.quick.state.working && window.__sunspill.quick.state.buildings.length > 30)
   assert.equal(await page.evaluate(() => window.__sunspill.quick.state.buildings.filter((b) => b.fromLink).length), 1, 'the link building stays since the map has no building at that spot')
   assert.deepEqual((await quickState(page)).chosen, ['S'], 'the sides the person picked since are kept')
+  await context.close()
+})
+
+// ---------------------------------------------------------------- past deals
+
+const way = JSON.parse(overpass).elements.find((e) => e.id === BUILDING)
+const MIDDLE = { lat: way.geometry.reduce((a, p) => a + p.lat, 0) / way.geometry.length, lon: way.geometry.reduce((a, p) => a + p.lon, 0) / way.geometry.length }
+const monthsAgo = (n) => {
+  const d = new Date()
+  d.setDate(1)
+  d.setMonth(d.getMonth() - n)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+const yearOf = (n) => Number(monthsAgo(n).slice(0, 4))
+const median = (list) => {
+  const v = [...list].sort((a, b) => a - b)
+  return v.length % 2 ? v[v.length >> 1] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2
+}
+
+/** A deal this many metres east and north of the middle of the fixture building. */
+const near = (east, north, extra) => {
+  const at = fromLocal(MIDDLE, east, north)
+  return { lat: at.lat, lon: at.lon, kind: 'sale', date: monthsAgo(2), floor: 5, floors: 8, type: 'mid', built: 1998, ping: 30, price: 2000, unit: 66.7, lift: true, addr: null, ...extra }
+}
+
+/** The files of data/deals for a list of deals, by name, the way scripts/make-deals.mjs would have written them. */
+function dealsFiles(list, { asof = monthsAgo(1), extraTiles = [] } = {}) {
+  const groups = new Map()
+  for (const d of list) {
+    const t = tileOf(d.lat, d.lon)
+    groups.set(tileName(t), { t, deals: [...(groups.get(tileName(t))?.deals ?? []), d] })
+  }
+  const files = {}
+  for (const [name, { t, deals }] of groups) {
+    const addrs = [...new Set(deals.map((d) => d.addr).filter(Boolean))]
+    files[`${name}.json`] = JSON.stringify({ v: 1, z: t.z, x: t.x, y: t.y, cols: [], addrs, rows: deals.map((d) => packDeal(d, d.addr ? addrs.indexOf(d.addr) : null)) })
+  }
+  const tiles = [...groups.values()].map(({ t }) => `${t.x}-${t.y}`).concat(extraTiles)
+  files['index.json'] = JSON.stringify({ v: 1, zoom: 15, maxZoom: 17, asof, built: '2026-10-10', tiles: { 15: tiles } })
+  return files
+}
+
+const FIXTURE_DEALS = [
+  // the building itself, on its outline
+  near(0, 0, { date: monthsAgo(2), floor: 6, floors: 8, built: 1998, ping: 31.5, price: 2560, unit: 81.3, type: 'mid' }),
+  near(1, 1, { date: monthsAgo(5), floor: 3, floors: 8, built: 1998, ping: 28, price: 1980, unit: 70.7, type: 'mid' }),
+  near(-1, 0, { kind: 'rent', date: monthsAgo(3), floor: 4, floors: 8, built: 1998, ping: 20, price: 28000, unit: 1400, type: 'mid' }),
+  // other sales within 300 metres
+  near(50, 40, { floor: 2, built: 1980, unit: 60, price: 1500, ping: 25 }),
+  near(-60, 90, { floor: 5, built: 1990, unit: 70, price: 1900, ping: 27 }),
+  near(-150, -30, { floor: 7, built: 2000, unit: 80, price: 2400, ping: 30 }),
+  near(10, -200, { floor: 9, built: 2010, unit: 90, price: 3000, ping: 33 }),
+  near(250, 20, { floor: 12, built: 2015, unit: 100, price: 4000, ping: 40 }),
+  // rentals within 300 metres
+  near(60, -50, { kind: 'rent', price: 20000, unit: 1000, ping: 20 }),
+  near(70, -60, { kind: 'rent', price: 25000, unit: 1250, ping: 20 }),
+  near(-80, 60, { kind: 'rent', price: 30000, unit: 1500, ping: 20 }),
+  // too far, too old
+  near(400, 0, { unit: 999, price: 99999 }),
+  near(20, 20, { unit: 555, date: monthsAgo(13) }),
+]
+
+async function dealsPage(options = {}) {
+  const { answers = {}, ...rest } = options
+  const files = dealsFiles(FIXTURE_DEALS)
+  const result = await open({ ...rest, answers: { deals: files, ...answers } })
+  await findFlat(result.page)
+  await tapBuilding(result.page)
+  return { ...result, files }
+}
+
+test('Deals: after the side cards the sheet says what the past deals round the building say, and that they are past deals and not listings', async () => {
+  const { page, context, errors, outside, dealsAsked } = await dealsPage()
+  await page.waitForSelector('#quick-deals[data-status=ok]')
+  const section = page.locator('#quick-deals')
+  const text = await section.innerText()
+  assert.match(text, /附近實價登錄/)
+  assert.match(text, /過去成交紀錄，不是目前的物件/)
+  // 7 sales within 300 m in the last year: the building's two and five more, but not the one at 400 m or the one a year old
+  assert.match(text, /近 12 個月、300 公尺內買賣 7 筆/)
+  assert.match(text, /單價中位數 80 萬\/坪/)
+  assert.match(text, /2 到 12 樓/)
+  const ages = [[2, 1998], [5, 1998], [2, 1980], [2, 1990], [2, 2000], [2, 2010], [2, 2015]].map(([m, built]) => yearOf(m) - built)
+  assert.match(text, new RegExp(`屋齡中位數 ${Math.round(median(ages))} 年`))
+  assert.match(text, /租賃 4 筆[\s\S]*月租中位數 26,500 元，每坪 1,325 元/)
+  // the deals of the building come first, newest first, and are not listed again among the nearest
+  assert.match(await page.locator('#deals-same-title').innerText(), /同一棟（3 筆）/)
+  const same = await page.locator('#deals-same .deal-row').allInnerTexts()
+  assert.equal(same.length, 3)
+  assert.match(same[0], new RegExp(`${monthsAgo(2)} · 買賣 · 2,560 萬\n6/8 樓 · 屋齡 ${yearOf(2) - 1998} 年 · 31.5 坪 · 81.3 萬/坪`))
+  assert.match(same[1], new RegExp(`${monthsAgo(3)} · 租賃 · 月租 28,000 元\n4/8 樓 · 屋齡 ${yearOf(3) - 1998} 年 · 20 坪 · 每坪 1,400 元`))
+  assert.match(same[2], new RegExp(monthsAgo(5)))
+  // the five nearest, closest first, with how far they are
+  assert.match(await page.locator('#deals-near-title').innerText(), /最近的 5 筆/)
+  const nearest = await page.locator('#deals-near .deal-row').allInnerTexts()
+  assert.equal(nearest.length, 5)
+  // a sale 64 metres from the middle, two rentals, a third at 100 metres and a sale at 108
+  assert.match(nearest[0], new RegExp(`${monthsAgo(2)} · 買賣 · 1,500 萬\\n2/8 樓 · 屋齡 ${yearOf(2) - 1980} 年 · 25 坪 · 60 萬/坪 · 約 60 公尺`))
+  assert.deepEqual(nearest.map((r) => /租賃/.test(r)), [false, true, true, true, false])
+  const metres = nearest.map((r) => Number(/約 (\d+) 公尺/.exec(r)[1]))
+  assert.deepEqual(metres, [60, 80, 90, 100, 110])
+  assert.ok(metres.every((m) => m <= 450))
+  assert.ok(!nearest.some((r) => /999 萬|99,999/.test(r)), 'the deal 400 metres away is past the reach of the list')
+  // where it comes from, word for word
+  assert.equal(await page.locator('#deals-source').innerText(), '資料來源：內政部不動產交易實價查詢服務網（依政府資料開放授權條款）')
+  assert.match(text, /位置：臺北市、新北市、臺中市、桃園市政府的門牌位置開放資料/)
+  assert.match(text, /資料到 20\d\d-\d\d，每月更新/)
+  // it comes after the cards and before the More row, and the files came from the page's own address
+  const order = await page.evaluate(() => {
+    const at = (sel) => document.querySelector(sel).getBoundingClientRect().top
+    return [at('#quick-cards'), at('#quick-deals'), at('#adv-room')]
+  })
+  assert.ok(order[0] < order[1] && order[1] < order[2], order.join())
+  assert.equal(dealsAsked[0], 'index.json')
+  assert.ok(dealsAsked.slice(1).every((n) => /^15-\d+-\d+\.json$/.test(n)) && dealsAsked.length >= 2 && dealsAsked.length <= 5, dealsAsked.join())
+  assert.ok(outside.every((o) => ['nominatim.openstreetmap.org', 'tile.openstreetmap.org'].includes(o.host) || /^overpass/.test(o.host)), 'no new host')
+  assert.equal(await noSideways(page), true)
+  assert.deepEqual(errors, [])
+  await context.close()
+})
+
+test('Deals: a deal that carries the address that was typed is of the same building, and one with another house number is not', async () => {
+  // the address in the test is 復興南路二段151巷5號, and this deal is on the street, 30 metres from the outline
+  const list = [...FIXTURE_DEALS.slice(0, 3), near(30, 30, { addr: '復興南路二段151巷5號', date: monthsAgo(4), price: 2222 }), near(30, -30, { addr: '復興南路二段151巷7號', date: monthsAgo(4), price: 3333 })]
+  const { page, context } = await open({ answers: { deals: dealsFiles(list) } })
+  await findFlat(page)
+  await tapBuilding(page)
+  await page.waitForSelector('#quick-deals[data-status=ok]')
+  const same = await page.locator('#deals-same .deal-row').allInnerTexts()
+  assert.equal(same.length, 4)
+  assert.ok(same.some((r) => /2,222 萬/.test(r)))
+  assert.ok(!same.some((r) => /3,333 萬/.test(r)))
+  assert.match(await page.locator('#deals-near').innerText(), /3,333 萬/)
+  await context.close()
+})
+
+test('Deals: outside the four cities the section says so in one line and shows no numbers and no source', async () => {
+  // the index lists tiles, but none of them near this building
+  const { page, context, dealsAsked } = await open({ answers: { deals: { 'index.json': JSON.stringify({ v: 1, zoom: 15, maxZoom: 17, asof: '2026-09', tiles: { 15: ['1-1'] } }) } } })
+  await findFlat(page)
+  await tapBuilding(page)
+  await page.waitForSelector('#quick-deals[data-status=none]')
+  assert.equal(await page.locator('#deals-none').innerText(), '這一帶還沒有成交資料，目前只有臺北、新北、臺中和桃園。')
+  assert.match(await page.locator('#quick-deals').innerText(), /過去成交紀錄，不是目前的物件/)
+  assert.equal(await page.locator('#deals-source').count(), 0)
+  assert.equal(await page.locator('.deal-row').count(), 0)
+  assert.deepEqual(dealsAsked, ['index.json'], 'no tile was asked for')
+  await context.close()
+})
+
+test('Deals: a copy of the page with no deals data says so, and the sun answer is not held up', async () => {
+  const { page, context } = await open()
+  await findFlat(page)
+  await tapBuilding(page)
+  await page.waitForSelector('#quick-deals[data-status=missing]')
+  assert.equal(await page.locator('#deals-missing').innerText(), '這個版本的頁面沒有附上成交資料。')
+  assert.equal(await page.locator('.side-card').count(), 4)
+  await context.close()
+})
+
+test('Deals: when the files will not come the page says so and the retry brings them', async () => {
+  const files = dealsFiles(FIXTURE_DEALS)
+  let fail = true
+  const { page, context } = await open({ answers: { deals: (name) => (name !== 'index.json' && fail ? 500 : files[name]) } })
+  await findFlat(page)
+  await tapBuilding(page)
+  await page.waitForSelector('#quick-deals[data-status=failed]')
+  assert.equal(await page.locator('#deals-failed').innerText(), '成交資料載入失敗。')
+  fail = false
+  await page.tap('#deals-retry')
+  await page.waitForSelector('#quick-deals[data-status=ok]')
+  assert.match(await page.locator('#quick-deals').innerText(), /買賣 7 筆/)
+  await context.close()
+})
+
+test('Deals: the floor stepper does not ask for the files again, and another building gets its own numbers from the same files', async () => {
+  const { page, context, dealsAsked } = await dealsPage()
+  await page.waitForSelector('#quick-deals[data-status=ok]')
+  const asked = dealsAsked.length
+  await page.tap('#floor-more')
+  await page.waitForFunction(() => !window.__sunspill.quick.state.working && window.__sunspill.quick.state.sidesFloor === 6)
+  assert.equal(dealsAsked.length, asked, 'a floor is not a new place')
+  assert.equal(await page.locator('#quick-deals').getAttribute('data-status'), 'ok')
+  // the building next door has none of the deals on its outline
+  const other = await page.evaluate((id) => {
+    const q = window.__sunspill.quick.state
+    const c = (b) => [b.ring.reduce((s, p) => s + p[0], 0) / b.ring.length, b.ring.reduce((s, p) => s + p[1], 0) / b.ring.length]
+    const me = c(q.buildings.find((b) => b.id === id))
+    return q.buildings.filter((b) => b.id !== id && b.ring.length >= 4).map((b) => ({ id: b.id, d: Math.hypot(c(b)[0] - me[0], c(b)[1] - me[1]) })).filter((x) => x.d > 25 && x.d < 80).sort((a, b) => a.d - b.d)[0].id
+  }, BUILDING)
+  await tapBuilding(page, other)
+  await page.waitForFunction((id) => window.__sunspill.quick.state.buildings[window.__sunspill.quick.state.selected].id === id, other)
+  await page.waitForSelector('#quick-deals[data-status=ok]')
+  assert.equal(await page.locator('#deals-same').count(), 0, 'no deal sits on the other building')
+  assert.match(await page.locator('#quick-deals').innerText(), /最近的/)
+  await context.close()
+})
+
+test('Deals: the English page says the same in English, and the licence line is there', async () => {
+  const { page, context } = await dealsPage({ locale: 'en-GB' })
+  await page.waitForSelector('#quick-deals[data-status=ok]')
+  const text = await page.locator('#quick-deals').innerText()
+  assert.match(text, /nearby past deals/i)
+  assert.match(text, /Past deals, not current listings/)
+  assert.match(text, /7 sales within 300 m in the last 12 months/)
+  assert.match(text, /median 80 萬 per ping/)
+  assert.match(text, /4 rentals within 300 m/)
+  assert.match(text, /Same building \(3\)/)
+  assert.match(await page.locator('#deals-source').innerText(), /^Source: Ministry of the Interior real price registration service \(under the Open Government Data License, version 1\)$/)
+  await context.close()
+})
+
+test('Deals: at 320 pixels the rows wrap and nothing scrolls sideways', async () => {
+  const { page, context } = await dealsPage({ viewport: { width: 320, height: 640 } })
+  await page.waitForSelector('#quick-deals[data-status=ok]')
+  assert.equal(await noSideways(page), true)
+  const widths = await page.locator('.deal-row').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().right))
+  assert.ok(widths.every((r) => r <= 320), widths.join())
   await context.close()
 })

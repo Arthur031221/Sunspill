@@ -1,0 +1,55 @@
+name: Update past deals data
+
+# Once a month, and on request, builds data/deals from the Ministry of the Interior's 實價登錄 and the address points
+# of Taipei, New Taipei, Taichung and Taoyuan with scripts/make-deals.mjs, commits the files, and asks the Pages
+# workflow to publish them. A push made with this workflow's own token does not start other workflows, which is why
+# Pages is asked for by hand at the end. Only government open data is read, see docs/DEALS.md.
+#
+# With --strict the script writes nothing when a dataset could not be fetched, so a run that fails leaves the data
+# of the month before in place, and the job fails so that someone looks.
+on:
+  schedule:
+    - cron: '41 3 12 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: deals
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Build the data
+        run: node scripts/make-deals.mjs --strict
+      - name: The data keeps to its limits
+        run: node --test test/deals-data.test.js
+      - name: Commit the data
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all data/deals
+          if git diff --cached --quiet; then
+            echo "The data has not changed."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          month="$(node -p "JSON.parse(require('fs').readFileSync('data/deals/index.json', 'utf8')).asof")"
+          git commit -m "Data: past deals up to ${month}"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - name: Publish the page
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref "${GITHUB_REF_NAME}"

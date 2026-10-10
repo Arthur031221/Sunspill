@@ -24,7 +24,7 @@ npx --yes serve dist
 
 ## Host it yourself
 
-Copy `dist/index.html`, `dist/sw.js`, `dist/manifest.webmanifest` and the three `dist/icon-*.png` files to any static host, side by side. The manifest and the icons only matter for "Add to Home Screen", and the page works without them. The page sets a Content Security Policy that allows no network requests except the three optional OpenStreetMap services (address search, map pictures and building outlines), which stay off until a person allows them, see [PRIVACY.md](PRIVACY.md). A host that adds its own `connect-src` rules can stop those three and nothing else. Serve it over HTTPS if you want the offline worker, which browsers only allow on secure origins and on localhost.
+Copy `dist/index.html`, `dist/sw.js`, `dist/manifest.webmanifest` and the three `dist/icon-*.png` files to any static host, side by side. The manifest and the icons only matter for "Add to Home Screen", and the page works without them. The page sets a Content Security Policy that allows no network requests except the three optional OpenStreetMap services (address search, map pictures and building outlines), which stay off until a person allows them, see [PRIVACY.md](PRIVACY.md). A host that adds its own `connect-src` rules can stop those three and nothing else. Serve it over HTTPS if you want the offline worker, which browsers only allow on secure origins and on localhost. To have the "nearby past deals" part of the quick check, copy the `data/deals` folder of the repository to `data/deals` next to `index.html` too. It is read from the page's own address, so no setting is needed, and without it the page says that the deals data is not there. [DEALS.md](DEALS.md) says how the folder is made.
 
 ## Use the library
 

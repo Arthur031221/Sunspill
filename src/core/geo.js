@@ -106,6 +106,20 @@ export function insideRing(ring, [x, y]) {
   return inside
 }
 
+/** The metres from a point to the nearest part of an outline, 0 when the point is inside it. */
+export function ringDistance(ring, [x, y]) {
+  let best = Infinity
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i]
+    const [xj, yj] = ring[j]
+    const dx = xj - xi
+    const dy = yj - yi
+    const k = Math.min(1, Math.max(0, ((x - xi) * dx + (y - yi) * dy) / (dx * dx + dy * dy || 1)))
+    best = Math.min(best, Math.hypot(x - (xi + dx * k), y - (yi + dy * k)))
+  }
+  return insideRing(ring, [x, y]) ? 0 : best
+}
+
 /** Which building outline holds the room centre, or -1. Trees never do. */
 export function ownBuilding(scene) {
   return scene.obstacles.findIndex((o) => o.type === 'building' && insideRing(o.ring, [0, 0]))

@@ -43,14 +43,15 @@ const logo = read('assets/logo.svg').replace(/<svg /u, '<svg class="logo" ').rep
 const favicon = `data:image/svg+xml,${encodeURIComponent(read('assets/logo.svg').replace(/\s*\n\s*/gu, ''))}`
 const hash = createHash('sha256').update(js).digest('base64')
 // The page makes no request until a person allows one of the three online
-// services in src/app/net.js. The policy names exactly those hosts and no others.
+// services in src/app/net.js. The policy names exactly those hosts and no others,
+// and its own address ('self'), where the past deals files in data/deals are fetched from.
 const csp = [
   "default-src 'none'",
   `script-src 'sha256-${hash}'`,
   "style-src 'unsafe-inline'",
   'font-src data:',
   `img-src 'self' data: blob: ${ORIGINS.images.join(' ')}`,
-  `connect-src ${ORIGINS.connect.join(' ')}`,
+  `connect-src 'self' ${ORIGINS.connect.join(' ')}`,
   "worker-src 'self'",
   "manifest-src 'self'",
   "form-action 'none'",

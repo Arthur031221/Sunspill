@@ -135,7 +135,8 @@ test('the sample page still asks nothing of anyone: no outside request, and the 
   assert.deepEqual(outside, [])
   const csp = await page.evaluate(() => document.querySelector('meta[http-equiv="Content-Security-Policy"]').content)
   const connect = csp.match(/connect-src ([^;]+)/)[1].split(' ').sort()
-  assert.deepEqual(connect, ['https://nominatim.openstreetmap.org', 'https://overpass-api.de', 'https://overpass.kumi.systems', 'https://overpass.private.coffee'])
+  // the page's own address is for the past deals files, which are served with the page, and the five hosts are the same as before
+  assert.deepEqual(connect, ["'self'", 'https://nominatim.openstreetmap.org', 'https://overpass-api.de', 'https://overpass.kumi.systems', 'https://overpass.private.coffee'])
   assert.match(csp, /img-src 'self' data: blob: https:\/\/tile\.openstreetmap\.org(;|$)/)
   assert.match(csp, /default-src 'none'/)
   await context.close()

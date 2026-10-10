@@ -17,6 +17,7 @@
     "reference": "python3 scripts/make-reference.py",
     "assets": "node scripts/make-assets.mjs",
     "icons": "node scripts/make-icons.mjs",
+    "deals": "node scripts/make-deals.mjs",
     "demo": "node scripts/record-demo.mjs",
     "demo:setup": "node scripts/record-setup-demo.mjs",
     "validate": "node scripts/validate.mjs",

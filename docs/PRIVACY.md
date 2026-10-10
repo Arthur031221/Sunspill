@@ -12,7 +12,7 @@ Three optional services talk to public servers. Each one is off until you allow 
 
 Every request also carries what any web request carries: your network address, your browser's name and the site this page is on (not its full address, and never the part after the `#`). OpenStreetMap's own [privacy policy](https://wiki.osmfoundation.org/wiki/Privacy_Policy) and the policies of the Overpass server operators say what they do with it.
 
-The page's Content Security Policy lists exactly those five hosts (the Nominatim server, three Overpass servers and the tile server) and no others, so the browser blocks a script request to anything else (the page's own address is also allowed, for its icon). It does not stop a link that someone clicks. `test/e2e/setup.e2e.js` and `test/e2e/quick.e2e.js` check that:
+The page's Content Security Policy lists exactly those five hosts (the Nominatim server, three Overpass servers and the tile server) and no others, so the browser blocks a script request to anything else (the page's own address is also allowed, for its icon and for the past deals files below). It does not stop a link that someone clicks. `test/e2e/setup.e2e.js` and `test/e2e/quick.e2e.js` check that:
 
 - a fresh page makes no request but its own,
 - a "Not now" sends nothing,
@@ -20,6 +20,10 @@ The page's Content Security Policy lists exactly those five hosts (the Nominatim
 - the map asks for nothing but tiles,
 - the building request sends only the position and the radius,
 - the quick check sends the street and city of an address found in pasted text and no other word of it, and never the floor.
+
+## Past deals
+
+In the quick check, once you have chosen a building, the page reads files of past sales and rentals from the address it came from, `data/deals/index.json` and the tile files near the building (usually one to four, each covering about one kilometre). It sends no cookie and no text, only the file names, and the file names say which tile you are looking at, so the server that serves the page (for the demo page, GitHub Pages) can see where you are to about a kilometre, as it can for any file it serves. No other host is asked and there is nothing to switch on, since the files are static and are made ahead of time from the Ministry of the Interior's open data, see [DEALS.md](DEALS.md). The files do not hold anything about you. When the page is opened from a file on disk, or from a copy that has no `data/deals`, the section says so and nothing is sent.
 
 ## What never leaves
 

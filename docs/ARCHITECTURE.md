@@ -9,6 +9,8 @@ src/core     pure code, no DOM, runs in Node and the browser
   obstacles.js buildings, trees and balcony rails as prisms, their shadow on a window, and which of them shade a window now
   hours.js     day steps, sun hours grids, afternoon check, plant spots
   geo.js       latitude and longitude to metres, map tiles, moving the room on the ground
+  addresskey.js a Taiwanese address as the key that a deal and an address point are matched on (road, lane, alley, number)
+  deals.js     past deals (實價登錄): the tile of a place, the row of a tile file, and the numbers for the deals near a building
   address.js   plainer forms of an address for a second search (house number after a space, no floor), built from the typed words only
   twaddress.js a Taiwanese address and its floor taken out of typed or pasted text, as the street and city of a structured search
   sides.js     a footprint cut into compass sides, party walls left out, and the scene of the virtual window of a side
@@ -45,12 +47,13 @@ src/app      the interface
   quick.js     the quick check, the first screen   compare.js   the flats kept for comparing
   picture.js   a picture canvas for tracing a plan and flattening a photo
   trace-ui.js, compass-ui.js   the tracing and compass flows
-  net.js       the only code that makes a request, with the three services and their hosts
+  net.js       the only code that talks to other servers, with the three services and their hosts
+  deals.js     the past deals files, fetched from the page's own address   deals-view.js  the nearby past deals part of the sheet
   consent.js, modal.js   the sheets that ask before anything is sent
   analysis.js  long jobs run in slices and cancelled on change
   export.js    PNG card and GIF   i18n.js format.js dom.js frame.js
 src/locales  one JSON file per language, and quick.en.json and quick.zh-TW.json for the quick check
-scripts      build, reference data, validation, sensitivity, demo recording
+scripts      build, reference data, validation, sensitivity, demo recording, and make-deals.mjs (the past deals data, run in Node and never in the browser) with scripts/lib
 test         unit tests, test/e2e browser tests, test/helpers, test/fixtures
 ```
 
@@ -96,7 +99,16 @@ The map draws tiles through `tilemap.js` and `tilecache.js`. `planTiles` returns
 
 On the facing map a finger that goes down inside the room pans the map, so reaching for the map never moves the room. The room moves after a press of 350 ms (it is lifted, with a shadow) or by the handle on the far side of the room from the window arrow, and a mouse drags it at once. Two fingers zoom, and turn the room only when `pinchTracker` says the turn has passed 8 degrees and is larger than the change in the distance between the fingers. A gesture does not call `store.update` on every pointer move. `MapView` gathers what the gesture did to the room and hands it on once per animation frame with `history: false`, and when the fingers come up `store.commit` keeps the whole gesture as one undo step.
 
-`net.js` is the only file that calls `fetch` or builds a tile address. It checks a switch for the service before it does anything, and `consent.js` asks for it. The page's Content Security Policy, written by `scripts/build.mjs` from the same list of hosts, names those hosts and no others.
+`net.js` is the only file that talks to other servers or builds a tile address. It checks a switch for the service before it does anything, and `consent.js` asks for it. The page's Content Security Policy, written by `scripts/build.mjs` from the same list of hosts, names those hosts, and the page's own address for the one other file that calls `fetch`: `app/deals.js`, which reads the past deals files that are served with the page.
+
+## Past deals
+
+The quick check can show what sold and what let near the building, from the Ministry of the Interior's 實價登錄. The data is built ahead of time by `scripts/make-deals.mjs`, and the page only reads static files, so nothing is asked of a third party and nothing is switched on. [DEALS.md](DEALS.md) has the sources, the steps, the file format and the limits.
+
+1. `scripts/make-deals.mjs` downloads the last four seasons of sales and rentals of Taipei, New Taipei, Taichung and Taoyuan, and each city's address points. `scripts/lib/lvr.mjs` keeps the deals of homes on the market and leaves out land, parking, shops, offices, relatives' deals, presales and the rest.
+2. Each deal's address is turned into a key by `core/addresskey.js` (the city and district come off with `extractAddress`), the same function that turns a row of an address file into a key, so the two agree on 台 or 臺, full width digits, 之 or a hyphen, 1段 or 一段 and a floor after the number. A key that two districts share is told apart by the district, whose name is learned from the keys that only one district has. A deal with no address point, or with two that cannot be told apart, is left out and counted.
+3. `scripts/lib/tiles.mjs` writes one file for each map tile at level 15 (about 1.1 km), cut into four tiles of the next level where one is over 190 KB, and `index.json` lists the files that exist.
+4. In the sheet, `app/deals.js` reads the index and the tiles that a 450 metre circle round the selected building touches, and `core/deals.js` `summarise` gives the numbers: the sales and rentals within 300 metres in the last twelve calendar months (count, middle unit price, floors, middle age, middle rent), the deals of the building itself (on its outline, or carrying the address that was typed and near it), and the five nearest.
 
 ## The interface
 
