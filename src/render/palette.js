@@ -44,6 +44,10 @@ export const PALETTES = {
       box: ['#c2b9ab', '#9f9686', '#82796a'],
       shelf: ['#d4c3a3', '#b09a74', '#8f7a57'],
     },
+    materials: {
+      wood: '#c9a577', woodDark: '#9a7652', metal: '#5d5f63', linen: '#f4efe6', duvet: '#b9c8dc', duvetFold: '#cfdae8',
+      pillow: '#fbf8f2', fabric: '#8fa596', cushion: '#a3b8aa', bookA: '#c8553d', bookB: '#3d6e8f', bookC: '#e0b04f', bookD: '#5f8a5a',
+    },
     heat: ['#fff2bd', '#ffd45e', '#f59a1a', '#d4470d', '#7a1d0a'],
     cool: 'rgba(95, 120, 190, 0.2)',
   },
@@ -83,6 +87,10 @@ export const PALETTES = {
       plant: ['#a0561b', '#7d4214', '#4c9a4c'],
       box: ['#8f8a82', '#706c65', '#58544e'],
       shelf: ['#9b8c6e', '#7b6e55', '#5f5441'],
+    },
+    materials: {
+      wood: '#a07e57', woodDark: '#755a3d', metal: '#6c7182', linen: '#c9cbd6', duvet: '#6f7fa6', duvetFold: '#8593b8',
+      pillow: '#d8dae3', fabric: '#62806e', cushion: '#76937f', bookA: '#a8493a', bookB: '#3f6585', bookC: '#b8923f', bookD: '#527a4e',
     },
     heat: ['#ffe9a3', '#ffc94d', '#ff9a1f', '#ea5a14', '#a3200c'],
     cool: 'rgba(120, 150, 230, 0.22)',

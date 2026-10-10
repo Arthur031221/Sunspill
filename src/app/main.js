@@ -512,6 +512,8 @@ function chrome() {
   langSel.value = locale()
   $('#theme').textContent = t(`top.theme.${store.ui.theme}`)
   $('#theme').title = t('top.theme')
+  $('#gh').title = t('foot.source')
+  $('#gh').setAttribute('aria-label', t('foot.source'))
   const units = $('#units')
   units.replaceChildren(...['m', 'ft'].map((u) => h('button', { type: 'button', 'aria-pressed': String(store.ui.units === u), onclick: () => store.setUi({ units: u }) }, u)))
   units.setAttribute('aria-label', t('top.units'))

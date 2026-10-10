@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **GitHub button.** The header has a GitHub button next to undo. On a phone it shows only the mark, so the header keeps two rows.
+- **Furniture that looks like furniture.** Each piece is drawn from its parts: the bed has legs, a frame, a headboard, a mattress, a duvet and pillows, the desk a top, metal legs and a drawer, the sofa cushions, a back and arms, the shelf boards and books, the chest drawers and handles. The light still treats each piece as one box of its full height, and its patch lands on the parts at that height.
+
 ## 0.2.3 (2026-10-10)
 
 Walking the live page with real addresses and the real OpenStreetMap servers found several things that fixtures had hidden.

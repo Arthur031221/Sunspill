@@ -5,6 +5,7 @@
 import { WALLS, wallFrame, sunInRoom, itemFootprint } from '../core/room.js'
 import { markOutline } from '../core/fit.js'
 import { hull, pathOf, mix } from './geometry.js'
+import { drawPiece } from './furniture.js'
 
 const DOOR_HEIGHT = 2.05
 
@@ -472,16 +473,9 @@ function drawItems(ctx, cam, scene, pal, frame, hits) {
     if (item.kind === 'plant') {
       drawPlant(ctx, cam, item, colors)
     } else {
-      sidesOf(ctx, faces, colors)
-      ctx.fillStyle = colors[0]
-      pathOf(ctx, faces.top)
-      ctx.fill()
-      const lit = frame.itemTops?.[index] ?? []
-      for (const poly of lit) fillSurface(ctx, poly.map(([x, y]) => cam.project(x, y, item.h)), faces.top, pal, frame.dpr, 7)
-      ctx.strokeStyle = 'rgba(0,0,0,0.18)'
-      ctx.lineWidth = 1
-      pathOf(ctx, faces.top)
-      ctx.stroke()
+      drawPiece(ctx, cam, item, pal, frame.itemTops?.[index] ?? [], (lit) => {
+        for (const poly of lit) fillSurface(ctx, poly.map(([x, y]) => cam.project(x, y, item.h)), null, pal, frame.dpr, 7)
+      })
     }
     ctx.restore()
     const selected = frame.selection?.type === 'item' && frame.selection.index === index
@@ -520,14 +514,6 @@ function drawItems(ctx, cam, scene, pal, frame, hits) {
       ctx.restore()
     }
   }
-}
-
-function sidesOf(ctx, faces, colors) {
-  faces.sides.forEach((s) => {
-    ctx.fillStyle = Math.abs(s.n[0]) > Math.abs(s.n[1]) ? colors[2] : colors[1]
-    pathOf(ctx, s.poly)
-    ctx.fill()
-  })
 }
 
 function drawPlant(ctx, cam, item, colors) {
