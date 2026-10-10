@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { chromium, firefox, webkit } from 'playwright'
 import { readFileSync } from 'node:fs'
 import { serve } from '../serve.js'
+import { launchBrowser } from './browser.js'
 import { decodeGif } from '../helpers/gif-decode.js'
 
 const engine = { firefox, webkit }[process.env.BROWSER] ?? chromium
@@ -11,7 +12,7 @@ let browser
 
 before(async () => {
   site = await serve()
-  browser = await engine.launch()
+  browser = await launchBrowser(engine)
 })
 after(async () => {
   await browser.close()

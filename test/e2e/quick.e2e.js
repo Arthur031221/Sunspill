@@ -6,6 +6,7 @@ import assert from 'node:assert/strict'
 import { chromium, firefox, webkit } from 'playwright'
 import { readFileSync } from 'node:fs'
 import { serve } from '../serve.js'
+import { launchBrowser } from './browser.js'
 import { encodeQuick, decodeQuick } from '../../src/core/sharelink.js'
 import { packDeal, tileName, tileOf } from '../../src/core/deals.js'
 import { fromLocal } from '../../src/core/geo.js'
@@ -27,7 +28,7 @@ let browser
 
 before(async () => {
   site = await serve()
-  browser = await engine.launch()
+  browser = await launchBrowser(engine)
 })
 after(async () => {
   await browser.close()
@@ -277,12 +278,23 @@ test('a double tap zooms in and chooses the building once', async () => {
     const was = map.on.quickTap
     map.on.quickTap = (hit) => { if (hit.kind === 'building') window.__picks++; was(hit) }
   })
-  await page.touchscreen.tap(x, y)
-  await page.waitForTimeout(80)
-  await page.touchscreen.tap(x + 2, y + 1)
+  // Browser round trips and the first tap's analysis must not stretch this beyond the 250 ms double-tap window.
+  const time = new Date('2026-10-11T00:00:00Z')
+  await page.clock.install({ time })
+  await page.clock.pauseAt(new Date(time.getTime() + 1000))
+  let afterFirst
+  try {
+    await page.touchscreen.tap(x, y)
+    afterFirst = await page.evaluate(() => window.__sunspill.quick.map.cam.zoom)
+    await page.clock.runFor(80)
+    await page.touchscreen.tap(x + 2, y + 1)
+  } finally {
+    await page.clock.resume()
+  }
   await page.waitForFunction(() => !window.__sunspill.quick.state.working)
   const z1 = await page.evaluate(() => window.__sunspill.quick.map.cam.zoom)
   assert.ok(z1 > z0 + 0.5, `zoom ${z0} to ${z1}`)
+  assert.ok(Math.abs(z1 - afterFirst - 1) < 1e-9, `the second tap zoomed from ${afterFirst} to ${z1}`)
   assert.equal(await page.evaluate(() => window.__picks), 1, 'the second tap of a double tap chose nothing')
   assert.notEqual((await quickState(page)).selected, null)
   await context.close()

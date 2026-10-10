@@ -5,6 +5,7 @@ import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { chromium, firefox, webkit } from 'playwright'
 import { serve } from '../serve.js'
+import { launchBrowser, waitForPaint } from './browser.js'
 
 const engine = { firefox, webkit }[process.env.BROWSER] ?? chromium
 // a 1 pixel PNG, for every map tile
@@ -16,7 +17,7 @@ let browser
 
 before(async () => {
   site = await serve()
-  browser = await engine.launch()
+  browser = await launchBrowser(engine)
 })
 after(async () => {
   await browser.close()
@@ -94,6 +95,7 @@ test('the view is never fitted closer than the level 19 tiles, which a closer vi
   assert.ok((await mapZoom(page)) <= 19)
   // a person can still pinch in past it, and the picture is the level 19 tiles scaled up
   await page.evaluate(() => window.__sunspill.map.zoomBy(2))
+  await waitForPaint(page)
   assert.ok((await mapZoom(page)) > 19)
   assert.equal(await page.evaluate(() => window.__sunspill.map.tileStats.z), 19)
   await context.close()
@@ -222,13 +224,16 @@ function pinch(cx, cy, { r = 60, from = 300, to = 330, spread = 0, steps = 12, e
   return events
 }
 
-const geometry = (page) => page.evaluate(() => {
-  const { map } = window.__sunspill
-  const r = map.canvas.getBoundingClientRect()
-  const c = map.local(0, 0)
-  const abs = (p) => (p ? [r.left + p[0], r.top + p[1]] : null)
-  return { cx: r.left + c[0], cy: r.top + c[1], moveHandle: abs(map.moveHandle), turnHandle: abs(map.handle), ppm: map.pixelsPerMetre, cam: { ...map.cam } }
-})
+const geometry = async (page) => {
+  await waitForPaint(page)
+  return page.evaluate(() => {
+    const { map } = window.__sunspill
+    const r = map.canvas.getBoundingClientRect()
+    const c = map.local(0, 0)
+    const abs = (p) => (p ? [r.left + p[0], r.top + p[1]] : null)
+    return { cx: r.left + c[0], cy: r.top + c[1], moveHandle: abs(map.moveHandle), turnHandle: abs(map.handle), ppm: map.pixelsPerMetre, cam: { ...map.cam } }
+  })
+}
 const placeOf = async (page) => (await scene(page)).place
 const countUpdates = (page) => page.evaluate(() => {
   const store = window.__sunspill.store

@@ -6,6 +6,7 @@ import assert from 'node:assert/strict'
 import { chromium, firefox, webkit } from 'playwright'
 import { readFileSync } from 'node:fs'
 import { serve } from '../serve.js'
+import { launchBrowser } from './browser.js'
 
 const engine = { firefox, webkit }[process.env.BROWSER] ?? chromium
 const overpass = readFileSync(new URL('../fixtures/overpass-taipei.json', import.meta.url), 'utf8')
@@ -18,7 +19,7 @@ let browser
 
 before(async () => {
   site = await serve()
-  browser = await engine.launch()
+  browser = await launchBrowser(engine)
 })
 after(async () => {
   await browser.close()
