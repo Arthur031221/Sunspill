@@ -11,8 +11,9 @@ import { createCompare, MAX_COMPARE } from './compare.js'
 import { extractAddress } from '../core/twaddress.js'
 import { footprintSides, sideScene, WINDOW } from '../core/sides.js'
 import { sunPlan, measureSteps, verdictOf } from '../core/sidesun.js'
-import { fromLocal } from '../core/geo.js'
+import { fromLocal, insideRing } from '../core/geo.js'
 import { zoneAt } from '../core/zone.js'
+import { encodeQuick } from '../core/sharelink.js'
 
 const STOREY = 3
 const DEFAULT_FLOOR = 3
@@ -20,6 +21,8 @@ const DEFAULT_FLOOR = 3
 const POINT_SIZE = 10
 const BUILDING_LIMIT = 400
 const RADIUS = 200
+/** How far, in metres, the middle of a shared building may have moved on the map and still be the same building. */
+const SAME_BUILDING = 25
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0))
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
@@ -49,7 +52,7 @@ function ringDistance(ring, [x, y]) {
  * @param ctx.openRoom  (scene) => void, opens the room editor with this scene
  */
 export function createQuick(ctx) {
-  const { store, net, consent, toast, root } = ctx
+  const { store, net, consent, modal, toast, root } = ctx
   const compare = createCompare()
 
   const state = {
@@ -78,6 +81,8 @@ export function createQuick(ctx) {
     analysisGen: 0,
     view: 'main',
     added: false,
+    // the answer of a link that is being opened: the building to find, the sides to pick, and whether they were picked yet
+    link: null,
   }
   let controller = null
   let floorTimer = 0
@@ -165,6 +170,7 @@ export function createQuick(ctx) {
   function stop() {
     state.gen++
     state.analysisGen++
+    state.link = null
     controller?.abort()
     controller = null
   }
@@ -235,6 +241,7 @@ export function createQuick(ctx) {
   }
 
   function choose(place) {
+    state.link = null
     state.place = place
     state.origin = { lat: place.lat, lon: place.lon }
     state.buildings = []
@@ -258,11 +265,12 @@ export function createQuick(ctx) {
     controller = new AbortController()
     const signal = controller.signal
     state.loadState = 'loading'
+    let gone = false
     try {
       const { buildings } = await net.buildings(origin, RADIUS, signal, { limit: BUILDING_LIMIT, rounds: 2, onNext: (host) => toast(t('wiz.map.another', { host })) })
       if (mine !== state.gen) return
       // a square that stood in for a building with no outline stays chosen, now with its neighbours in
-      const square = building()?.synthetic ? building() : null
+      const square = building()?.synthetic && !building().fromLink ? building() : null
       state.buildings = buildings
       state.selected = null
       if (square) {
@@ -270,13 +278,116 @@ export function createQuick(ctx) {
         state.selected = state.buildings.length - 1
       }
       state.loadState = buildings.length ? 'ok' : 'empty'
+      gone = !square && applyLink()
     } catch (err) {
       if (mine !== state.gen || signal.aborted) return
       state.loadState = err instanceof Refused ? 'refused' : 'failed'
+      // no outlines, but a link that carries its building's outline can still say what the sun does at it
+      state.buildings = state.buildings.filter((b) => !b.fromLink)
+      state.selected = null
+      gone = applyLink()
     }
     pushMap()
-    setPhase('choose', state.loadState === 'ok' ? done || tq('quick.tapBuilding') : '')
+    setPhase('choose', gone ? tq('quick.link.gone') : state.loadState === 'ok' ? done || tq('quick.tapBuilding') : '')
     if (state.selected !== null) analyse()
+  }
+
+  // ---------------------------------------------------------------- a link that is being opened
+
+  /**
+   * Where the building of a link stands among the outlines that were loaded: the one with its OpenStreetMap number,
+   * as long as it is where the link says, and else the building that holds the middle of the link's outline. -1 when none.
+   */
+  function findLinked(list, wanted) {
+    const c = wanted.ring ? centroid(wanted.ring) : null
+    let best = -1
+    let near = Infinity
+    if (wanted.id) {
+      list.forEach((o, i) => {
+        if (o.id !== wanted.id || o.fromLink) return
+        const d = c ? Math.hypot(centroid(o.ring)[0] - c[0], centroid(o.ring)[1] - c[1]) : 0
+        if (d < near) {
+          best = i
+          near = d
+        }
+      })
+      if (near <= SAME_BUILDING) return best
+    }
+    best = -1
+    if (c) list.forEach((o, i) => { if (!o.fromLink && !o.synthetic && insideRing(o.ring, c) && (best < 0 || o.h > list[best].h)) best = i })
+    return best
+  }
+
+  /** The building a link carries, for when the map has no outline for it. */
+  function linkedBuilding(wanted) {
+    const base = { type: 'building', src: 'osm', name: '', ring: wanted.ring, h: wanted.h || 12, base: 0, est: true, own: false, on: true, fromLink: true }
+    return wanted.id ? { ...base, id: wanted.id, ...(wanted.levels ? { levels: wanted.levels } : {}) } : { ...base, id: -1, synthetic: true }
+  }
+
+  /**
+   * Choose the building of the link among the outlines that were loaded, put the sides it named on, and report
+   * whether the building could not be found at all. A link whose outline is kept never fails that way.
+   */
+  function applyLink() {
+    const link = state.link
+    if (!link) return false
+    const at = findLinked(state.buildings, link.building)
+    if (at >= 0) {
+      state.selected = at
+      state.link = null
+    } else if (link.building.ring) {
+      state.buildings.push(linkedBuilding(link.building))
+      state.selected = state.buildings.length - 1
+    } else {
+      state.link = null
+      return true
+    }
+    if (!link.applied) {
+      link.applied = true
+      state.chosen.clear()
+      for (const id of link.sides) state.chosen.add(id)
+    }
+    flyToBuilding()
+    return false
+  }
+
+  /** Open the answer of a link: ask the one question first when it has not been answered, then load the outlines and choose the same building, floor and sides. */
+  async function openShared(link) {
+    stop()
+    const mine = state.gen
+    state.view = 'main'
+    state.declined = false
+    state.found = null
+    state.exact = true
+    state.floor = link.floor
+    state.added = false
+    state.link = { building: link.building, sides: link.sides, applied: false }
+    input.value = link.name
+    setPhase('idle', '')
+    if (!(await consent.askQuick())) {
+      if (mine !== state.gen) return
+      state.declined = true
+      state.link = null
+      setPhase('idle', tq('quick.declined'))
+      return
+    }
+    if (mine !== state.gen) return
+    // the link has done its work, and the address bar should not keep an answer that the person is about to change
+    ctx.linkOpened?.()
+    const place = link.pin ? { name: link.name, label: '', lat: link.lat, lon: link.lon, zone: zoneAt(link.lat, link.lon) || 'Asia/Taipei' } : null
+    state.place = place
+    state.origin = { lat: link.lat, lon: link.lon }
+    state.buildings = []
+    state.selected = null
+    state.sides = []
+    state.chosen.clear()
+    state.chip = null
+    state.loadState = 'loading'
+    state.analysisGen++
+    map.flyTo(link.lat, link.lon, 18)
+    pushMap()
+    setPhase('loading', tq('quick.loading'))
+    loadBuildings(state.origin, '')
   }
 
   // ---------------------------------------------------------------- taps on the map
@@ -300,6 +411,7 @@ export function createQuick(ctx) {
   }
 
   function selectBuilding(index) {
+    state.link = null
     state.selected = index
     state.chip = null
     state.chosen.clear()
@@ -490,7 +602,9 @@ export function createQuick(ctx) {
       frag.push(floorStepper())
       return frag
     }
-    frag.push(h('h2', {}, b.name ? tq('quick.building.named', { name: b.name }) : tq('quick.building')))
+    frag.push(h('div', { class: 'quick-head' },
+      h('h2', {}, b.name ? tq('quick.building.named', { name: b.name }) : tq('quick.building')),
+      h('button', { class: 'btn', type: 'button', id: 'quick-share', 'aria-label': tq('quick.share.aria'), onclick: () => share() }, tq('quick.share'))))
     if (b.synthetic) frag.push(h('p', { class: 'note' }, tq('quick.pointNote')))
     if (state.loadState === 'failed' || state.loadState === 'refused') {
       frag.push(h('p', { class: 'note warn', id: 'quick-load-failed' }, tq('quick.loadFailed')),
@@ -519,6 +633,7 @@ export function createQuick(ctx) {
   async function loadHere() {
     const at = { lat: map.cam.lat, lon: map.cam.lon }
     if (!(await consent.askQuick())) return
+    state.link = null
     state.place = null
     state.origin = at
     state.buildings = []
@@ -528,6 +643,53 @@ export function createQuick(ctx) {
     pushMap()
     setPhase('loading', tq('quick.loading'))
     loadBuildings(at, '')
+  }
+
+  // ---------------------------------------------------------------- share
+
+  /** The link that opens this answer again: the place, the building, the floor and the sides picked. */
+  function shareUrl() {
+    const b = building()
+    const hash = encodeQuick({
+      lat: state.origin.lat,
+      lon: state.origin.lon,
+      name: state.found?.address || state.place?.name || '',
+      pin: Boolean(state.place),
+      floor: state.floor,
+      sides: [...state.chosen],
+      building: { id: b.synthetic ? 0 : b.id, ring: b.ring, h: b.h, levels: b.levels ?? 0 },
+    })
+    return `${location.origin}${location.pathname}#${hash}`
+  }
+
+  /** The link in a box to copy by hand, for a browser that will not copy it. */
+  function showLink(url) {
+    const box = h('input', { type: 'text', readOnly: true, value: url, class: 'quick-linkbox', id: 'quick-linkbox', 'aria-label': tq('quick.share.manual.title') })
+    box.addEventListener('focus', () => box.select())
+    modal.show(tq('quick.share.manual.title'), [h('p', {}, tq('quick.share.manual.body')), box], [h('button', { class: 'btn primary', type: 'button', onclick: () => modal.close(true) }, tq('quick.share.done'))])
+  }
+
+  /** The share sheet of the phone when there is one, else the link is copied. */
+  async function share() {
+    if (!building() || !state.origin) return
+    const url = shareUrl()
+    const place = state.found?.address || state.place?.name || tq('quick.share.here')
+    const data = { title: tq('quick.share.title'), text: tq('quick.share.text', { place, floor: tq('quick.floor.value', { n: state.floor }) }), url }
+    if (typeof navigator.share === 'function' && navigator.canShare?.(data) !== false) {
+      try {
+        await navigator.share(data)
+        return
+      } catch (err) {
+        // the person closed the sheet, which is an answer
+        if (err?.name === 'AbortError') return
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      toast(tq('quick.share.copied'))
+    } catch {
+      showLink(url)
+    }
   }
 
   // ---------------------------------------------------------------- compare
@@ -675,5 +837,6 @@ export function createQuick(ctx) {
       input.value = text
     },
     submit,
+    openShared,
   }
 }

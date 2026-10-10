@@ -6,6 +6,7 @@ import assert from 'node:assert/strict'
 import { chromium, firefox, webkit } from 'playwright'
 import { readFileSync } from 'node:fs'
 import { serve } from '../serve.js'
+import { encodeQuick, decodeQuick } from '../../src/core/sharelink.js'
 
 const engine = { firefox, webkit }[process.env.BROWSER] ?? chromium
 const overpass = readFileSync(new URL('../fixtures/overpass-taipei.json', import.meta.url), 'utf8')
@@ -619,5 +620,217 @@ test('a tile that fails is asked for again, and none stays a hole', async () => 
   for (const o of outside.filter((x) => x.host === 'tile.openstreetmap.org')) count.set(o.path, (count.get(o.path) ?? 0) + 1)
   assert.ok([...count.values()].some((n) => n >= 2), 'a tile that failed was asked for again')
   assert.ok(Math.max(...count.values()) <= 3, `no tile is asked for more than three times: ${Math.max(...count.values())}`)
+  await context.close()
+})
+
+// ---------------------------------------------------------------- share
+
+/** Stand-ins for the phone's share sheet and the clipboard, which record what they were given. */
+const stubShare = (page, { share = 'sheet', clipboard = 'ok' } = {}) => page.evaluate(({ share, clipboard }) => {
+  window.__shared = []
+  window.__copied = []
+  Object.defineProperty(navigator, 'share', {
+    configurable: true,
+    value: share === 'none' ? undefined : async (data) => {
+      window.__shared.push(data)
+      if (share === 'cancel') throw Object.assign(new Error('cancelled'), { name: 'AbortError' })
+      if (share === 'broken') throw Object.assign(new Error('not allowed'), { name: 'NotAllowedError' })
+    },
+  })
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText: async (text) => { if (clipboard === 'refuse') throw new Error('refused'); window.__copied.push(text) } },
+  })
+}, { share, clipboard })
+
+/** The answer of the fixture building on the 6th floor with the north and west sides picked, as a link. */
+async function shareFromFirstPage() {
+  const first = await open()
+  await stubShare(first.page)
+  await findFlat(first.page)
+  await tapBuilding(first.page)
+  await first.page.tap('#floor-more')
+  await first.page.waitForFunction(() => !window.__sunspill.quick.state.working && window.__sunspill.quick.state.sidesFloor === 6)
+  await first.page.tap('.side-card[data-side=W]')
+  await first.page.tap('.side-card[data-side=N]')
+  await first.page.tap('#quick-share')
+  const [data] = await first.page.evaluate(() => window.__shared)
+  const ring = await first.page.evaluate((id) => window.__sunspill.quick.state.buildings.find((b) => b.id === id).ring, BUILDING)
+  await first.context.close()
+  return { data, hash: new URL(data.url).hash, ring }
+}
+
+test('Share: the button hands the phone a link that holds the place, the building, the floor and the sides, and the link opens the same answer after the one yes', async () => {
+  const { data, hash } = await shareFromFirstPage()
+  assert.equal(data.title, 'Sunspill 日照查詢')
+  assert.match(data.text, /台北市大安區復興南路二段151巷5號 6 樓，各面的日照點開就看得到。/)
+  assert.ok(data.url.startsWith(site.url + '#q1='), data.url)
+  const link = decodeQuick(hash)
+  assert.deepEqual([link.lat, link.lon, link.floor, link.sides, link.building.id, link.pin], [25.02847, 121.54394, 6, ['N', 'W'], BUILDING, true])
+  assert.ok(link.building.ring.length >= 4)
+  assert.match(link.name, /復興南路二段151巷5號/)
+
+  // somebody else opens it: they have not said yes yet, so the one question comes first and nothing has left the phone
+  const { page, context, errors, outside } = await open({ hash })
+  await page.waitForSelector('#quick-allow')
+  assert.deepEqual(outside, [], 'nothing before the yes')
+  await page.tap('#quick-allow')
+  await page.waitForFunction(() => !window.__sunspill.quick.state.working && window.__sunspill.quick.state.sides.length > 0)
+  const state = await quickState(page)
+  assert.deepEqual([state.phase, state.floor, state.chosen.sort()], ['choose', 6, ['N', 'W']])
+  assert.equal(await page.evaluate(() => { const q = window.__sunspill.quick.state; return q.buildings[q.selected].id }), BUILDING)
+  assert.equal(await page.locator('#floor-value').innerText(), '6 樓')
+  assert.equal(await page.locator('.side-card').count(), 4)
+  assert.equal(await page.locator('.side-card[aria-pressed=true]').count(), 2)
+  assert.match(await page.locator('#quick-summary').innerText(), /你的窗戶朝(西面、北面|北面、西面)/)
+  assert.equal(await page.locator('#quick-q').inputValue(), link.name)
+  // no address search was needed, the outlines were asked for once, and the link is not left in the address bar
+  assert.equal(outside.filter((o) => o.host === 'nominatim.openstreetmap.org').length, 0)
+  assert.equal(outside.filter((o) => /^overpass/.test(o.host)).length, 1)
+  assert.equal(await page.evaluate(() => location.hash), '')
+  assert.deepEqual(await page.evaluate(() => window.__sunspill.store.ui.net), { search: true, tiles: true, buildings: true })
+  assert.equal(await page.evaluate(() => window.__sunspill.store.canUndo()), false, 'opening a link edited no room')
+  assert.deepEqual(errors, [])
+  await context.close()
+})
+
+test('Share: when the question was answered before, the link goes straight to the side cards with no sheet', async () => {
+  const { hash } = await shareFromFirstPage()
+  const { page, context, outside } = await open({ hash, prefs: { net: { search: true, tiles: true, buildings: true } } })
+  await page.waitForFunction(() => !window.__sunspill.quick.state.working && window.__sunspill.quick.state.sides.length > 0)
+  assert.equal(await page.locator('#quick-allow').count(), 0)
+  assert.equal(await page.locator('.modal').count(), 0)
+  assert.deepEqual((await quickState(page)).chosen.sort(), ['N', 'W'])
+  assert.equal(await page.locator('#floor-value').innerText(), '6 樓')
+  assert.equal(outside.filter((o) => o.host === 'nominatim.openstreetmap.org').length, 0)
+  await context.close()
+})
+
+test('Share: a person who says no to the question gets nothing sent and the way to the full editor', async () => {
+  const { hash } = await shareFromFirstPage()
+  const { page, context, outside } = await open({ hash })
+  await page.tap('#quick-deny')
+  assert.match(await page.locator('#quick-body').innerText(), /沒有連線就沒有地圖可以點/)
+  assert.equal(await page.locator('#quick-declined-classic').isVisible(), true)
+  assert.deepEqual(outside, [])
+  await context.close()
+})
+
+test('Share: a link opens the quick check even for somebody who chose the full editor, without changing that choice', async () => {
+  const { hash } = await shareFromFirstPage()
+  const { page, context } = await open({ hash, prefs: { view: 'classic', net: { search: true, tiles: true, buildings: true } } })
+  await page.waitForFunction(() => window.__sunspill.quick?.state.sides.length > 0 && !window.__sunspill.quick.state.working)
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.quick), '1')
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sunspill.prefs')).view), 'classic', 'the next plain visit is still the full editor')
+  await context.close()
+})
+
+test('Share: a link pasted into the open tab opens its answer', async () => {
+  const { hash } = await shareFromFirstPage()
+  const { page, context } = await open({ prefs: { net: { search: true, tiles: true, buildings: true } } })
+  await page.evaluate((h) => { location.hash = h }, hash)
+  await page.waitForFunction(() => window.__sunspill.quick.state.sides.length > 0 && !window.__sunspill.quick.state.working)
+  assert.deepEqual((await quickState(page)).chosen.sort(), ['N', 'W'])
+  await context.close()
+})
+
+test('Share: with no share sheet on the phone the link is copied, and a closed sheet copies nothing', async () => {
+  const { page, context } = await open()
+  await findFlat(page)
+  await tapBuilding(page)
+  await page.tap('.side-card[data-side=W]')
+  await stubShare(page, { share: 'none' })
+  await page.tap('#quick-share')
+  assert.match(await page.locator('#toast').innerText(), /連結已複製/)
+  const copied = await page.evaluate(() => window.__copied)
+  assert.equal(copied.length, 1)
+  assert.ok(copied[0].startsWith(site.url + '#q1='))
+  assert.deepEqual(decodeQuick(new URL(copied[0]).hash).sides, ['W'])
+  // the person closes the share sheet: that is an answer, and nothing is copied after it
+  await stubShare(page, { share: 'cancel' })
+  await page.tap('#quick-share')
+  assert.equal((await page.evaluate(() => window.__shared)).length, 1)
+  assert.deepEqual(await page.evaluate(() => window.__copied), [])
+  // a share sheet that fails for another reason falls back to the copy
+  await stubShare(page, { share: 'broken' })
+  await page.tap('#quick-share')
+  assert.equal((await page.evaluate(() => window.__copied)).length, 1)
+  await context.close()
+})
+
+test('Share: a browser that will not copy shows the link in a box to copy by hand', async () => {
+  const { page, context } = await open()
+  await findFlat(page)
+  await tapBuilding(page)
+  await stubShare(page, { share: 'none', clipboard: 'refuse' })
+  await page.tap('#quick-share')
+  await page.waitForSelector('#quick-linkbox')
+  assert.match(await page.locator('.modal').innerText(), /瀏覽器不讓我們直接幫你複製/)
+  const value = await page.locator('#quick-linkbox').inputValue()
+  assert.ok(value.startsWith(site.url + '#q1='))
+  assert.equal(decodeQuick(new URL(value).hash).building.id, BUILDING)
+  assert.equal(await page.locator('#quick-linkbox').evaluate((el) => el.selectionEnd - el.selectionStart), value.length, 'the whole line is selected')
+  await context.close()
+})
+
+test('Share: a damaged link opens the plain first screen, and a room link still opens the room', async () => {
+  const damaged = await open({ hash: '#q1=not-a-link' })
+  assert.equal(await damaged.page.evaluate(() => document.documentElement.dataset.quick), '1')
+  assert.match(await damaged.page.locator('#quick-body').innerText(), /找到你的房子，看陽光/)
+  assert.equal(await damaged.page.locator('.modal').count(), 0, 'no question for a link that is not one')
+  await damaged.context.close()
+  const first = await open()
+  await first.page.tap('#quick-classic')
+  await first.page.evaluate(() => window.__sunspill.store.update((d) => { d.room.w = 4.4 }))
+  await first.page.waitForTimeout(500)
+  const room = await first.page.evaluate(() => location.hash)
+  assert.match(room, /^#r2=/)
+  await first.context.close()
+  const linked = await open({ hash: room })
+  assert.equal(await linked.page.evaluate(() => document.documentElement.dataset.quick), undefined)
+  assert.equal((await scene(linked.page)).room.w, 4.4)
+  await linked.context.close()
+})
+
+test('Share: a building that has a new number on the map is found by its outline, and one that is gone is said so', async () => {
+  const { ring } = await shareFromFirstPage()
+  const prefs = { net: { search: true, tiles: true, buildings: true } }
+  // the number is not the one the map has, but the outline lies inside the building that is there
+  const renumbered = encodeQuick({ lat: 25.02847, lon: 121.54394, name: 'x', pin: true, floor: 5, sides: ['W'], building: { id: 1, ring, h: 26, levels: 8 } })
+  const a = await open({ hash: `#${renumbered}`, prefs })
+  await a.page.waitForFunction(() => window.__sunspill.quick.state.sides.length > 0 && !window.__sunspill.quick.state.working)
+  assert.equal(await a.page.evaluate(() => { const q = window.__sunspill.quick.state; return q.buildings[q.selected].id }), BUILDING)
+  assert.deepEqual((await quickState(a.page)).chosen, ['W'])
+  await a.context.close()
+  // a number only, which the map does not have: the page says so and waits for a tap
+  const gone = encodeQuick({ lat: 25.02847, lon: 121.54394, name: 'x', pin: true, floor: 5, sides: ['W'], building: { id: 7, ring: null, h: 20, levels: 0 } })
+  const b = await open({ hash: `#${gone}`, prefs })
+  await b.page.waitForFunction(() => window.__sunspill.quick.state.phase === 'choose')
+  assert.match(await b.page.locator('#quick-body').innerText(), /連結裡的那一棟，地圖上找不到了/)
+  assert.equal((await quickState(b.page)).selected, null)
+  await tapBuilding(b.page)
+  assert.equal((await quickState(b.page)).sides.length, 4)
+  await b.context.close()
+})
+
+test('Share: when no server sends the outlines the link still brings its own building, and a retry swaps in the real one', async () => {
+  const { ring } = await shareFromFirstPage()
+  const prefs = { net: { search: true, tiles: true, buildings: true } }
+  // two rounds over three servers is six requests
+  const empty = ring.map(([e, n]) => [e + 400, n + 400])
+  const lone = encodeQuick({ lat: 25.02847, lon: 121.54394, name: 'x', pin: true, floor: 5, sides: ['S'], building: { id: 9, ring: empty, h: 20, levels: 0 } })
+  const { page, context } = await open({ hash: `#${lone}`, prefs, answers: { overpassFail: 6 } })
+  await page.waitForFunction(() => window.__sunspill.quick.state.loadState === 'failed', null, { timeout: 30000 })
+  await page.waitForFunction(() => window.__sunspill.quick.state.sides.length > 0 && !window.__sunspill.quick.state.working)
+  assert.match(await page.locator('#quick-load-failed').innerText(), /周圍建物載入失敗/)
+  assert.deepEqual((await quickState(page)).chosen, ['S'])
+  assert.equal(await page.locator('.side-card').count(), 4)
+  assert.equal(await page.evaluate(() => window.__sunspill.quick.state.buildings.length), 1, 'the building of the link, alone')
+  // the outlines come on the retry, and the building that the link carried is not counted twice as a neighbour of itself
+  await page.tap('#quick-retry')
+  await page.waitForFunction(() => window.__sunspill.quick.state.loadState === 'ok')
+  await page.waitForFunction(() => !window.__sunspill.quick.state.working && window.__sunspill.quick.state.buildings.length > 30)
+  assert.equal(await page.evaluate(() => window.__sunspill.quick.state.buildings.filter((b) => b.fromLink).length), 1, 'the link building stays since the map has no building at that spot')
+  assert.deepEqual((await quickState(page)).chosen, ['S'], 'the sides the person picked since are kept')
   await context.close()
 })

@@ -85,5 +85,15 @@
   "quick.verdict.west.strong": "Strong west sun",
   "quick.verdict.west.medium": "Some west sun",
   "quick.verdict.west.weak": "Little west sun",
-  "quick.verdict.west.none": "Almost no west sun"
+  "quick.verdict.west.none": "Almost no west sun",
+  "quick.share": "Share",
+  "quick.share.aria": "Share this answer as a link",
+  "quick.share.title": "Sunspill sun check",
+  "quick.share.text": "The sun on every side of {place}, {floor}. Open the link to see it.",
+  "quick.share.here": "this building",
+  "quick.share.copied": "Link copied.",
+  "quick.share.manual.title": "Copy this link",
+  "quick.share.manual.body": "Your browser would not copy it for you. Select the line below and copy it yourself.",
+  "quick.share.done": "Done",
+  "quick.link.gone": "The building in that link is not on the map any more. Tap the one you want."
 }

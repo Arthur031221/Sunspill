@@ -10,6 +10,7 @@ import { renderCard, renderGif } from './export.js'
 import { clock, dateText, duration, bearingText, areaText, lengthText, itemName } from './format.js'
 import { defaultScene, normalizeScene } from '../core/room.js'
 import { encodeScene, decodeScene, blurScene } from '../core/codec.js'
+import { decodeQuick } from '../core/sharelink.js'
 import { hoursAt } from '../core/hours.js'
 import { legendGradient } from '../render/heat.js'
 import { PALETTES } from '../render/palette.js'
@@ -85,6 +86,8 @@ const writeSaved = (list) => {
 }
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
 const fromLink = decodeScene(location.hash.slice(1))
+// a link from the quick check's Share button, a format of its own that opens the quick check at the same answer
+const quickLink = decodeQuick(location.hash)
 // without a link, the room that was last edited here comes back
 const restored = fromLink ? null : loadRoom()
 // a link opened over a room of your own: the first edit keeps yours aside
@@ -93,7 +96,7 @@ const initial = fromLink ?? restored ?? defaultScene()
 // the first screen is the quick check, unless somebody's link is being opened, or a room was edited here before and the
 // person did not ask for the quick check, or the person chose the full editor last time
 const view = prefs.view === 'quick' || prefs.view === 'classic' ? prefs.view : null
-const quickFirst = !fromLink && (view === 'quick' || (view === null && !restored))
+const quickFirst = Boolean(quickLink) || (!fromLink && (view === 'quick' || (view === null && !restored)))
 let edited = false
 const lang = LOCALES[prefs.lang] ? prefs.lang : pickLocale(navigator.languages)
 const imperial = /^en-(US|LR|MM)$/i.test(navigator.language || '')
@@ -486,6 +489,14 @@ const ensureQuick = () => (quick ??= createQuick({
   store, net, consent, modal, toast,
   root: $('#quick'),
   classic: () => showView('classic', true),
+  // the link has been read, so the address bar stops holding an answer that the person is about to change
+  linkOpened() {
+    try {
+      history.replaceState(null, '', `${location.pathname}${location.search}`)
+    } catch {
+      // the link stays in the address bar, which does no harm
+    }
+  },
   openRoom(scene) {
     const result = actions.openScene(scene)
     if (result !== 'opened') {
@@ -498,6 +509,7 @@ const ensureQuick = () => (quick ??= createQuick({
   },
 }))
 if (quickFirst) showView('quick')
+if (quickLink) ensureQuick().openShared(quickLink)
 
 function stamp() {
   const s = store.scene
@@ -773,6 +785,13 @@ dark.addEventListener('change', () => store.ui.theme === 'auto' && (resolveTheme
 addEventListener('resize', () => afterScene())
 addEventListener('hashchange', () => {
   if (location.hash === lastHash) return
+  // a quick check link pasted into this tab opens the same answer
+  const shared = decodeQuick(location.hash)
+  if (shared) {
+    showView('quick')
+    ensureQuick().openShared(shared)
+    return
+  }
   const next = decodeScene(location.hash.slice(1))
   if (!next) return
   // somebody's room pasted into this tab: it is not yours until you edit it, and yours stays set aside
@@ -812,7 +831,7 @@ onLocale(() => {
 resolveTheme()
 chrome()
 panels.build()
-if (restored) toast(t('app.restored'))
+if (restored && !quickLink) toast(t('app.restored'))
 lastLocaleBuild = `${store.ui.units}|${locale()}`
 afterScene()
 el.canvas.setAttribute('aria-label', summary())

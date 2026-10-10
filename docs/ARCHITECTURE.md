@@ -23,6 +23,7 @@ src/core     pure code, no DOM, runs in Node and the browser
   snap.js      snapping for windows along a wall and furniture over the floor
   templates.js typical rooms
   codec.js     scene <-> link
+  sharelink.js the quick check's answer <-> link, a format of its own (q1=) apart from the room links
   cities.js    built-in city list and search
   gif.js       GIF89a encoder
 src/render   canvas drawing (needs a 2D context)
@@ -81,6 +82,8 @@ An observation is the day, the time and the convex outline of the patch the pers
 3. `footprintSides` splits that outline into walls, groups the walls by the nearest of eight compass sectors, drops a side shorter than 3 metres and a wall that touches a neighbour at least as tall as the window (a party wall has no window).
 4. `sideScene` lays a 3.6 by 4.4 metre room behind the longest wall of a side so that a window of 1.8 by 1.5 metres at 0.9 metres is on that wall, facing out, with every neighbour at its place on the ground. The building itself is left out. This is an ordinary scene, so `litOpening`, with the prisms of `obstacles.js`, gives the lit part of the window with no new light code.
 5. `measureSteps` counts a time step as sunlit when more than a quarter of the opening is lit, over the afternoons (after 14:00) of 1 June to 30 September, over December, and on the 15th of each month. It is a generator that stops after each day, so the page hands the thread back every 12 ms.
+
+The Share button writes the answer as a link (`sharelink.js`: the place, the building by its OpenStreetMap number and its outline, the floor and the sides picked). Opening such a link asks the one question first when it has not been answered, loads the outlines again, picks the building by its number, else by the building that holds the middle of the outline, else from the outline in the link, and puts the sides on once the sun is worked out. `main.js` tells the two link formats apart by their prefix, and a quick link opens the quick check even when the full editor was the last choice.
 
 The "More" row's room is the same scene of one side with the building put in switched off as the room's own building, so the editor opens at the room step with place, floor, facing and neighbours set.
 

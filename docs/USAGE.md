@@ -8,6 +8,8 @@ Each side is judged at a window that is not there, 1.8 by 1.5 metres with the si
 
 The "More" row opens the room editor with the place, the floor, the facing of the side you chose and the neighbours already in, at the room step, and adds the flat to a list of up to four, kept in this browser, that "Compare" shows side by side. "Full editor" at the bottom opens the page as it was before the quick check, with a sample bedroom in Taipei with a west window and the sun already moving across the floor, and "Quick check" at the bottom of the full editor comes back. The page remembers which you used last. A friend's link, and a room you edited before, open the full editor.
 
+The Share button next to the building's name makes a link to this answer: the place, the building, the floor and the sides you picked. Where the phone has a share sheet it opens, and elsewhere the link is copied (and shown in a box to copy by hand if the browser will not copy). Whoever opens the link goes straight to the side cards. The page asks the one question about OpenStreetMap first if it has not been answered, then loads the buildings again and picks the same one. The address search is not needed, so the link sends nothing but the position that the outlines are asked for. A link from the Share button opens the quick check even for somebody who chose the full editor, and it does not change that choice.
+
 ## The full editor
 
 The full editor opens on a sample bedroom in Taipei with a west window and the sun already moving across the floor. Press space to pause, then drag the time bar to scrub the day. The amber curve behind the bar shows how much floor is in sun at each hour, so you can see when the sun comes in before you play it.

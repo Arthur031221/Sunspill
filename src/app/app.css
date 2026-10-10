@@ -456,6 +456,10 @@ html[data-quick] body { overflow: hidden; }
 .quick-grab span { width: 44px; height: 5px; border-radius: 3px; background: var(--line); }
 .quick-body { overflow: auto; padding: 0 14px 10px; flex: 1; min-height: 0; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .quick-body h2 { margin-top: 0; font-size: 20px; }
+.quick-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 4px; }
+.quick-head h2 { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.quick-head .btn { flex: none; height: 44px; min-width: 72px; }
+.quick-linkbox { width: 100%; height: 44px; font-size: 14px; }
 .quick-body p { margin: 8px 0; }
 .quick-status { font-weight: 600; }
 p.note.warn, .note.warn { color: var(--accent); font-weight: 600; }

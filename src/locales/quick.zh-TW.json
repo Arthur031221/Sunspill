@@ -85,5 +85,15 @@
   "quick.verdict.west.strong": "西曬強",
   "quick.verdict.west.medium": "西曬中",
   "quick.verdict.west.weak": "西曬弱",
-  "quick.verdict.west.none": "幾乎沒有西曬"
+  "quick.verdict.west.none": "幾乎沒有西曬",
+  "quick.share": "分享",
+  "quick.share.aria": "把這個結果做成連結分享出去",
+  "quick.share.title": "Sunspill 日照查詢",
+  "quick.share.text": "{place} {floor}，各面的日照點開就看得到。",
+  "quick.share.here": "這棟房子",
+  "quick.share.copied": "連結已複製。",
+  "quick.share.manual.title": "複製這個連結",
+  "quick.share.manual.body": "瀏覽器不讓我們直接幫你複製。請選取下面這一行，自己複製。",
+  "quick.share.done": "完成",
+  "quick.link.gone": "連結裡的那一棟，地圖上找不到了。請點你要看的那一棟。"
 }
