@@ -83,18 +83,30 @@ writeFileSync(resolve(root, 'dist/manifest.webmanifest'), JSON.stringify({
     { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
   ],
 }, null, 2) + '\n')
-// A cache-first worker, so a page opened once keeps working without a connection.
+// The page itself is asked for on the network first, so a new version shows on the next
+// visit, and the cached copy answers only when the network is down or slow. The deals data
+// is network first too, so its monthly update is seen. The icon and manifest stay cache first.
 const cacheId = createHash('sha256').update(html).digest('hex').slice(0, 10)
 writeFileSync(resolve(root, 'dist/sw.js'), `const CACHE = 'sunspill-${cacheId}'
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['./', 'manifest.webmanifest', 'icon-192.png'])).then(() => self.skipWaiting()))
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['./', 'manifest.webmanifest', 'icon-192.png'].map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()))
 })
 self.addEventListener('activate', (event) => {
   event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith('sunspill-') && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()))
 })
+const fresh = (request, key) => {
+  const network = fetch(request, { cache: 'no-cache' }).then((res) => {
+    if (res.ok) caches.open(CACHE).then((cache) => cache.put(key, res.clone()))
+    return res
+  })
+  const late = new Promise((resolve) => setTimeout(resolve, 4000)).then(() => caches.match(key, { ignoreSearch: true }))
+  return Promise.race([network, late.then((hit) => hit || network)]).catch(() => caches.match(key, { ignoreSearch: true }))
+}
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
   if (event.request.method !== 'GET' || url.origin !== location.origin) return
+  if (event.request.mode === 'navigate') return event.respondWith(fresh(event.request, './'))
+  if (url.pathname.includes('/data/')) return event.respondWith(fresh(event.request, event.request))
   event.respondWith(caches.match(event.request, { ignoreSearch: true }).then((hit) => hit || fetch(event.request)))
 })
 `)
