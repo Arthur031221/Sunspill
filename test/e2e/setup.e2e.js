@@ -31,7 +31,7 @@ async function open({ locale = 'en-GB', answers = {}, hash = '', viewport = { wi
   const context = await browser.newContext({ viewport, ...(engine === firefox ? { serviceWorkers: 'block' } : { isMobile: true }), hasTouch: true, deviceScaleFactor: 2, reducedMotion: 'reduce', locale })
   // a first visit now opens the quick check, and these tests are about the guided setup, so they start where a person
   // who chose the full editor last time would (the quick check has its own tests in quick.e2e.js)
-  await context.addInitScript(() => { if (!localStorage.getItem('sunspill.prefs')) localStorage.setItem('sunspill.prefs', JSON.stringify({ view: 'classic' })) })
+  await context.addInitScript(() => { if (!localStorage.getItem('sunspill.prefs')) localStorage.setItem('sunspill.prefs', JSON.stringify({ view: 'classic', viewv: 2 })) })
   const outside = []
   await context.route((url) => url.hostname !== '127.0.0.1', async (route) => {
     const url = new URL(route.request().url())

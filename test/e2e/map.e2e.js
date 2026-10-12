@@ -27,7 +27,7 @@ after(async () => {
 /** A phone in the full editor with the map pictures allowed. `tile(path)` can delay, fail or let through each tile. */
 async function open({ tile = () => 'ok' } = {}) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, ...(engine === firefox ? { serviceWorkers: 'block' } : { isMobile: true }), hasTouch: true, deviceScaleFactor: 2, reducedMotion: 'reduce', locale: 'en-GB' })
-  await context.addInitScript(() => { if (!localStorage.getItem('sunspill.prefs')) localStorage.setItem('sunspill.prefs', JSON.stringify({ view: 'classic', net: { search: true, tiles: true, buildings: true } })) })
+  await context.addInitScript(() => { if (!localStorage.getItem('sunspill.prefs')) localStorage.setItem('sunspill.prefs', JSON.stringify({ view: 'classic', viewv: 2, net: { search: true, tiles: true, buildings: true } })) })
   const tiles = { asked: [], aborted: 0 }
   await context.route((url) => url.hostname !== '127.0.0.1', async (route) => {
     const url = new URL(route.request().url())

@@ -37,7 +37,7 @@ const loadPrefs = () => {
 }
 const savePrefs = (ui) => {
   try {
-    localStorage.setItem(PREFS_KEY, JSON.stringify({ theme: ui.theme, lang: ui.lang, units: ui.units, arc: ui.showArc, net: ui.net, setup: ui.setupDone, view: ui.view }))
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ theme: ui.theme, lang: ui.lang, units: ui.units, arc: ui.showArc, net: ui.net, setup: ui.setupDone, view: ui.view, viewv: 2 }))
   } catch {
     // private mode: the settings simply do not persist
   }
@@ -95,8 +95,11 @@ let aside = fromLink && stored(ROOM_KEY) && stored(ROOM_KEY) !== location.hash.s
 const initial = fromLink ?? restored ?? defaultScene()
 // the first screen is the quick check, unless somebody's link is being opened, or a room was edited here before and the
 // person did not ask for the quick check, or the person chose the full editor last time
-const view = prefs.view === 'quick' || prefs.view === 'classic' ? prefs.view : null
-const quickFirst = Boolean(quickLink) || (!fromLink && (view === 'quick' || (view === null && !restored)))
+// The quick check opens first on every device. Only a choice of the full editor made since
+// 2026-10-12 (saved with viewv 2) keeps it, so an older saved room or an older choice no
+// longer makes a computer open on the editor while a phone opens on the quick check.
+const view = prefs.viewv === 2 && (prefs.view === 'quick' || prefs.view === 'classic') ? prefs.view : null
+const quickFirst = Boolean(quickLink) || (!fromLink && view !== 'classic')
 let edited = false
 const lang = LOCALES[prefs.lang] ? prefs.lang : pickLocale(navigator.languages)
 const imperial = /^en-(US|LR|MM)$/i.test(navigator.language || '')

@@ -472,7 +472,7 @@ test('the more row: the room editor opens at the room step with the place, the f
 })
 
 test('a room of your own is saved first when the quick check opens the editor, and the quick check never overwrites it', async () => {
-  const { page, context } = await open({ prefs: { view: 'classic', net: { search: true, tiles: true, buildings: true } } })
+  const { page, context } = await open({ prefs: { view: 'classic', viewv: 2, net: { search: true, tiles: true, buildings: true } } })
   // edit the room in the full editor, then go to the quick check by the small link
   await page.evaluate(() => window.__sunspill.store.update((d) => { d.room.w = 4.2; d.place.name = 'My room' }))
   await page.waitForTimeout(500)
@@ -744,7 +744,7 @@ test('Share: a person who says no to the question gets nothing sent and the way 
 
 test('Share: a link opens the quick check even for somebody who chose the full editor, without changing that choice', async () => {
   const { hash } = await shareFromFirstPage()
-  const { page, context } = await open({ hash, prefs: { view: 'classic', net: { search: true, tiles: true, buildings: true } } })
+  const { page, context } = await open({ hash, prefs: { view: 'classic', viewv: 2, net: { search: true, tiles: true, buildings: true } } })
   await page.waitForFunction(() => window.__sunspill.quick?.state.sides.length > 0 && !window.__sunspill.quick.state.working)
   assert.equal(await page.evaluate(() => document.documentElement.dataset.quick), '1')
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('sunspill.prefs')).view), 'classic', 'the next plain visit is still the full editor')
